@@ -1,3 +1,11 @@
+/**
+ * @name _MessagesLogger
+ * @command -
+ * @internal true
+ * @desc 内部插件，收发消息记录日志
+ * @authority -
+ */
+
 import { Context } from 'koishi'
 
 export const name = '_internal-MessagesLogger'

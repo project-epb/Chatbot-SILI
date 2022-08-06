@@ -1,9 +1,18 @@
+/**
+ * @name Chatbot-SILI 万界规划局QQ机器人
+ * @author Dragon-Fish <dragon-fish@qq.com>
+ * 
+ * @license MIT
+ */
+
 import 'dotenv/config'
 import { App } from 'koishi'
 import { env } from 'node:process'
 
 import PluginPing from './plugins/ping'
 import MessagesLogger from './modules/onMessages'
+import PatchCallme from './plugins/callme'
+import PluginMute from './plugins/mute'
 
 /** 初始化 Koishi 实例 */
 const app = new App(
@@ -50,15 +59,19 @@ env.KOISHI_ENV === 'prod' &&
 // @pollify v3 自带的指令
 // [core]
 app.plugin('help')
+app.plugin('commands')
 app.plugin('suggest')
+app.plugin('switch')
 // [common]
 app.plugin('admin') // channel user auth
 app.plugin('bind')
 app.plugin('broadcast')
 app.plugin('callme')
 app.plugin('echo')
+app.plugin('rate-limit')
 app.plugin('recall')
 // [tools]
+app.plugin('baidu')
 
 // 网页控制台
 app.plugin('console')
@@ -75,14 +88,16 @@ app.plugin('bvid')
 app.plugin('mediawiki')
 app.plugin('schedule')
 app.plugin('teach', {
-  prefix: '?!',
+  prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
 })
 
 // SILI Core
 app.plugin(PluginPing)
+app.plugin(PluginMute)
 
 // Internal utils
 app.plugin(MessagesLogger)
+app.plugin(PatchCallme)
 
 /** 启动应用程序 */
 app.start().then(() => {

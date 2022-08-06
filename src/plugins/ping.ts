@@ -1,11 +1,18 @@
-import { Context } from 'koishi'
+/**
+ * @name ping-pong
+ * @command ping
+ * @desc 应答测试
+ * @authority 1
+ */
+
+import { Context, Time } from 'koishi'
 
 export const name = 'ping-pong'
 
 export default class PluginPing {
   constructor(public ctx: Context) {
     ctx
-      .command('ping', '应答测试')
+      .command('ping', '应答测试', { minInterval: 10 * Time.second } as any)
       .alias('在吗', '!', '！')
       .action(() => {
         this.logger.info(new Date().toISOString())
