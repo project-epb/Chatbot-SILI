@@ -3,11 +3,7 @@ import { Context } from 'koishi'
 export const name = 'ping-pong'
 
 export default class PluginPing {
-  ctx: Context
-
-  constructor(ctx: Context) {
-    this.ctx = ctx
-
+  constructor(public ctx: Context) {
     ctx
       .command('ping', '应答测试')
       .alias('在吗', '!', '！')
