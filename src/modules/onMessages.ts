@@ -8,9 +8,11 @@ export default class MessagesLogger {
     this.ctx = ctx
     ctx.on('message', (session) => {
       this.logger.info(
-        `[${session.platform}:${session.userId}]`,
-        `${session.type} / ${session.subsubtype || '-'}`,
-        session.content
+        `[${session.platform}:${session.userId}${
+          session.channelId !== session.userId ? '@' + session.channelId : ''
+        }]`,
+        `${session.type}/${session.subsubtype || '-'}`,
+        ': ' + session.content
       )
     })
   }
