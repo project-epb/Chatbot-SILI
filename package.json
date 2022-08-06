@@ -1,12 +1,8 @@
 {
-  "name": "koishi-app",
-  "version": "0.0.0",
+  "name": "chatbot-sili",
+  "version": "4.0.0-alpha.0",
   "private": true,
-  "files": [
-    ".env",
-    "koishi.yml"
-  ],
-  "license": "AGPL-3.0",
+  "license": "MIT",
   "workspaces": [
     "packages/*",
     "plugins/*"
@@ -21,8 +17,8 @@
     "pub": "yakumo publish",
     "dev": "nodemon -r esbuild-register ./src",
     "start": "node -r esbuild-register ./src",
-    "dotenv:push": "dotenv-vault push",
-    "dotenv:pull": "dotenv-vault pull"
+    "env:push": "dotenv-vault push",
+    "env:pull": "dotenv-vault pull"
   },
   "devDependencies": {
     "@koishijs/client": "^4.3.1",
