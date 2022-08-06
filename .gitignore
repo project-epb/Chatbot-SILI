@@ -130,3 +130,6 @@ dist
 .pnp.*
 
 .cqhttp
+.env*
+!.env.project
+!.env.vault

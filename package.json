@@ -20,7 +20,9 @@
     "dep": "yakumo upgrade",
     "pub": "yakumo publish",
     "dev": "nodemon -r esbuild-register ./src",
-    "start": "node -r esbuild-register ./src"
+    "start": "node -r esbuild-register ./src",
+    "dotenv:push": "dotenv-vault push",
+    "dotenv:pull": "dotenv-vault pull"
   },
   "devDependencies": {
     "@koishijs/client": "^4.3.1",
@@ -28,6 +30,7 @@
     "@types/node": "^17.0.45",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.1",
+    "dotenv-vault": "^1.11.1",
     "esbuild": "^0.14.51",
     "esbuild-register": "^3.3.3",
     "nodemon": "^2.0.19",
