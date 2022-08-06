@@ -1,7 +1,7 @@
 /**
  * @name Chatbot-SILI 万界规划局QQ机器人
  * @author Dragon-Fish <dragon-fish@qq.com>
- * 
+ *
  * @license MIT
  */
 
@@ -13,6 +13,7 @@ import PluginPing from './plugins/ping'
 import MessagesLogger from './modules/onMessages'
 import PatchCallme from './plugins/callme'
 import PluginMute from './plugins/mute'
+import MgpGroupUtils from './modules/mgpGroupUtils'
 
 /** 初始化 Koishi 实例 */
 const app = new App(
@@ -97,6 +98,7 @@ app.plugin(PluginMute)
 
 // Internal utils
 app.plugin(MessagesLogger)
+app.plugin(MgpGroupUtils)
 app.plugin(PatchCallme)
 
 /** 启动应用程序 */
