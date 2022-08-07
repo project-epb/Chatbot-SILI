@@ -104,16 +104,16 @@ app.plugin('repeater', {
       return hit ? session.send('No，不要再复读了！') : false
     }
   },
-  onInterrupt(state: RepeatState, session: Session) {
-    if (!state.repeated) return
-    const hit = randomHit(0.1 * (state.times - 5))
-    logger.info('[尝试质询打断]', hit)
-    return hit
-      ? session.send(
-          `${segment.at(session.userId as string)}在？为什么打断复读？`
-        )
-      : false
-  },
+  // onInterrupt(state: RepeatState, session: Session) {
+  //   if (!state.repeated) return
+  //   const hit = randomHit(0.1 * (state.times - 5))
+  //   logger.info('[尝试质询打断]', hit)
+  //   return hit
+  //     ? session.send(
+  //         `${segment.at(session.userId as string)}在？为什么打断复读？`
+  //       )
+  //     : false
+  // },
 })
 // [tools]
 app.plugin('baidu')
