@@ -6,7 +6,7 @@
  */
 
 import 'dotenv/config'
-import { App } from 'koishi'
+import { App, segment, type Session } from 'koishi'
 import { env } from 'node:process'
 
 import {} from '@koishijs/plugin-help'
@@ -18,6 +18,13 @@ import MessagesLogger from './modules/onMessages'
 import PatchCallme from './plugins/callme'
 import PluginMute from './plugins/mute'
 import MgpGroupUtils from './modules/mgpGroupUtils'
+
+interface RepeatState {
+  content: string
+  repeated: boolean
+  times: number
+  users: Record<number, number>
+}
 
 /** 初始化 Koishi 实例 */
 const app = new App(
@@ -75,6 +82,21 @@ app.plugin('callme')
 app.plugin('echo')
 app.plugin('rate-limit')
 app.plugin('recall')
+app.plugin('repeater', {
+  onRepeat(state: RepeatState, session: Session) {
+    if (!state.repeated && state.times > 3) {
+      return Math.random() < 0.8 ? state.content : void 0
+    }
+    if (state.repeated && state.times >= 10) {
+      return 'No，不要再复读了！'
+    }
+  },
+  onInterrupt: (state: RepeatState, session: Session) =>
+    state.repeated &&
+    state.times >= 3 &&
+    Math.random() > 0.5 &&
+    segment.at(session.userId as string) + '在？为什么打断复读？',
+})
 // [tools]
 app.plugin('baidu')
 

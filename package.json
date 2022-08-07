@@ -56,6 +56,7 @@
     "@koishijs/plugin-logger": "^2.1.1",
     "@koishijs/plugin-rate-limit": "^1.1.5",
     "@koishijs/plugin-recall": "^1.1.1",
+    "@koishijs/plugin-repeater": "^1.1.0",
     "@koishijs/plugin-sandbox": "^2.1.1",
     "@koishijs/plugin-schedule": "^4.3.0",
     "@koishijs/plugin-status": "^6.1.3",
