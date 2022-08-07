@@ -82,20 +82,30 @@ app.plugin('callme')
 app.plugin('echo')
 app.plugin('rate-limit')
 app.plugin('recall')
+const randomHit = (probability: number) => Math.random() < probability
 app.plugin('repeater', {
   onRepeat(state: RepeatState, session: Session) {
     if (!state.repeated && state.times > 3) {
-      return Math.random() < 0.8 ? state.content : void 0
+      const hit = randomHit(0.125 * state.times)
+      logger.info('[尝试参与复读]', hit)
+      return hit ? session.send(state.content) : false
     }
-    if (state.repeated && state.times >= 10) {
-      return 'No，不要再复读了！'
+    if (state.repeated && state.times > 5) {
+      const hit = randomHit(0.1 * (state.times - 5))
+      logger.info('[尝试打断复读]', hit)
+      return hit ? session.send('No，不要再复读了！') : false
     }
   },
-  onInterrupt: (state: RepeatState, session: Session) =>
-    state.repeated &&
-    state.times >= 3 &&
-    Math.random() > 0.5 &&
-    segment.at(session.userId as string) + '在？为什么打断复读？',
+  onInterrupt(state: RepeatState, session: Session) {
+    if (!state.repeated) return
+    const hit = randomHit(0.1 * (state.times - 5))
+    logger.info('[尝试质询打断]', hit)
+    return hit
+      ? session.send(
+          `${segment.at(session.userId as string)}在？为什么打断复读？`
+        )
+      : false
+  },
 })
 // [tools]
 app.plugin('baidu')
