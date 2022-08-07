@@ -10,15 +10,18 @@ import { App, segment, type Session } from 'koishi'
 import { env } from 'node:process'
 
 import {} from '@koishijs/plugin-help'
+import {} from '@koishijs/plugin-database-mongo'
 import {} from '@koishijs/plugin-rate-limit'
 import {} from '@koishijs/plugin-switch'
 
 import PluginPing from './plugins/ping'
-import MessagesLogger from './modules/onMessages'
+import MessagesLogger from './modules/MessagesLogger'
 import PatchCallme from './plugins/callme'
 import PluginMute from './plugins/mute'
-import MgpGroupUtils from './modules/mgpGroupUtils'
+import MgpGroupUtils from './modules/MgpGroupUtils'
 import PluginPixiv from './plugins/pixiv'
+import PluginVerifyFandomUser from './plugins/verifyFandomUser'
+import FandomDiscordConnect from './modules/fandomDiscordConnect'
 
 interface RepeatState {
   content: string
@@ -63,10 +66,12 @@ app.plugin('adapter-onebot', {
   endpoint: env.ONEBOT_ENDPOINT,
 })
 // Discord
-env.KOISHI_ENV === 'prod' &&
-  app.plugin('adapter-discord', {
-    token: env.TOKEN_DISCORD_BOT_SILI,
-  })
+app.plugin('adapter-discord', {
+  token:
+    env.KOISHI_ENV === 'prod'
+      ? env.TOKEN_DISCORD_BOT_SILI
+      : env.TOKEN_DISCORD_BOT_XIAOYUJUN,
+})
 
 /** 安装插件 */
 // @pollify v3 自带的指令
@@ -136,8 +141,10 @@ app.plugin('teach', {
 app.plugin(PluginPing)
 app.plugin(PluginMute)
 app.plugin(PluginPixiv)
+app.plugin(PluginVerifyFandomUser)
 
 // Internal utils
+app.plugin(FandomDiscordConnect)
 app.plugin(MessagesLogger)
 app.plugin(MgpGroupUtils)
 app.plugin(PatchCallme)

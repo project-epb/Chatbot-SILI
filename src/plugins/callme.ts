@@ -8,6 +8,14 @@
 import { Context, Time } from 'koishi'
 
 export const name = 'patch-callme'
+declare module 'koishi' {
+  interface Channel {
+    disable: string[]
+  }
+  interface User {
+    name: string
+  }
+}
 
 export default class PatchCallme {
   constructor(public ctx: Context) {
