@@ -22,6 +22,7 @@ import MgpGroupUtils from './modules/MgpGroupUtils'
 import PluginPixiv from './plugins/pixiv'
 import PluginVerifyFandomUser from './plugins/verifyFandomUser'
 import FandomDiscordConnect from './modules/fandomDiscordConnect'
+import PluginAbout from './plugins/about'
 
 interface RepeatState {
   content: string
@@ -143,6 +144,7 @@ app.plugin('teach', {
 })
 
 // SILI Core
+app.plugin(PluginAbout)
 app.plugin(PluginPing)
 app.plugin(PluginMute)
 app.plugin(PluginPixiv)
