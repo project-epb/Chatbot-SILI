@@ -7,7 +7,8 @@
 
 import 'dotenv/config'
 import { App, segment, type Session } from 'koishi'
-import { env } from 'node:process'
+// import { env } from 'node:process'
+const { env } = process
 
 import {} from '@koishijs/plugin-help'
 import {} from '@koishijs/plugin-database-mongo'
@@ -117,7 +118,11 @@ app.plugin('repeater', {
 app.plugin('baidu')
 
 // 网页控制台
-app.plugin('console')
+app.plugin('console', {
+  title: 'SILI 监控中心',
+  uiPath: '/dash',
+  apiPath: '/api/status',
+})
 app.plugin('auth')
 app.plugin('dataview')
 app.plugin('insight')
