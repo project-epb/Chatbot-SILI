@@ -23,6 +23,7 @@ import MgpGroupUtils from './modules/MgpGroupUtils'
 import PluginPixiv from './plugins/pixiv'
 import PluginVerifyFandomUser from './plugins/verifyFandomUser'
 import FandomDiscordConnect from './modules/fandomDiscordConnect'
+import PluginAbout from './plugins/about'
 
 interface RepeatState {
   content: string
@@ -133,6 +134,11 @@ app.plugin('sandbox')
 // 第三方
 // app.plugin('blive')
 app.plugin('bvid')
+app.plugin('github', {
+  path: '/api/github',
+  appId: env.TOKEN_GITHUB_APPID,
+  appSecret: env.TOKEN_GITHUB_APPSECRET,
+})
 app.plugin('image-search', {
   saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
 })
@@ -143,6 +149,7 @@ app.plugin('teach', {
 })
 
 // SILI Core
+app.plugin(PluginAbout)
 app.plugin(PluginPing)
 app.plugin(PluginMute)
 app.plugin(PluginPixiv)
