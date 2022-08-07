@@ -1,5 +1,5 @@
 /**
- * @name _MessagesLogger
+ * @name _internal-MessagesLogger
  * @command -
  * @internal true
  * @desc 内部插件，收发消息记录日志
@@ -14,7 +14,7 @@ export default class MessagesLogger {
   constructor(public ctx: Context) {
     ctx.on('message', (session) => {
       this.logger.info(
-        `[${session.type}/${session.subsubtype || '-'}]`,
+        `[${session.subsubtype}/${session.subsubtype}]`,
         `[${session.channelId}@${session.platform}]`,
         '> ' + session.content
       )

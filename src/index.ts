@@ -9,6 +9,10 @@ import 'dotenv/config'
 import { App } from 'koishi'
 import { env } from 'node:process'
 
+import {} from '@koishijs/plugin-help'
+import {} from '@koishijs/plugin-rate-limit'
+import {} from '@koishijs/plugin-switch'
+
 import PluginPing from './plugins/ping'
 import MessagesLogger from './modules/onMessages'
 import PatchCallme from './plugins/callme'

@@ -1,5 +1,5 @@
 /**
- * @name _MgpGroupUtils
+ * @name _internal-MgpGroupUtils
  * @command -
  * @internal true
  * @desc 内部插件，萌娘百科B站粉丝群工具箱
