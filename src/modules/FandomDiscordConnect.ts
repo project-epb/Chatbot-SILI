@@ -17,10 +17,7 @@ export default class FandomDiscordConnect {
     // 缓存上下文
     const ctxQQ = ctx
         .platform('onebot')
-        .channel(
-          process.env.CHANNEL_QQ_FANDOM as string,
-          process.env.CHANNEL_QQ_SANDBOX as string
-        ),
+        .channel(process.env.CHANNEL_QQ_FANDOM as string),
       ctxDC = ctx
         .platform('discord')
         .channel('736880471891378246', '568268934176964629')
@@ -49,12 +46,12 @@ export default class FandomDiscordConnect {
         // 研讨会Hook
         // session.author.userId !== '865799566417854524'
       ) {
-        this.discordToQQ(session, process.env.CHANNEL_QQ_SANDBOX as string)
+        this.discordToQQ(session, process.env.CHANNEL_QQ_FANDOM as string)
       }
 
       // Discord 自己发消息
       ctxDC.on('send', (session) => {
-        this.discordToQQ(session, process.env.CHANNEL_QQ_SANDBOX as string)
+        this.discordToQQ(session, process.env.CHANNEL_QQ_FANDOM as string)
       })
     })
   }

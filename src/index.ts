@@ -128,6 +128,11 @@ app.plugin('sandbox')
 // 第三方
 // app.plugin('blive')
 app.plugin('bvid')
+app.plugin('github', {
+  path: '/api/github',
+  appId: env.TOKEN_GITHUB_APPID,
+  appSecret: env.TOKEN_GITHUB_APPSECRET,
+})
 app.plugin('image-search', {
   saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
 })
