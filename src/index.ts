@@ -24,6 +24,7 @@ import PluginPixiv from './plugins/pixiv'
 import PluginVerifyFandomUser from './plugins/verifyFandomUser'
 import FandomDiscordConnect from './modules/fandomDiscordConnect'
 import PluginAbout from './plugins/about'
+import PluginVersion from './plugins/version'
 
 interface RepeatState {
   content: string
@@ -154,6 +155,7 @@ app.plugin(PluginPing)
 app.plugin(PluginMute)
 app.plugin(PluginPixiv)
 app.plugin(PluginVerifyFandomUser)
+app.plugin(PluginVersion)
 
 // Internal utils
 app.plugin(FandomDiscordConnect)
