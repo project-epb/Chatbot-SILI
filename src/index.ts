@@ -18,6 +18,7 @@ import MessagesLogger from './modules/onMessages'
 import PatchCallme from './plugins/callme'
 import PluginMute from './plugins/mute'
 import MgpGroupUtils from './modules/mgpGroupUtils'
+import PluginPixiv from './plugins/pixiv'
 
 interface RepeatState {
   content: string
@@ -122,6 +123,9 @@ app.plugin('sandbox')
 // 第三方
 // app.plugin('blive')
 app.plugin('bvid')
+app.plugin('image-search', {
+  saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
+})
 app.plugin('mediawiki')
 app.plugin('schedule')
 app.plugin('teach', {
@@ -131,6 +135,7 @@ app.plugin('teach', {
 // SILI Core
 app.plugin(PluginPing)
 app.plugin(PluginMute)
+app.plugin(PluginPixiv)
 
 // Internal utils
 app.plugin(MessagesLogger)

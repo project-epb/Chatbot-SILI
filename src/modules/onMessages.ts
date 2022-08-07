@@ -14,10 +14,21 @@ export default class MessagesLogger {
   constructor(public ctx: Context) {
     ctx.on('message', (session) => {
       this.logger.info(
-        `[${session.subsubtype}/${session.subsubtype}]`,
-        `[${session.channelId}@${session.platform}]`,
+        `[${session.platform}]`,
+        `[${session.subsubtype}/${session.channelId}]`,
+        `${session.username} (${session.userId})`,
         '> ' + session.content
       )
+    })
+    ctx.on('send', (session) => {
+      ctx
+        .logger('SEND')
+        .info(
+          `[${session.platform}]`,
+          `[${session.type}/${session.channelId}]`,
+          `${session.username} (${session.selfId})`,
+          '> ' + session.content
+        )
     })
   }
   get logger() {
