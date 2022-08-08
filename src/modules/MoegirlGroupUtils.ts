@@ -8,8 +8,6 @@
 
 import { Context } from 'koishi'
 
-export const name = '_internal-MgpGroupUtils'
-
 // Constants
 const KEYWORDS_BLACKLIST = JSON.parse(
   process.env.MOEGIRL_KEYWORDS_BLACKLIST || '[]'
@@ -45,7 +43,7 @@ const KEYWORDS_BLACKLIST_REG = new RegExp(
 )
 const COMMAND_THITELIST_REG = new RegExp(`^(${COMMAND_WHITELIST.join('|')})`)
 
-export default class MgpGroupUtils {
+export default class MoegirlGroupUtils {
   constructor(public ctx: Context) {
     ctx = ctx.channel(process.env.CHANNEL_QQ_MOEGIRL_5 as string)
 

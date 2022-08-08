@@ -27,7 +27,11 @@ export default class MessagesLogger {
           `[${session.platform}]`,
           `[${session.type}/${session.channelId}]`,
           `${session.username} (${session.selfId})`,
-          '> ' + session.content
+          '> ' +
+            session.content?.replace(
+              /\[CQ:image,file=base64:\/\/.+?]/g,
+              '[CQ:image,file=<!-- base64 -->]'
+            )
         )
     })
   }

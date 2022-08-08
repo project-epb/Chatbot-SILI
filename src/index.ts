@@ -6,9 +6,8 @@
  */
 
 import 'dotenv/config'
-import { App, segment, type Session } from 'koishi'
-// import { env } from 'node:process'
-const { env } = process
+import { App, type Session } from 'koishi'
+import { findChrome } from 'find-chrome-bin'
 
 import {} from '@koishijs/plugin-help'
 import {} from '@koishijs/plugin-database-mongo'
@@ -19,12 +18,13 @@ import PluginPing from './plugins/ping'
 import MessagesLogger from './modules/MessagesLogger'
 import PatchCallme from './plugins/callme'
 import PluginMute from './plugins/mute'
-import MgpGroupUtils from './modules/MgpGroupUtils'
+import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import PluginPixiv from './plugins/pixiv'
 import PluginVerifyFandomUser from './plugins/verifyFandomUser'
 import FandomDiscordConnect from './modules/fandomDiscordConnect'
 import PluginAbout from './plugins/about'
 import PluginVersion from './plugins/version'
+import ProcessErrorHandler from './modules/ProcessErrorHandler'
 
 interface RepeatState {
   content: string
@@ -32,6 +32,8 @@ interface RepeatState {
   times: number
   users: Record<number, number>
 }
+
+const { env } = process
 
 /** 初始化 Koishi 实例 */
 const app = new App(
@@ -62,106 +64,137 @@ app.plugin('database-mongo', {
 })
 
 /** 安装适配器 */
-// QQ
-app.plugin('adapter-onebot', {
-  protocol: env.ONEBOT_PROTOCOL,
-  selfId: env.KOISHI_ENV === 'prod' ? env.ONEBOT_SELFID : env.ACCOUNT_QQ_ADAM,
-  endpoint: env.ONEBOT_ENDPOINT,
-})
-// Discord
-app.plugin('adapter-discord', {
-  token:
-    env.KOISHI_ENV === 'prod'
-      ? env.TOKEN_DISCORD_BOT_SILI
-      : env.TOKEN_DISCORD_BOT_XIAOYUJUN,
+app.plugin(function PluginCollectionAdapters(ctx) {
+  // QQ
+  ctx.plugin('adapter-onebot', {
+    protocol: env.ONEBOT_PROTOCOL,
+    selfId: env.KOISHI_ENV === 'prod' ? env.ONEBOT_SELFID : env.ACCOUNT_QQ_ADAM,
+    endpoint: env.ONEBOT_ENDPOINT,
+  })
+  // Discord
+  ctx.plugin('adapter-discord', {
+    token:
+      env.KOISHI_ENV === 'prod'
+        ? env.TOKEN_DISCORD_BOT_SILI
+        : env.TOKEN_DISCORD_BOT_XIAOYUJUN,
+  })
 })
 
 /** 安装插件 */
 // @pollify v3 自带的指令
-// [core]
-app.plugin('help')
-app.plugin('commands')
-app.plugin('suggest')
-app.plugin('switch')
-// [common]
-app.plugin('admin') // channel user auth
-app.plugin('bind')
-app.plugin('broadcast')
-app.plugin('callme')
-app.plugin('echo')
-app.plugin('rate-limit')
-app.plugin('recall')
-const randomHit = (probability: number) => Math.random() < probability
-app.plugin('repeater', {
-  onRepeat(state: RepeatState, session: Session) {
-    if (!state.repeated && state.times > 3) {
-      const hit = randomHit(0.125 * state.times)
-      logger.info('[尝试参与复读]', hit)
-      return hit ? session.send(state.content) : false
-    }
-    if (state.repeated && state.times > 5) {
-      const hit = randomHit(0.1 * (state.times - 5))
-      logger.info('[尝试打断复读]', hit)
-      return hit ? session.send('No，不要再复读了！') : false
-    }
-  },
-  // onInterrupt(state: RepeatState, session: Session) {
-  //   if (!state.repeated) return
-  //   const hit = randomHit(0.1 * (state.times - 5))
-  //   logger.info('[尝试质询打断]', hit)
-  //   return hit
-  //     ? session.send(
-  //         `${segment.at(session.userId as string)}在？为什么打断复读？`
-  //       )
-  //     : false
-  // },
+app.plugin(function PluginCollectionLegacy(ctx) {
+  // [core]
+  ctx.plugin(function PluginCollectionLegacyCore(ctx) {
+    ctx.plugin('help')
+    ctx.plugin('commands')
+    ctx.plugin('suggest')
+    ctx.plugin('switch')
+  })
+  // [common]
+  ctx.plugin(function PluginCollectionLegacyCommon(ctx) {
+    ctx.plugin('admin') // channel user auth
+    ctx.plugin('bind')
+    ctx.plugin('broadcast')
+    ctx.plugin('callme')
+    ctx.plugin('echo')
+    ctx.plugin('rate-limit')
+    ctx.plugin('recall')
+    const randomHit = (probability: number) => Math.random() < probability
+    ctx.plugin('repeater', {
+      onRepeat(state: RepeatState, session: Session) {
+        if (!state.repeated && state.times > 3) {
+          const hit = randomHit(0.125 * state.times)
+          logger.info('[尝试参与复读]', hit)
+          return hit ? session.send(state.content) : false
+        }
+        if (state.repeated && state.times > 5) {
+          const hit = randomHit(0.1 * (state.times - 5))
+          logger.info('[尝试打断复读]', hit)
+          return hit ? session.send('No，不要再复读了！') : false
+        }
+      },
+      // onInterrupt(state: RepeatState, session: Session) {
+      //   if (!state.repeated) return
+      //   const hit = randomHit(0.1 * (state.times - 5))
+      //   logger.info('[尝试质询打断]', hit)
+      //   return hit
+      //     ? session.send(
+      //         `${segment.at(session.userId as string)}在？为什么打断复读？`
+      //       )
+      //     : false
+      // },
+    })
+  })
+  // [tools]
+  ctx.plugin(function PluginCollectionLegacyTools(ctx) {
+    ctx.plugin('baidu')
+  })
 })
-// [tools]
-app.plugin('baidu')
 
 // 网页控制台
-app.plugin('console', {
-  title: 'SILI 监控中心',
-  uiPath: '/dash',
-  apiPath: '/api/status',
+app.plugin(function PluginCollectionConsole(ctx) {
+  ctx.plugin('console', {
+    title: 'SILI 监控中心',
+    uiPath: '/dash',
+    apiPath: '/api/status',
+  })
+  ctx.plugin('auth')
+  ctx.plugin('dataview')
+  ctx.plugin('insight')
+  ctx.plugin('status')
+  ctx.plugin('logger')
+  ctx.plugin('sandbox')
 })
-app.plugin('auth')
-app.plugin('dataview')
-app.plugin('insight')
-app.plugin('status')
-app.plugin('logger')
-app.plugin('sandbox')
 
 // 第三方
-// app.plugin('blive')
-app.plugin('bvid')
-app.plugin('github', {
-  path: '/api/github',
-  appId: env.TOKEN_GITHUB_APPID,
-  appSecret: env.TOKEN_GITHUB_APPSECRET,
-})
-app.plugin('image-search', {
-  saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
-})
-app.plugin('mediawiki')
-app.plugin('schedule')
-app.plugin('teach', {
-  prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
+app.plugin(async function PluginCollectionThirdParty(ctx) {
+  // ctx.plugin('blive')
+  ctx.plugin('bvid')
+  ctx.plugin('github', {
+    path: '/api/github',
+    appId: env.TOKEN_GITHUB_APPID,
+    appSecret: env.TOKEN_GITHUB_APPSECRET,
+  })
+  ctx.plugin('image-search', {
+    saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
+  })
+  ctx.plugin('mediawiki')
+  ctx.plugin('schedule')
+  ctx.plugin('teach', {
+    prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
+  })
+
+  try {
+    const chrome = await findChrome({})
+    logger.info('[puppeteer] 找到了合适的 Chrome', chrome)
+    ctx.plugin('puppeteer', {
+      browser: {
+        executablePath: chrome.executablePath,
+      },
+    })
+  } catch (e) {
+    logger.warn('[puppeteer] 未找到合适的 Chrome', e.message)
+  }
 })
 
 // SILI Core
-app.plugin(PluginAbout)
-app.plugin(PluginPing)
-app.plugin(PluginMute)
-app.plugin(PluginPixiv)
-app.plugin(PluginVerifyFandomUser)
-app.plugin(PluginVersion)
+app.plugin(function PluginCollectionSILICore(ctx) {
+  ctx.plugin(PluginAbout)
+  ctx.plugin(PluginPing)
+  ctx.plugin(PluginMute)
+  ctx.plugin(PluginPixiv)
+  ctx.plugin(PluginVerifyFandomUser)
+  ctx.plugin(PluginVersion)
+})
 
 // Internal utils
-app.plugin(FandomDiscordConnect)
-app.plugin(MessagesLogger)
-app.plugin(MgpGroupUtils)
-app.plugin(PatchCallme)
+app.plugin(function PluginCollectionInternal(ctx) {
+  ctx.plugin(FandomDiscordConnect)
+  ctx.plugin(MessagesLogger)
+  ctx.plugin(MgpGroupUtils)
+  ctx.plugin(PatchCallme)
+  ctx.plugin(ProcessErrorHandler)
+})
 
 /** 启动应用程序 */
 app.start().then(() => {
