@@ -158,7 +158,14 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   ctx.plugin('image-search', {
     saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
   })
+
+  // MediaWiki
   ctx.plugin('mediawiki')
+  ctx.command('wiki.link').config.authority = 2
+  ctx.command('wiki.flag').config.authority = 2
+  ctx.command('wiki.parse').config.authority = 3
+  ctx.command('wiki.shot').config.authority = 3
+
   ctx.plugin('schedule')
   ctx.plugin('teach', {
     prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
