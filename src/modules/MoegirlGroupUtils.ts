@@ -61,7 +61,7 @@ export default class MoegirlGroupUtils {
       if (!match) {
         return
       }
-      const log = `B群触发关键词黑名单: ${match[1]}\n${sess.username} (${sess.userId}) > ${sess.content}`
+      const log = `B群触发关键词黑名单: ${match[1]}\n${sess.channelName} > ${sess.username} (${sess.userId}) > ${sess.content}`
       this.logger.info(log)
       let duration = 10 * 60
       sess.bot.internal.setGroupBan(sess.channelId, sess.userId, duration)
