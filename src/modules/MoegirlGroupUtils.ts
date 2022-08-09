@@ -6,7 +6,22 @@
  * @authority -
  */
 
-import { Context } from 'koishi'
+import { Context, Time } from 'koishi'
+import {} from '@koishijs/plugin-database-mongo'
+
+interface SpamLog {
+  time: string
+  match: string[]
+  content: string
+  channelId: string
+}
+declare module 'koishi' {
+  interface User {
+    mgpGroupSpamLogs: SpamLog[]
+  }
+}
+
+const MUTE_DURATION = [0, 10 * Time.minute, 2 * Time.hour, 1 * Time.day]
 
 // Constants
 const KEYWORDS_BLACKLIST = JSON.parse(
@@ -59,21 +74,66 @@ export default class MoegirlGroupUtils {
     })
 
     // 自动禁言
-    ctx.on('message', (sess) => {
+    ctx.on('message', async (sess) => {
       const match = KEYWORDS_BLACKLIST_REG.exec(sess.content || '')
-      if (!match) {
+      if (!match || sess.author?.roles?.find((i) => i === 'admin')) {
         return
       }
-      const log = `B群触发关键词黑名单: ${match[1]}\n${sess.channelId} > ${sess.author?.username} (${sess.userId}) > ${sess.content}`
+
+      const { mgpGroupSpamLogs = [] } = await sess.app.database.getUser(
+        sess.platform,
+        sess.userId as string,
+        ['mgpGroupSpamLogs']
+      )
+      mgpGroupSpamLogs.push({
+        time: new Date().toISOString(),
+        match,
+        content: sess.content as string,
+        channelId: sess.channelId as string,
+      })
+
+      const count = mgpGroupSpamLogs.length
+      const duration = MUTE_DURATION[count]
+        ? MUTE_DURATION[count] / 1000
+        : Infinity
+
+      const log = `B群触发关键词黑名单: ${match[1]}\n${sess.channelId} > ${
+        sess.username
+      } (${sess.userId}) > ${sess.content}\n已累计触发 ${count} 次，本次将${
+        duration === Infinity
+          ? '踢出群聊'
+          : '禁言 ' + Time.format(duration * 1000)
+      }`
+
+      // 打日志
       this.logger.info(log)
-      let duration = 10 * 60
-      sess.bot.internal.setGroupBan(sess.channelId, sess.userId, duration)
+
+      // 禁言或踢出
       sess.bot.deleteMessage(sess.channelId as string, sess.messageId as string)
+      if (duration === Infinity) {
+        sess.onebot?.setGroupKick(
+          sess.channelId as string,
+          sess.userId as string,
+          false
+        )
+      } else {
+        sess.onebot?.setGroupBan(
+          sess.channelId as string,
+          sess.userId as string,
+          duration
+        )
+      }
+
       // 转发
       sess.bot.sendMessage(
         process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string,
         `[MGP_UTILS] ${log}`
       )
+
+      // 行车记录仪
+      sess.app.database.setUser(sess.platform, sess.userId as string, {
+        mgpGroupSpamLogs,
+      })
     })
   }
 
