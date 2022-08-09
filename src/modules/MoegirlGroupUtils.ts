@@ -57,13 +57,20 @@ export default class MoegirlGroupUtils {
 
     // 自动禁言
     ctx.on('message', (sess) => {
-      if (!KEYWORDS_BLACKLIST_REG.test(sess.content || '')) {
+      const match = KEYWORDS_BLACKLIST_REG.exec(sess.content || '')
+      if (!match) {
         return
       }
-      this.logger.info('触发关键词黑名单', sess.userId, '>', sess.content)
+      const log = `B群触发关键词黑名单: ${match[1]}\n${sess.username} (${sess.userId}) > ${sess.content}`
+      this.logger.info(log)
       let duration = 10 * 60
       sess.bot.internal.setGroupBan(sess.channelId, sess.userId, duration)
       sess.bot.deleteMessage(sess.channelId as string, sess.messageId as string)
+      // 转发
+      sess.bot.sendMessage(
+        process.env.CHANNEL_QQ_MOEGIRL_ADMIN as string,
+        `[MGP_UTILS] ${log}`
+      )
     })
   }
 
