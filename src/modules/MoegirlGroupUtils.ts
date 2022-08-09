@@ -61,9 +61,7 @@ const COMMAND_THITELIST_REG = new RegExp(`^(${COMMAND_WHITELIST.join('|')})`)
 export default class MoegirlGroupUtils {
   constructor(public ctx: Context) {
     ctx.model.extend('user', {
-      mgpGroupSpamLogs: {
-        type: 'list',
-      },
+      mgpGroupSpamLogs: 'list',
     })
 
     ctx = ctx.channel(
@@ -86,11 +84,12 @@ export default class MoegirlGroupUtils {
         return
       }
 
-      const { mgpGroupSpamLogs } =
-        (await sess.app.database.getUser(sess.platform, sess.userId as string, [
-          'mgpGroupSpamLogs',
-        ])) || []
-      mgpGroupSpamLogs.push({
+      let { mgpGroupSpamLogs } = await sess.app.database.getUser(
+        sess.platform,
+        sess.userId as string,
+        ['mgpGroupSpamLogs']
+      )
+      ;(mgpGroupSpamLogs = mgpGroupSpamLogs || []).push({
         time: new Date().toISOString(),
         match,
         content: sess.content as string,
