@@ -68,7 +68,7 @@ export default class MoegirlGroupUtils {
       sess.bot.deleteMessage(sess.channelId as string, sess.messageId as string)
       // 转发
       sess.bot.sendMessage(
-        process.env.CHANNEL_QQ_MOEGIRL_ADMIN as string,
+        process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string,
         `[MGP_UTILS] ${log}`
       )
     })
