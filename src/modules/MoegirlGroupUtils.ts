@@ -45,7 +45,10 @@ const COMMAND_THITELIST_REG = new RegExp(`^(${COMMAND_WHITELIST.join('|')})`)
 
 export default class MoegirlGroupUtils {
   constructor(public ctx: Context) {
-    ctx = ctx.channel(process.env.CHANNEL_QQ_MOEGIRL_5 as string)
+    ctx = ctx.channel(
+      process.env.CHANNEL_QQ_MOEGIRL_BFANS_1 as string,
+      process.env.CHANNEL_QQ_MOEGIRL_BFANS_2 as string
+    )
 
     // 指令白名单
     ctx.on('command/before-execute', ({ command }) => {
