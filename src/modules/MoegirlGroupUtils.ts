@@ -60,6 +60,12 @@ const COMMAND_THITELIST_REG = new RegExp(`^(${COMMAND_WHITELIST.join('|')})`)
 
 export default class MoegirlGroupUtils {
   constructor(public ctx: Context) {
+    ctx.model.extend('user', {
+      mgpGroupSpamLogs: {
+        type: 'list',
+      },
+    })
+
     ctx = ctx.channel(
       process.env.CHANNEL_QQ_MOEGIRL_BFANS_1 as string,
       process.env.CHANNEL_QQ_MOEGIRL_BFANS_2 as string
