@@ -25,6 +25,11 @@ import FandomDiscordConnect from './modules/fandomDiscordConnect'
 import PluginAbout from './plugins/about'
 import PluginVersion from './plugins/version'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
+import PluginProfile from './plugins/profile'
+import PluginQueue from './plugins/queue'
+import PluginSiliName from './plugins/siliName'
+import PluginSticker from './plugins/sticker'
+import PluginYoudao from './plugins/youdao'
 
 interface RepeatState {
   content: string
@@ -187,11 +192,16 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
 // SILI Core
 app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginAbout)
-  ctx.plugin(PluginPing)
   ctx.plugin(PluginMute)
+  ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv)
+  ctx.plugin(PluginProfile)
+  ctx.plugin(PluginQueue)
+  ctx.plugin(PluginSiliName)
+  ctx.plugin(PluginSticker)
   ctx.plugin(PluginVerifyFandomUser)
   ctx.plugin(PluginVersion)
+  ctx.plugin(PluginYoudao)
 })
 
 // Internal utils

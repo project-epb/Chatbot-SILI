@@ -7,8 +7,6 @@
 
 import { Context, segment } from 'koishi'
 
-export const name = 'about'
-
 export default class PluginAbout {
   constructor(public ctx: Context) {
     ctx.command('about').action(() => {

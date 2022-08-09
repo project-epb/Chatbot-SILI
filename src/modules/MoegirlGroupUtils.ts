@@ -7,6 +7,7 @@
  */
 
 import { Context, Time } from 'koishi'
+import {} from '@koishijs/plugin-adapter-onebot'
 import {} from '@koishijs/plugin-database-mongo'
 
 interface SpamLog {

@@ -7,8 +7,6 @@
 
 import { Context, Time } from 'koishi'
 
-export const name = 'ping-pong'
-
 export default class PluginPing {
   constructor(public ctx: Context) {
     ctx

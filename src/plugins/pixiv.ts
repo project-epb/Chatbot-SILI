@@ -8,8 +8,6 @@
 import { Context, segment, Time } from 'koishi'
 import axios from 'axios'
 
-export const name = 'pixiv'
-
 const API_BASE = process.env.API_PIXIVNOW_API
 
 export default class PluginPixiv {

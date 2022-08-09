@@ -7,8 +7,6 @@
 
 import { Context } from 'koishi'
 
-export const name = 'mute'
-
 export default class PluginMute {
   constructor(public ctx: Context) {
     ctx = ctx.platform('onebot').channel()

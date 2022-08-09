@@ -6,8 +6,8 @@
  */
 
 import { Context, Time } from 'koishi'
+import {} from '@koishijs/plugin-rate-limit'
 
-export const name = 'patch-callme'
 declare module 'koishi' {
   interface Channel {
     disable: string[]
