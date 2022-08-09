@@ -86,11 +86,10 @@ export default class MoegirlGroupUtils {
         return
       }
 
-      const { mgpGroupSpamLogs = [] } = await sess.app.database.getUser(
-        sess.platform,
-        sess.userId as string,
-        ['mgpGroupSpamLogs']
-      )
+      const { mgpGroupSpamLogs } =
+        (await sess.app.database.getUser(sess.platform, sess.userId as string, [
+          'mgpGroupSpamLogs',
+        ])) || []
       mgpGroupSpamLogs.push({
         time: new Date().toISOString(),
         match,
