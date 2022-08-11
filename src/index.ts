@@ -6,7 +6,7 @@
  */
 
 import 'dotenv/config'
-import { App, type Session } from 'koishi'
+import { App, type Session, Random } from 'koishi'
 import { findChrome } from 'find-chrome-bin'
 
 import {} from '@koishijs/plugin-help'
@@ -112,10 +112,21 @@ app.plugin(function PluginCollectionLegacy(ctx) {
           logger.info('[尝试参与复读]', hit)
           return hit ? session.send(state.content) : false
         }
-        if (state.repeated && state.times > 5) {
+
+        const noRepeatText = [
+          'No，不要再复读了！',
+          '🤚我说婷婷✋，你们搞复读，不讲武德。',
+          '那么就到此为止吧，再复读就不礼貌了。',
+          '🤚很抱歉打扰大家的复读✋，水群不要忘记多喝热水哟~',
+        ]
+        if (
+          state.repeated &&
+          state.times > 5 &&
+          !noRepeatText.includes(state.content)
+        ) {
           const hit = randomHit(0.1 * (state.times - 5))
           logger.info('[尝试打断复读]', hit)
-          return hit ? session.send('No，不要再复读了！') : false
+          return hit ? session.send(Random.pick(noRepeatText)) : false
         }
       },
       // onInterrupt(state: RepeatState, session: Session) {
