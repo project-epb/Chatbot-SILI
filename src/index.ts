@@ -115,9 +115,9 @@ app.plugin(function PluginCollectionLegacy(ctx) {
 
         const noRepeatText = [
           'No，不要再复读了！',
-          '🤚我说婷婷✋，你们搞复读，不讲武德。',
+          '🤚我说婷婷，你们搞复读，不讲武德。',
           '那么就到此为止吧，再复读就不礼貌了。',
-          '🤚很抱歉打扰大家的复读✋，水群不要忘记多喝热水哟~',
+          '🤚很抱歉打扰大家的复读，水群不要忘记多喝热水哟~',
         ]
         if (
           state.repeated &&

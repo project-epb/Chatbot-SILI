@@ -5,30 +5,27 @@
  * @authority 1
  */
 
- import { Context, Session, version as koishiVersion } from 'koishi'
+import { Context, version as KOISHI_VERSION } from 'koishi'
+import { execSync } from 'child_process'
 
- export const name = 'version'
- 
- export default class PluginVersion {
-   constructor(public ctx: Context) {
-     ctx.command('version', '查看SILI版本信息').action(async ({ session }) => {
-       const SILI_CORE = (
-         await import('../../package.json', { assert: { type: 'json' } })
-       ).default
-       const ONEBOT = await ctx.bots
-         .find((i) => i.platform === 'onebot')
-         ?.internal.getVersionInfo()
- 
-       console.info(ctx.plugin.prototype)
- 
-       return `[SILICore] v${SILI_CORE.version}
- [Onebot] protocol ${ONEBOT.protocol_version} / go-cqhttp ${ONEBOT.version}
- [Koishi.js] v${koishiVersion}`
-     })
-   }
- 
-   get logger() {
-     return this.ctx.logger('VERSION')
-   }
- }
- 
+export default class PluginVersion {
+  constructor(public ctx: Context) {
+    ctx.command('version', '查看SILI版本信息').action(async () => {
+      const GIT_HASH = execSync('git rev-parse --short HEAD').toString().trim()
+      const SILI_CORE = (
+        await import('../../package.json', { assert: { type: 'json' } })
+      ).default
+      const ONEBOT = await ctx.bots
+        .find((i) => i.platform === 'onebot')
+        ?.internal.getVersionInfo()
+
+      return `[SILI Core] v${SILI_CORE.version} (${GIT_HASH})
+[Onebot] protocol ${ONEBOT.protocol_version} / go-cqhttp ${ONEBOT.version}
+[Koishi.js] v${KOISHI_VERSION}`
+    })
+  }
+
+  get logger() {
+    return this.ctx.logger('VERSION')
+  }
+}
