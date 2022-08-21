@@ -20,6 +20,9 @@ declare module 'koishi' {
 export default class PluginVerifyFandomUser {
   constructor(public ctx: Context) {
     ctx = ctx.channel()
+    ctx.model.extend('channel', {
+      userBlacklist: 'list',
+    })
 
     // 指令
     ctx
@@ -114,8 +117,7 @@ export default class PluginVerifyFandomUser {
     // 修正用户名：替换空格
     userName = userName.replace(/[_\s]+/g, ' ')
     // 修正用户名：首字母大写
-    userName =
-      userName.slice(0, 1).toUpperCase() + userName.slice(1).toLowerCase()
+    userName = userName.slice(0, 1).toUpperCase() + userName.slice(1)
 
     const { data } = await this.ajax.get('', {
       params: {
