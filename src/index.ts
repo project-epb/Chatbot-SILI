@@ -101,7 +101,9 @@ app.plugin(function PluginCollectionLegacy(ctx) {
       },
       bucket: env.TOKEN_S3_BUCKET,
       pathPrefix: env.KOISHI_ENV === 'prod' ? 'v4/assets/' : 'v4-dev/assets/',
-      publicUrl: env.TOKEN_S3_PUBLIC_URL,
+      publicUrl: `${env.TOKEN_S3_PUBLIC_URL}/${
+        env.KOISHI_ENV === 'prod' ? 'v4/assets/' : 'v4-dev/assets/'
+      }`,
       region: env.TOKEN_S3_REGION,
       endpoint: env.TOKEN_S3_ENDPOINT,
     })
