@@ -94,6 +94,17 @@ app.plugin(function PluginCollectionLegacy(ctx) {
     ctx.plugin('commands')
     ctx.plugin('suggest')
     ctx.plugin('switch')
+    ctx.plugin('assets-s3', {
+      credentials: {
+        accessKeyId: env.TOKEN_S3_ACCESS_KEY_ID,
+        secretAccessKey: env.TOKEN_S3_ACCESS_KEY_SECRET,
+      },
+      bucket: env.TOKEN_S3_BUCKET,
+      pathPrefix: env.KOISHI_ENV === 'prod' ? 'v4/assets' : 'v4-dev/assets',
+      publicUrl: env.TOKEN_S3_PUBLIC_URL,
+      region: env.TOKEN_S3_REGION,
+      endpoint: env.TOKEN_S3_ENDPOINT,
+    })
   })
   // [common]
   ctx.plugin(function PluginCollectionLegacyCommon(ctx) {
