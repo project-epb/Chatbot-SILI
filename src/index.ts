@@ -6,7 +6,7 @@
  */
 
 import 'dotenv/config'
-import { App, type Session, Random } from 'koishi'
+import { App, type Session, Random, Time } from 'koishi'
 import { findChrome } from 'find-chrome-bin'
 
 import {} from '@koishijs/plugin-help'
@@ -185,6 +185,15 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   ctx.plugin('schedule')
   ctx.plugin('teach', {
     prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
+    throttle: {
+      responses: 10,
+      interval: 1 * Time.minute,
+    },
+    preventLoop: {
+      length: 3,
+      participants: 1,
+      debounce: 3 * Time.minute,
+    },
   })
 
   try {

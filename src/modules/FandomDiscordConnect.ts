@@ -9,6 +9,7 @@
 import { Context, segment, Session } from 'koishi'
 import axios from 'axios'
 import { resolveBrackets } from '../utils/resolveBrackets'
+import {} from '@koishijs/plugin-teach'
 
 export const name = '_internal-FandomDiscordConnect'
 
@@ -54,6 +55,19 @@ export default class FandomDiscordConnect {
         this.discordToQQ(session, process.env.CHANNEL_QQ_FANDOM as string)
       })
     })
+
+    // 防止自触发
+    ctx
+      .platform('discord')
+      .before('command/execute', ({ session }) =>
+        this.isDiscordBot(session!) ? '' : void 0
+      )
+    ctx
+      .platform('discord')
+      // @ts-ignore
+      .on('dialogue/before-send', ({ session }) =>
+        this.isDiscordBot(session) ? true : void 0
+      )
   }
 
   discordToQQ(session: Session, channelId: string) {
@@ -148,6 +162,14 @@ export default class FandomDiscordConnect {
     return msg.replace(
       /\[CQ:face,id=(.+?),.+\]/gi,
       '[CQ:image,file=https://discord-emoji.vercel.app/api/emojis/$1]'
+    )
+  }
+
+  isDiscordBot(session: Session) {
+    return !!(
+      session.author?.isBot ||
+      !session.author?.discriminator ||
+      session.author.discriminator === '0000'
     )
   }
 
