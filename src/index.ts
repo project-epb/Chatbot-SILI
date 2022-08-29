@@ -100,7 +100,7 @@ app.plugin(function PluginCollectionLegacy(ctx) {
         secretAccessKey: env.TOKEN_S3_ACCESS_KEY_SECRET,
       },
       bucket: env.TOKEN_S3_BUCKET,
-      pathPrefix: env.KOISHI_ENV === 'prod' ? 'v4/assets' : 'v4-dev/assets',
+      pathPrefix: env.KOISHI_ENV === 'prod' ? 'v4/assets/' : 'v4-dev/assets/',
       publicUrl: env.TOKEN_S3_PUBLIC_URL,
       region: env.TOKEN_S3_REGION,
       endpoint: env.TOKEN_S3_ENDPOINT,
