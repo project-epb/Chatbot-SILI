@@ -2,10 +2,10 @@ import { Context } from 'koishi'
 import type Puppeteer from '@koishijs/plugin-puppeteer'
 
 export class RenderHTML {
-  ppt: Puppeteer
+  constructor(public ctx: Context) {}
 
-  constructor(public ctx: Context) {
-    this.ppt = ctx.puppeteer
+  get ppt() {
+    return this.ctx.puppeteer
   }
 
   async rawHtml(html: string, selector: string = 'body') {

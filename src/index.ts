@@ -239,7 +239,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
 
 // Internal utils
 app.plugin(function PluginCollectionInternal(ctx) {
-  ctx.plugin(FandomDiscordConnect)
+  // ctx.plugin(FandomDiscordConnect)
   ctx.plugin(MessagesLogger)
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)

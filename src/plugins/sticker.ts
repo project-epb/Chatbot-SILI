@@ -14,7 +14,9 @@ export default class PluginSticker {
   render: RenderHTML
 
   constructor(public ctx: Context) {
-    this.render = new RenderHTML(ctx)
+    ctx.using(['puppeteer'], (ctx) => {
+      this.render = new RenderHTML(ctx)
+    })
     ctx.command('tools/sticker', '生成表情包')
 
     ctx
@@ -68,7 +70,7 @@ export default class PluginSticker {
       .action(async ({ session }, text) => {
         text = text || '加油！'
         const html = `
-<span style="
+<span id="sticker" style="
   color: #000;
   font-size: 1em;
   line-height: 1.4;
