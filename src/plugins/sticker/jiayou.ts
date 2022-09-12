@@ -1,17 +1,42 @@
 import { BaseSticker } from './_base'
 import { Context, segment as s, Time } from 'koishi'
+import {} from '@koishijs/plugin-rate-limit'
 
 export default class 加油 extends BaseSticker {
   constructor(ctx: Context) {
     super(ctx)
     ctx
-      .command('sticker.加油 <content:text>', 'Eric_Liu：“加油！”', {
+      .command('sticker.加油 <content:text>', 'Eric_Liu说：“加油！”', {
         minInterval: Time.minute,
       })
       .alias('sticker.jiayou')
-      .action(async ({ session }, content) => {
+      .shortcut(/^表情包 这两周$/, {
+        args: ['这两周。'],
+        options: {
+          avatar: 'https://img.moegirl.org.cn/common/avatars/233835/128.png',
+          username: 'User:Etolli',
+        },
+      })
+      .option('username', '-u <name:string>', { hidden: true })
+      .option('avatar', '-a <avatar:string>', { hidden: true })
+      .action(async ({ session, options }, content) => {
+        if (!session || !options) return
+
         content =
           content?.replace(/</g, '&lt;').replace(/>/g, '&gt;') || '加油！'
+        try {
+          options.avatar = new URL(
+            options.avatar || session.author?.avatar || ''
+          ).href
+        } catch (e) {
+          options.avatar = session.author?.avatar
+        }
+        options.username =
+          options.username?.replace(/</g, '&lt;').replace(/>/g, '&gt;') ||
+          session?.author?.nickname ||
+          session?.author?.username ||
+          session?.author?.userId
+
         const html = `
 <span id="sticker" style="
   color: #000;
@@ -33,7 +58,7 @@ export default class 加油 extends BaseSticker {
     overflow: hidden;
     margin: .2em 0 0
   ">
-    <img src="${session?.author?.avatar}" alt="头像" style="
+    <img src="${options.avatar}" alt="头像" style="
         width: 2.2em;
         height: 2.2em;
     ">
@@ -51,11 +76,7 @@ export default class 加油 extends BaseSticker {
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
-    ">${
-      session?.author?.nickname ||
-      session?.author?.username ||
-      session?.author?.userId
-    }</span>
+    ">${options.username}</span>
     <span style="
       display: inline-block;
       font-size: 1.3em;
