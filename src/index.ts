@@ -30,6 +30,7 @@ import PluginQueue from './plugins/queue'
 import PluginSiliName from './plugins/siliName'
 import PluginSticker from './plugins/sticker'
 import PluginYoudao from './plugins/youdao'
+import { PluginHljs } from './plugins/hljs'
 
 interface RepeatState {
   content: string
@@ -225,6 +226,7 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
 // SILI Core
 app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginAbout)
+  ctx.plugin(PluginHljs)
   ctx.plugin(PluginMute)
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv)

@@ -1,16 +1,20 @@
-/**
- * @name PluginName
- * @command command
- * @desc 这是一个插件
- * @authority 1
- */
+import { Context, snakeCase } from 'koishi'
 
-import { Context } from 'koishi'
+export default class BasePlugin {
+  #name: string
 
-export default class PluginName {
-  constructor(public ctx: Context) {}
+  constructor(public ctx: Context, public options = {}, name = 'plugin') {
+    this.name = name
+  }
+
+  set name(name: string) {
+    this.#name = snakeCase(name).toUpperCase()
+  }
+  get name() {
+    return this.#name
+  }
 
   get logger() {
-    return this.ctx.logger('PLUGIN')
+    return this.ctx.logger(this.name)
   }
 }

@@ -1,18 +1,20 @@
 import { Context } from 'koishi'
-import type Puppeteer from '@koishijs/plugin-puppeteer'
 
 export class RenderHTML {
-  ppt: Puppeteer
+  constructor(public ctx: Context) {}
 
-  constructor(public ctx: Context) {
-    this.ppt = ctx.puppeteer
+  get ppt() {
+    return this.ctx.puppeteer
   }
 
   async rawHtml(html: string, selector: string = 'body') {
     const page = await this.ppt.page()
     let file: Buffer | undefined
     try {
-      await page.setContent(html)
+      await page.setContent(html, {
+        waitUntil: 'networkidle2',
+        timeout: 5 * 1000,
+      })
       const $el = await page.$(selector)
       file = await $el?.screenshot({
         type: 'jpeg',
@@ -33,10 +35,10 @@ export class RenderHTML {
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans+SC">
+  <link rel="stylesheet" href="https://fonts.googlefonts.cn/css?family=Noto+Sans+SC">
   <style>
     :root {
-      font-family: 'Noto Sans SC';
+      font-family: 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
       font-size: 14px;
       color: #252525;
     }
@@ -78,26 +80,27 @@ ${body}
   color: #ccc;
   border-right: 1px solid #CCC;
   vertical-align: top;
-  padding-right: 5px;
+  padding-right: 0.5rem !important;
 }
 .hljs-ln-code {
-  padding-left: 10px;
+  padding-left: 1rem !important;
 }
 </style>
-<pre id="hljs-target" class="hljs ${lang ? 'lang-' + lang : ''}">${code
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')}</pre>
+<pre id="hljs-target" class="hljs"><code class="hljs ${
+      lang ? 'lang-' + lang : ''
+    }">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
 <script src="https://unpkg.com/@highlightjs/cdn-assets@11.6.0/highlight.min.js"></script>
 <script src="https://unpkg.com/highlightjs-line-numbers.js@2.8.0/src/highlightjs-line-numbers.js"></script>
 <script>;(() => {
-  const target = document.querySelector('#hljs-target')
+  const target = document.querySelector('#hljs-target code')
   if (target.innerText.length > 100000) {
     return
   }
-  hljs.lineNumbersBlock(target, { startFrom: ${Math.max(
-    1,
-    Number(startFrom)
-  )} })
+  hljs.highlightElement(target)
+  hljs.lineNumbersBlock(target, {
+    startFrom: ${Math.max(1, Number(startFrom))},
+    singleLine: true,
+  })
 })()</script>
 `
 
