@@ -1,4 +1,5 @@
 import { Context } from 'koishi'
+import {} from '@koishijs/plugin-puppeteer'
 
 export class RenderHTML {
   constructor(public ctx: Context) {}
@@ -84,6 +85,107 @@ ${body}
 }
 .hljs-ln-code {
   padding-left: 1rem !important;
+}
+.hljs-ln-line {
+  white-space: break-spaces;
+  max-width: calc(100vw - 6rem);
+  word-wrap: break-word;
+}
+code.hljs {
+  position: relative;
+}
+code.hljs[class*='lang-']:before {
+  position: absolute;
+  color: #fff;
+  z-index: 3;
+  line-height: 1;
+  top: 1rem;
+  right: 1rem;
+  background-color: #000;
+  padding: 0.2rem 0.4rem;
+  border-radius: 1rem;
+}
+code.hljs[class~='lang-js']:before,
+code.hljs[class~='lang-javascript']:before {
+  content: 'js';
+}
+code.hljs[class~='lang-lua']:before {
+  content: 'lua';
+}
+code.hljs[class~='lang-ts']:before,
+code.hljs[class~='lang-typescript']:before {
+  content: 'ts';
+}
+code.hljs[class~='lang-html']:before,
+code.hljs[class~='lang-markup']:before {
+  content: 'html';
+}
+code.hljs[class~='lang-md']:before,
+code.hljs[class~='lang-markdown']:before {
+  content: 'md';
+}
+code.hljs[class~='lang-vue']:before {
+  content: 'vue';
+}
+code.hljs[class~='lang-css']:before {
+  content: 'css';
+}
+code.hljs[class~='lang-sass']:before {
+  content: 'sass';
+}
+code.hljs[class~='lang-scss']:before {
+  content: 'scss';
+}
+code.hljs[class~='lang-less']:before {
+  content: 'less';
+}
+code.hljs[class~='lang-stylus']:before {
+  content: 'stylus';
+}
+code.hljs[class~='lang-go']:before {
+  content: 'go';
+}
+code.hljs[class~='lang-java']:before {
+  content: 'java';
+}
+code.hljs[class~='lang-c']:before {
+  content: 'c';
+}
+code.hljs[class~='lang-sh']:before {
+  content: 'sh';
+}
+code.hljs[class~='lang-yaml']:before {
+  content: 'yaml';
+}
+code.hljs[class~='lang-py']:before {
+  content: 'py';
+}
+code.hljs[class~='lang-docker']:before {
+  content: 'docker';
+}
+code.hljs[class~='lang-dockerfile']:before {
+  content: 'dockerfile';
+}
+code.hljs[class~='lang-makefile']:before {
+  content: 'makefile';
+}
+code.hljs[class~='lang-json']:before {
+  content: 'json';
+}
+code.hljs[class~='lang-ruby']:before {
+  content: 'rb';
+}
+code.hljs[class~='lang-python']:before {
+  content: 'py';
+}
+code.hljs[class~='lang-bash']:before {
+  content: 'sh';
+}
+code.hljs[class~='lang-php']:before {
+  content: 'php';
+}
+code.hljs[class~='lang-wiki']:before {
+  content: 'wiki';
 }
 </style>
 <pre id="hljs-target" class="hljs"><code class="hljs ${
