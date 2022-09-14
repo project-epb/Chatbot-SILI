@@ -13,8 +13,8 @@ export class RenderHTML {
     let file: Buffer | undefined
     try {
       await page.setContent(html, {
-        waitUntil: 'networkidle2',
-        timeout: 5 * 1000,
+        waitUntil: 'networkidle0',
+        timeout: 15 * 1000,
       })
       const $el = await page.$(selector)
       file = await $el?.screenshot({

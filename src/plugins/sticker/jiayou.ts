@@ -61,6 +61,7 @@ export default class 加油 extends BaseSticker {
     <img src="${options.avatar}" alt="头像" style="
         width: 2.2em;
         height: 2.2em;
+        border-radius: .2em;
     ">
   </span>
   <span style="
