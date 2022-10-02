@@ -31,6 +31,7 @@ import PluginSiliName from './plugins/siliName'
 import PluginSticker from './plugins/sticker'
 import PluginYoudao from './plugins/youdao'
 import { PluginHljs } from './plugins/hljs'
+import PluginPowerUser from './plugins/powerUser'
 
 interface RepeatState {
   content: string
@@ -230,6 +231,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginMute)
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv)
+  ctx.plugin(PluginPowerUser)
   ctx.plugin(PluginProfile)
   ctx.plugin(PluginQueue)
   ctx.plugin(PluginSiliName)
