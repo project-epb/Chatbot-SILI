@@ -5,24 +5,56 @@
  * @authority 1
  */
 
-import { Context, version as KOISHI_VERSION } from 'koishi'
+import { Context, segment, version as KOISHI_VERSION } from 'koishi'
 import { execSync } from 'child_process'
+import { RenderHTML } from '../utils/RenderHTML'
 
 export default class PluginVersion {
   constructor(public ctx: Context) {
-    ctx.command('version', '查看SILI版本信息').action(async () => {
-      const GIT_HASH = execSync('git rev-parse --short HEAD').toString().trim()
-      const SILI_CORE = (
-        await import('../../package.json', { assert: { type: 'json' } })
-      ).default
-      const ONEBOT = await ctx.bots
-        .find((i) => i.platform === 'onebot')
-        ?.internal.getVersionInfo()
+    ctx
+      .command('version', '查看SILI版本信息')
+      .option('all', '-a', { authority: 2 })
+      .action(async ({ options }) => {
+        const GIT_HASH = execSync('git rev-parse --short HEAD')
+          .toString()
+          .trim()
+        const SILI_CORE = (
+          await import('../../package.json', { assert: { type: 'json' } })
+        ).default
+        const ONEBOT = await ctx.bots
+          .find((i) => i.platform === 'onebot')
+          ?.internal.getVersionInfo()
 
-      return `[SILI Core] v${SILI_CORE.version} (${GIT_HASH})
+        if (!options!.all) {
+          return `[SILI Core] v${SILI_CORE.version} (${GIT_HASH})
 [Onebot] protocol ${ONEBOT.protocol_version} / go-cqhttp ${ONEBOT.version}
 [Koishi.js] v${KOISHI_VERSION}`
-    })
+        }
+
+        const plugins = Object.keys(SILI_CORE.dependencies)
+          .filter(
+            (i) =>
+              i.startsWith('@koishijs/plugin-') ||
+              i.startsWith('koishi-plugin-')
+          )
+          .map(
+            (i) =>
+              `${i.replace(/^(@koishijs\/|koishi-)/, '')}: ${
+                SILI_CORE.dependencies[i]
+              }`
+          )
+
+        const render = new RenderHTML(ctx)
+        const img = await render.text(
+          [
+            `[SILI Core] v${SILI_CORE.version} (${GIT_HASH})`,
+            `[Onebot] protocol ${ONEBOT.protocol_version} / go-cqhttp ${ONEBOT.version}`,
+            `[Koishi.js] v${KOISHI_VERSION}`,
+            `  - ${plugins.join('\n  - ')}`,
+          ].join('\n')
+        )
+        return img ? segment.image(img) : '检查版本时发生未知错误。'
+      })
   }
 
   get logger() {
