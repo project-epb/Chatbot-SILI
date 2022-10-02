@@ -109,12 +109,14 @@ export default class PluginMediawiki {
               .map(getWikiDisplayTitle)
               .filter((i) => !!i)
           )
-        ).map((i) => {
-          return {
-            name: i.split('#')[0],
-            anchor: i.split('#')[1] ? '#' + encodeURI(i.split('#')[1]) : '',
-          }
-        })
+        )
+          .map((i) => {
+            return {
+              name: i.split('#')[0],
+              anchor: i.split('#')[1] ? '#' + encodeURI(i.split('#')[1]) : '',
+            }
+          })
+          .reverse()
 
         const { data } = await api
           .get<{
@@ -384,7 +386,7 @@ export default class PluginMediawiki {
     const matchedSite = Object.keys(INFOBOX_MAP).find((i) => host.endsWith(i))
     if (!matchedSite) return ''
     const cssClasses = INFOBOX_MAP[matchedSite]
-    this.logger.info('SHOT INFOBOX', matchedSite, cssClasses)
+    this.logger.info('SHOT_INFOBOX', matchedSite, cssClasses)
 
     const page = await this.ctx.puppeteer.page()
     try {
@@ -394,15 +396,16 @@ export default class PluginMediawiki {
       })
       const target = await page.$(cssClasses)
       if (!target) {
-        this.logger.info('SHOT INFOBOX', 'Missing target')
+        this.logger.info('SHOT_INFOBOX', 'Canceled', 'Missing target')
         await page.close()
         return ''
       }
       const img = await target.screenshot({ type: 'jpeg', quality: 85 })
-      this.logger.info('SHOT INFOBOX', 'OK', img)
+      this.logger.info('SHOT_INFOBOX', 'OK', img)
       await page.close()
       return segment.image(img)
     } catch (e) {
+      this.logger.warn('SHOT_INFOBOX', 'Failed', e)
       await page?.close()
       return ''
     }
