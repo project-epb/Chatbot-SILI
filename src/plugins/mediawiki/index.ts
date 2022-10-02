@@ -262,7 +262,7 @@ export default class PluginMediawiki {
           [...pageMsgs, ...interwikiMsgs].join('\n----\n')
         if (pages.length === 1 && !pages[0].missing) {
           await session.send(message)
-          session.send(await this.shotInfobox(api, pages[0].title))
+          session.send(await this.shotInfobox(pages[0].canonicalurl))
         } else {
           return message
         }
@@ -381,8 +381,8 @@ export default class PluginMediawiki {
       })
   }
 
-  async shotInfobox(api: MediaWikiApi, title?: string) {
-    const host = new URL(api.baseURL.value).host
+  async shotInfobox(url: string) {
+    const host = new URL(url).host
     const matchedSite = Object.keys(INFOBOX_MAP).find((i) => host.endsWith(i))
     if (!matchedSite) return ''
     const cssClasses = INFOBOX_MAP[matchedSite]
@@ -390,7 +390,7 @@ export default class PluginMediawiki {
 
     const page = await this.ctx.puppeteer.page()
     try {
-      await page.goto(getUrl(api.baseURL.value, { title }), {
+      await page.goto(url, {
         waitUntil: 'networkidle0',
         timeout: 30 * 1000,
       })
