@@ -24,7 +24,6 @@ import {
   useApi,
 } from './utils'
 import FormData from 'form-data'
-import { MediaWikiApi } from 'mediawiki-api-axios'
 import { INFOBOX_MAP } from './infoboxMap'
 
 // @ts-ignore
@@ -57,6 +56,8 @@ export type Config = Partial<ConfigInit>
 export const name = 'mediawiki'
 
 export default class PluginMediawiki {
+  INFOBOX_MAP: typeof INFOBOX_MAP
+
   constructor(public ctx: Context, public config: Config = {}) {
     this.config = { ...defaultConfig, ...config }
     ctx.using(['database', 'puppeteer'], () => {
@@ -65,6 +66,7 @@ export default class PluginMediawiki {
       })
       this.init()
     })
+    this.INFOBOX_MAP = INFOBOX_MAP
   }
 
   get logger() {
@@ -382,19 +384,16 @@ export default class PluginMediawiki {
   }
 
   async shotInfobox(url: string) {
-    const host = new URL(url).host
-    const matchedSite = Object.keys(INFOBOX_MAP).find((i) => host.endsWith(i))
-    if (!matchedSite) return ''
-    const cssClasses = INFOBOX_MAP[matchedSite]
-    this.logger.info('SHOT_INFOBOX', matchedSite, cssClasses)
+    const matched = this.INFOBOX_MAP.find((i) => i.match(new URL(url)))
+    if (!matched) return ''
+    this.logger.info('SHOT_INFOBOX', url, matched.siteName, matched.cssClasses)
 
     const page = await this.ctx.puppeteer.page()
     try {
       await page.goto(url, {
-        waitUntil: 'networkidle0',
         timeout: 30 * 1000,
       })
-      const target = await page.$(cssClasses)
+      const target = await page.$(matched.cssClasses)
       if (!target) {
         this.logger.info('SHOT_INFOBOX', 'Canceled', 'Missing target')
         await page.close()
