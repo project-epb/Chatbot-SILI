@@ -38,6 +38,7 @@ specifiers:
   dotenv-vault: ^1.13.10
   esbuild: ^0.15.10
   find-chrome-bin: ^1.0.2
+  form-data: ^4.0.0
   koishi: ^4.9.3
   koishi-plugin-baidu: ^1.1.0
   koishi-plugin-blive: ^1.3.1
@@ -45,6 +46,7 @@ specifiers:
   koishi-plugin-github: ^5.1.0
   koishi-plugin-image-search: ^4.1.3
   koishi-plugin-mediawiki: ^1.0.0
+  mediawiki-api-axios: ^1.0.0
   tsx: ^3.9.0
   typescript: ^4.8.4
   yakumo: ^0.3.6
@@ -91,6 +93,7 @@ dependencies:
   koishi-plugin-github: 5.1.0_koishi@4.9.3
   koishi-plugin-image-search: 4.1.3_koishi@4.9.3
   koishi-plugin-mediawiki: 1.0.0_koishi@4.9.3
+  mediawiki-api-axios: 1.0.0
 
 devDependencies:
   '@koishijs/client': 4.6.2
@@ -100,6 +103,7 @@ devDependencies:
   dotenv: 16.0.3
   dotenv-vault: 1.13.10
   esbuild: 0.15.10
+  form-data: 4.0.0
   tsx: 3.9.0
   typescript: 4.8.4
   yakumo: 0.3.6
@@ -1960,7 +1964,6 @@ packages:
     resolution: {integrity: sha512-N9qgGLlZmtUBMHF9xDT4EkD9RdXde1Xbveb+niWMXuHVWQP5BzgRmE3SFyUBBcyayG4y1lhoz+lphGRRxxK4RA==}
     dependencies:
       '@vue/shared': 3.2.40
-    dev: true
 
   /@vue/runtime-core/3.2.40:
     resolution: {integrity: sha512-U1+rWf0H8xK8aBUZhnrN97yoZfHbjgw/bGUzfgKPJl69/mXDuSg8CbdBYBn6VVQdR947vWneQBFzdhasyzMUKg==}
@@ -1989,7 +1992,6 @@ packages:
 
   /@vue/shared/3.2.40:
     resolution: {integrity: sha512-0PLQ6RUtZM0vO3teRfzGi4ltLUO5aO+kLgwh4Um3THSR03rpQWLTuRCkuO5A41ITzwdWeKdPHtSARuPkoo5pCQ==}
-    dev: true
 
   /@vueuse/core/8.9.4_vue@3.2.40:
     resolution: {integrity: sha512-B/Mdj9TK1peFyWaPof+Zf/mP9XuGAngaJZBwPaXBvU3aCTZlx3ltlrFFFyMV4iGBwsjSCeUCgZrtkEj9dS2Y3Q==}
@@ -4348,6 +4350,15 @@ packages:
   /media-typer/0.3.0:
     resolution: {integrity: sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==}
     engines: {node: '>= 0.6'}
+    dev: false
+
+  /mediawiki-api-axios/1.0.0:
+    resolution: {integrity: sha512-an8lmzqVQgr8WDK8U4HHQkwUUH4INv4aRN45K+RBaawQ0iS6frw477x2jm9PoEMqIzJmmK/j7sbT+BIBfCBWWw==}
+    dependencies:
+      '@vue/reactivity': 3.2.40
+      axios: 0.27.2
+    transitivePeerDependencies:
+      - debug
     dev: false
 
   /memoize-one/6.0.0:

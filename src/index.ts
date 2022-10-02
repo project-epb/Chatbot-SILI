@@ -32,6 +32,7 @@ import PluginSticker from './plugins/sticker'
 import PluginYoudao from './plugins/youdao'
 import { PluginHljs } from './plugins/hljs'
 import PluginPowerUser from './plugins/powerUser'
+import PluginMediawiki from './plugins/mediawiki'
 
 interface RepeatState {
   content: string
@@ -190,13 +191,6 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
     saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
   })
 
-  // MediaWiki
-  ctx.plugin('mediawiki')
-  ctx.command('wiki.link').config.authority = 2
-  ctx.command('wiki.flag').config.authority = 2
-  ctx.command('wiki.parse').config.authority = 3
-  ctx.command('wiki.shot').config.authority = 3
-
   ctx.plugin('schedule')
   ctx.plugin('teach', {
     prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
@@ -239,6 +233,11 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginVerifyFandomUser)
   ctx.plugin(PluginVersion)
   ctx.plugin(PluginYoudao)
+
+  // MediaWiki
+  ctx.plugin(PluginMediawiki)
+  ctx.command('wiki.connect').config.authority = 2
+  // ctx.command('wiki.flag').config.authority = 2
 })
 
 // Internal utils
