@@ -394,6 +394,7 @@ export default class PluginMediawiki {
 
     let pageLoaded = false
     const page = await this.ctx.puppeteer.page()
+    await page.setViewport({ width: 1080, height: 720 })
     page.on('load', () => (pageLoaded = true))
 
     try {
@@ -409,8 +410,18 @@ export default class PluginMediawiki {
       }
     }
 
+    if (matched.injectStyles) {
+      await page.addStyleTag({ content: matched.injectStyles }).catch((e) => {
+        this.logger.warn('SHOT_INFOBOX', 'Inject styles error', e)
+      })
+    }
+
     try {
-      const target = await page.$(matched.cssClasses)
+      const target = await page.$(
+        Array.isArray(matched.cssClasses)
+          ? matched.cssClasses.join(', ')
+          : matched.cssClasses
+      )
       if (!target) {
         this.logger.info('SHOT_INFOBOX', 'Canceled', 'Missing target')
         await page.close()

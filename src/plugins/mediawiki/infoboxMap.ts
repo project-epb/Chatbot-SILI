@@ -11,7 +11,8 @@ import { url } from 'inspector'
  */
 export const INFOBOX_MAP: {
   match: (url: URL) => boolean
-  cssClasses: string
+  cssClasses: string | string[]
+  injectStyles?: string
 }[] = [
   // 萌娘百科
   {
@@ -23,22 +24,25 @@ export const INFOBOX_MAP: {
       '.mw-parser-output table.infoboxSpecial',
       // 旧版兼容
       '.mw-parser-output table.infobox',
-    ].join(', '),
+    ],
+    injectStyles: `moe-global-header, #moe-global-toolbar { display: none !important }`,
   },
   // Minecraft Wiki
   {
     match: (url) => url.host === 'minecraft.fandom.com',
-    cssClasses: '.mw-parser-output .notaninfobox',
+    cssClasses: ['.mw-parser-output .notaninfobox'],
   },
   // Fandom (basic)
   {
     match: (url) => url.host.endsWith('fandom.com'),
-    cssClasses: '.mw-parser-output aside.portable-infobox',
+    cssClasses: ['.mw-parser-output aside.portable-infobox'],
   },
   // 万界规划局
   {
     match: (url) => url.host.endsWith('wjghj.cn'),
-    cssClasses: '.mw-parser-output .portable-infobox:not(.pi-theme-顶部提示小)',
+    cssClasses: [
+      '.mw-parser-output .portable-infobox:not(.pi-theme-顶部提示小)',
+    ],
   },
   // 最终幻想XIV中文维基
   {
@@ -52,6 +56,6 @@ export const INFOBOX_MAP: {
       '.mw-parser-output .instance-infobox',
       // 常规
       '.mw-parser-output .ff14-infobox',
-    ].join(', '),
+    ],
   },
 ]
