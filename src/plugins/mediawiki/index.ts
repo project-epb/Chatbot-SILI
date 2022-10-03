@@ -60,12 +60,11 @@ export default class PluginMediawiki {
 
   constructor(public ctx: Context, public config: Config = {}) {
     this.config = { ...defaultConfig, ...config }
-    ctx.using(['database', 'puppeteer'], () => {
-      ctx.model.extend('channel', {
-        mwApi: 'string',
-      })
-      this.init()
+    // ctx.using(['database', 'puppeteer'], () => {})
+    ctx.model.extend('channel', {
+      mwApi: 'string',
     })
+    this.init()
     this.INFOBOX_MAP = INFOBOX_MAP
   }
 
@@ -262,7 +261,12 @@ export default class PluginMediawiki {
         const message =
           segment.quote(session.messageId as string) +
           [...pageMsgs, ...interwikiMsgs].join('\n----\n')
-        if (pages.length === 1 && !pages[0].missing) {
+        if (
+          pages.length === 1 &&
+          pages[0].ns === 0 &&
+          !pages[0].missing &&
+          !pages[0].invalid
+        ) {
           await session.send(message)
           session.send(await this.shotInfobox(pages[0].canonicalurl))
         } else {

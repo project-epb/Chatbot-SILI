@@ -1,3 +1,5 @@
+import { url } from 'inspector'
+
 /**
  * @example Extend your sites
  * ```ts
@@ -28,6 +30,11 @@ export const INFOBOX_MAP: {
     siteName: 'Minecraft Wiki',
     match: (url) => url.host === 'minecraft.fandom.com',
     cssClasses: '.mw-parser-output .notaninfobox',
+  },
+  {
+    siteName: 'Fandom',
+    match: (url) => url.host.endsWith('fandom.com'),
+    cssClasses: '.mw-parser-output aside.portable-infobox',
   },
   {
     siteName: '万界规划局',
