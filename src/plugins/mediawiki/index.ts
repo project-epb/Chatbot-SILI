@@ -390,13 +390,26 @@ export default class PluginMediawiki {
   async shotInfobox(url: string) {
     const matched = this.INFOBOX_MAP.find((i) => i.match(new URL(url)))
     if (!matched) return ''
-    this.logger.info('SHOT_INFOBOX', url, matched.siteName, matched.cssClasses)
+    this.logger.info('SHOT_INFOBOX', url, matched.cssClasses)
 
+    let pageLoaded = false
     const page = await this.ctx.puppeteer.page()
+    page.on('load', () => (pageLoaded = true))
+
     try {
       await page.goto(url, {
         timeout: 30 * 1000,
+        waitUntil: 'networkidle0',
       })
+    } catch (e) {
+      this.logger.warn('SHOT_INFOBOX', 'Navigation timeout', pageLoaded, e)
+      if (!pageLoaded) {
+        await page.close()
+        return ''
+      }
+    }
+
+    try {
       const target = await page.$(matched.cssClasses)
       if (!target) {
         this.logger.info('SHOT_INFOBOX', 'Canceled', 'Missing target')
