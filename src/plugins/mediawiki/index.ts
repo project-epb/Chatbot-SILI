@@ -394,16 +394,24 @@ export default class PluginMediawiki {
 
     let pageLoaded = false
     const page = await this.ctx.puppeteer.page()
-    await page.setViewport({ width: 1080, height: 720 })
-    page.on('load', () => (pageLoaded = true))
+    await page.setViewport({ width: 960, height: 720 })
+    page.on('load', () => {
+      pageLoaded = true
+      console.info('page loaded')
+    })
 
     try {
       await page.goto(url, {
-        timeout: 30 * 1000,
+        timeout: 15 * 1000,
         waitUntil: 'networkidle0',
       })
     } catch (e) {
-      this.logger.warn('SHOT_INFOBOX', 'Navigation timeout', pageLoaded, e)
+      this.logger.warn(
+        'SHOT_INFOBOX',
+        'Navigation timeout:',
+        `(page HAS ${pageLoaded ? '' : 'NOT'} loaded)`,
+        e
+      )
       if (!pageLoaded) {
         await page.close()
         return ''

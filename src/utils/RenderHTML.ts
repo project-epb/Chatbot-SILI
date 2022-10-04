@@ -36,7 +36,7 @@ export class RenderHTML {
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-  <link rel="stylesheet" href="https://fonts.googlefonts.cn/css?family=Noto+Sans+SC">
+  <!-- <link rel="stylesheet" href="https://fonts.googlefonts.cn/css?family=Noto+Sans+SC"> -->
   <style>
     :root {
       font-family: 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
