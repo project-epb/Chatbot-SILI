@@ -25,7 +25,7 @@ export const INFOBOX_MAP: {
       // 旧版兼容
       '.mw-parser-output table.infobox',
     ],
-    injectStyles: `moe-global-header, #moe-global-toolbar { display: none !important }`,
+    injectStyles: `body #moe-full-container > header#moe-global-header, body #moe-full-container > #moe-global-toolbar { display: none !important }`,
   },
   // Minecraft Wiki
   {
