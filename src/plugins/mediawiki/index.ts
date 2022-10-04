@@ -391,21 +391,27 @@ export default class PluginMediawiki {
     const matched = this.INFOBOX_MAP.find((i) => i.match(new URL(url)))
     if (!matched) return ''
     this.logger.info('SHOT_INFOBOX', url, matched.cssClasses)
+    const start = Date.now()
+    const timeSpend = () => ((Date.now() - start) / 1000).toFixed(3) + 's'
 
     let pageLoaded = false
     const page = await this.ctx.puppeteer.page()
     await page.setViewport({ width: 960, height: 720 })
-    page.on('load', () => {
-      pageLoaded = true
-      console.info('page loaded')
-    })
 
     try {
-      await page.goto(url, {
-        timeout: 15 * 1000,
-        waitUntil: 'networkidle0',
-      })
+      // 开始竞速，load 事件触发后最多再等 5s
+      await Promise.race([
+        page.goto(url, { timeout: 15 * 1000, waitUntil: 'networkidle0' }),
+        new Promise((resolve) => {
+          page.on('load', () => {
+            console.info('[TIMER]', 'page loaded', timeSpend())
+            pageLoaded = true
+            setTimeout(() => resolve(1), 5 * 1000)
+          })
+        }),
+      ])
     } catch (e) {
+      console.info('[TIMER]', 'Navigation timeout', timeSpend())
       this.logger.warn(
         'SHOT_INFOBOX',
         'Navigation timeout:',
@@ -436,6 +442,7 @@ export default class PluginMediawiki {
         return ''
       }
       const img = await target.screenshot({ type: 'jpeg', quality: 85 })
+      console.info('[TIMER]', 'OK', timeSpend())
       this.logger.info('SHOT_INFOBOX', 'OK', img)
       await page.close()
       return segment.image(img)
