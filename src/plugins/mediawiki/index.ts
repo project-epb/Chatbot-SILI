@@ -394,8 +394,10 @@ export default class PluginMediawiki {
     const start = Date.now()
     const timeSpend = () => ((Date.now() - start) / 1000).toFixed(3) + 's'
 
+    // 使用 render 模式或者 fallback 皮肤有效剔除不必要的内容，加快页面加载速度
     const renderUrl = new URL(url)
-    renderUrl.searchParams.set('action', 'render')
+    // renderUrl.searchParams.set('action', 'render')
+    renderUrl.searchParams.set('useskin', 'fallback')
 
     let pageLoaded = false
     const page = await this.ctx.puppeteer.page()
