@@ -394,6 +394,9 @@ export default class PluginMediawiki {
     const start = Date.now()
     const timeSpend = () => ((Date.now() - start) / 1000).toFixed(3) + 's'
 
+    const renderUrl = new URL(url)
+    renderUrl.searchParams.set('action', 'render')
+
     let pageLoaded = false
     const page = await this.ctx.puppeteer.page()
     await page.setViewport({ width: 960, height: 720 })
@@ -401,7 +404,10 @@ export default class PluginMediawiki {
     try {
       // 开始竞速，load 事件触发后最多再等 5s
       await Promise.race([
-        page.goto(url, { timeout: 15 * 1000, waitUntil: 'networkidle0' }),
+        page.goto(renderUrl.toString(), {
+          timeout: 15 * 1000,
+          waitUntil: 'networkidle0',
+        }),
         new Promise((resolve) => {
           page.on('load', () => {
             console.info('[TIMER]', 'page loaded', timeSpend())
