@@ -20,6 +20,7 @@ export const INFOBOX_MAP: {
     cssClasses: [
       // 标准信息框
       '.mw-parser-output .infotemplatebox',
+      '.mw-parser-output table.infobox2',
       // 成句
       '.mw-parser-output table.infoboxSpecial',
       // 旧版兼容
