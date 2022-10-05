@@ -1,5 +1,3 @@
-import { url } from 'inspector'
-
 /**
  * @example Extend your sites
  * ```ts
