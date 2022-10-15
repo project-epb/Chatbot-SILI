@@ -43,7 +43,7 @@ specifiers:
   koishi-plugin-baidu: ^1.1.0
   koishi-plugin-blive: ^1.3.1
   koishi-plugin-bvid: ^1.0.1
-  koishi-plugin-github: ^5.1.0
+  koishi-plugin-github: ^5.1.1
   koishi-plugin-image-search: ^4.1.3
   koishi-plugin-mediawiki: ^1.0.0
   mediawiki-api-axios: ^1.0.0
@@ -90,7 +90,7 @@ dependencies:
   koishi-plugin-baidu: 1.1.0_koishi@4.9.3
   koishi-plugin-blive: 1.3.1
   koishi-plugin-bvid: 1.0.1_koishi@4.9.3
-  koishi-plugin-github: 5.1.0_koishi@4.9.3
+  koishi-plugin-github: 5.1.1_koishi@4.9.3
   koishi-plugin-image-search: 4.1.3_koishi@4.9.3
   koishi-plugin-mediawiki: 1.0.0_koishi@4.9.3
   mediawiki-api-axios: 1.0.0
@@ -2326,7 +2326,7 @@ packages:
       normalize-path: 3.0.0
       readdirp: 3.6.0
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: r2.cnpmjs.org/fsevents/2.3.2
 
   /chownr/1.1.4:
     resolution: {integrity: sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==}
@@ -3304,7 +3304,7 @@ packages:
       esutils: 2.0.3
       optionator: 0.8.3
     optionalDependencies:
-      source-map: 0.6.1
+      source-map: r2.cnpmjs.org/source-map/0.6.1
     dev: false
 
   /esprima/4.0.1:
@@ -3512,13 +3512,6 @@ packages:
   /fs.realpath/1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
     dev: false
-
-  /fsevents/2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
-    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
-    os: [darwin]
-    requiresBuild: true
-    optional: true
 
   /ftp/0.3.10:
     resolution: {integrity: sha512-faFVML1aBx2UoDStmLwv2Wptt4vw5x03xxX172nhA5Y5HBshW5JweqQ2W4xL4dezQTG8inJsuYcpPHHU3X5OTQ==}
@@ -4186,8 +4179,8 @@ packages:
       koishi: 4.9.3
     dev: false
 
-  /koishi-plugin-github/5.1.0_koishi@4.9.3:
-    resolution: {integrity: sha512-0N6VF+dX8xCAExQio+uXcn1WpTr4Hg5EM8W3MN1RaL9wh4QbiWmbQUaXc0cwiEQOgBVtnQ5Dd7CtZVZuEVSKow==}
+  /koishi-plugin-github/5.1.1_koishi@4.9.3:
+    resolution: {integrity: sha512-Bb5X7kFEmCkpQpnyy97i3c1heq1ApfEK3JMCA6qhRU7cExm0Pm0zvuwAzV5AMtclhit6zsGAMJPhIfkO+pBDrQ==}
     peerDependencies:
       koishi: ^4.8.4
       koishi-plugin-puppeteer: ^3.0.2
@@ -4453,7 +4446,7 @@ packages:
       mongodb-connection-string-url: 2.5.3
       socks: 2.7.0
     optionalDependencies:
-      saslprep: 1.0.3
+      saslprep: r2.cnpmjs.org/saslprep/1.0.3
     dev: false
 
   /ms/2.1.2:
@@ -5040,7 +5033,7 @@ packages:
     engines: {node: '>=10.0.0'}
     hasBin: true
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: r2.cnpmjs.org/fsevents/2.3.2
     dev: true
 
   /run-async/2.4.1:
@@ -5065,15 +5058,6 @@ packages:
 
   /safer-buffer/2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
-
-  /saslprep/1.0.3:
-    resolution: {integrity: sha512-/MY/PEMbk2SuY5sScONwhUDsV2p77Znkb/q3nSVstq/yQzYJOH/Azh29p9oJLsl3LnQwSvZDKagDGBsBwSooag==}
-    engines: {node: '>=6'}
-    requiresBuild: true
-    dependencies:
-      sparse-bitfield: 3.0.3
-    dev: false
-    optional: true
 
   /sass/1.54.3:
     resolution: {integrity: sha512-fLodey5Qd41Pxp/Tk7Al97sViYwF/TazRc5t6E65O7JOk4XF8pzwIW7CvCxYVOfJFFI/1x5+elDyBIixrp+zrw==}
@@ -5212,6 +5196,7 @@ packages:
   /source-map/0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
+    dev: true
 
   /sourcemap-codec/1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
@@ -5438,7 +5423,7 @@ packages:
       '@esbuild-kit/core-utils': 2.3.0
       '@esbuild-kit/esm-loader': 2.4.2
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: r2.cnpmjs.org/fsevents/2.3.2
     dev: true
 
   /tunnel-agent/0.6.0:
@@ -5548,7 +5533,7 @@ packages:
       rollup: 2.77.2
       sass: 1.54.3
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: r2.cnpmjs.org/fsevents/2.3.2
     dev: true
 
   /vm2/3.9.10:
@@ -5790,3 +5775,31 @@ packages:
     dependencies:
       js-yaml: 4.1.0
     dev: true
+
+  r2.cnpmjs.org/fsevents/2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==, registry: http://r.cnpmjs.org/, tarball: https://r2.cnpmjs.org/fsevents/-/fsevents-2.3.2.tgz}
+    name: fsevents
+    version: 2.3.2
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+    requiresBuild: true
+    optional: true
+
+  r2.cnpmjs.org/saslprep/1.0.3:
+    resolution: {integrity: sha512-/MY/PEMbk2SuY5sScONwhUDsV2p77Znkb/q3nSVstq/yQzYJOH/Azh29p9oJLsl3LnQwSvZDKagDGBsBwSooag==, registry: http://r.cnpmjs.org/, tarball: https://r2.cnpmjs.org/saslprep/-/saslprep-1.0.3.tgz}
+    name: saslprep
+    version: 1.0.3
+    engines: {node: '>=6'}
+    requiresBuild: true
+    dependencies:
+      sparse-bitfield: 3.0.3
+    dev: false
+    optional: true
+
+  r2.cnpmjs.org/source-map/0.6.1:
+    resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==, registry: http://r.cnpmjs.org/, tarball: https://r2.cnpmjs.org/source-map/-/source-map-0.6.1.tgz}
+    name: source-map
+    version: 0.6.1
+    engines: {node: '>=0.10.0'}
+    dev: false
+    optional: true
