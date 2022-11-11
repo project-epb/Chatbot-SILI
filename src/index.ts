@@ -235,9 +235,8 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginYoudao)
 
   // MediaWiki
-  // ctx.plugin(PluginMediawiki)
-  // ctx.command('wiki.connect').config.authority = 2
-  // ctx.command('wiki.flag').config.authority = 2
+  ctx.plugin(PluginMediawiki)
+  ctx.command('wiki.connect').config.authority = 2
 })
 
 // Internal utils
