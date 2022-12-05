@@ -24,7 +24,18 @@ export const INFOBOX_MAP: {
       // 旧版兼容
       '.mw-parser-output table.infobox',
     ],
-    injectStyles: `body #moe-full-container > header#moe-global-header, body #moe-full-container > #moe-global-toolbar, body #bottomRightCorner { display: none !important }`,
+    injectStyles: `
+      /* 隐藏部分妨碍截图的元素 */
+      /* 顶部导航栏和悬浮工具栏 */
+      body #moe-full-container > header#moe-global-header, body #moe-full-container > #moe-global-toolbar,
+      /* 右下角悬浮的功能按钮 */
+      #bottomRightCorner, 
+      /* 全站公告弹窗 */
+      body > .n-modal-container
+      {
+        display: none !important;
+      }
+      `,
   },
   // Minecraft Wiki
   {
