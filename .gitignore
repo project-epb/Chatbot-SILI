@@ -133,3 +133,5 @@ dist
 .env*
 !.env.project
 !.env.vault
+
+badwords.ini

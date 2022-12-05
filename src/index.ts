@@ -33,6 +33,7 @@ import PluginYoudao from './plugins/youdao'
 import { PluginHljs } from './plugins/hljs'
 import PluginPowerUser from './plugins/powerUser'
 import PluginMediawiki from './plugins/mediawiki'
+import PluginSensitiveFilter from './plugins/sensitive-words-filter'
 
 interface RepeatState {
   content: string
@@ -80,12 +81,12 @@ app.plugin(function PluginCollectionAdapters(ctx) {
     endpoint: env.ONEBOT_ENDPOINT,
   })
   // Discord
-  ctx.plugin('adapter-discord', {
-    token:
-      env.KOISHI_ENV === 'prod'
-        ? env.TOKEN_DISCORD_BOT_SILI
-        : env.TOKEN_DISCORD_BOT_XIAOYUJUN,
-  })
+  // ctx.plugin('adapter-discord', {
+  //   token:
+  //     env.KOISHI_ENV === 'prod'
+  //       ? env.TOKEN_DISCORD_BOT_SILI
+  //       : env.TOKEN_DISCORD_BOT_XIAOYUJUN,
+  // })
 })
 
 /** 安装插件 */
@@ -192,7 +193,7 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   })
 
   ctx.plugin('schedule')
-  ctx.plugin('teach', {
+  ctx.plugin('dialogue', {
     prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
     throttle: {
       responses: 10,
@@ -246,6 +247,7 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)
   ctx.plugin(ProcessErrorHandler)
+  ctx.plugin(PluginSensitiveFilter)
 })
 
 /** 启动应用程序 */
