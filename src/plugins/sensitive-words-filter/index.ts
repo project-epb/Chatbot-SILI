@@ -11,24 +11,23 @@ export default class PluginSensitiveFilter extends BasePlugin {
   }
 
   onBeforeSend(session: Session) {
-    const seg = segment.parse(session.content)
-    const textSegs = segment.select(seg, 'text')
+    if (!session.elements) return
+    const textSegs = segment.select(session.elements, 'text')
     const pass = PluginSensitiveFilter.filter.validator(textSegs.join(' '))
     if (!pass) {
-      seg.forEach((i, index) => {
+      const original = session.content
+      session.elements.forEach((i, index) => {
         if (i.type === 'text') {
-          seg[index].attrs.content = String(
-            PluginSensitiveFilter.filter.filterSync(i?.attrs?.content || '')
-              .text
-          )
+          session.elements![index].attrs.content =
+            PluginSensitiveFilter.filter
+              .filterSync(i?.attrs?.content || '')
+              .text?.toString() || ''
         }
       })
-      const parsedContent = seg.join('')
       this.logger.info('send-has-sensitive', {
-        before: session.content,
-        after: parsedContent,
+        before: original,
+        after: session.content,
       })
-      session.content = parsedContent
     }
   }
 }

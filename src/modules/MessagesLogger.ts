@@ -6,7 +6,7 @@
  * @authority -
  */
 
-import { Context } from 'koishi'
+import { Context, segment } from 'koishi'
 
 export const name = '_internal-MessagesLogger'
 
@@ -21,17 +21,19 @@ export default class MessagesLogger {
       )
     })
     ctx.on('send', (session) => {
+      const seg = segment.parse(session.content)
+      seg.forEach((i, index) => {
+        if (i.type === 'image' && i?.attrs?.url?.startsWith('base64://')) {
+          seg[index].attrs.url = '(base64)'
+        }
+      })
       ctx
         .logger('SEND')
         .info(
           `[${session.platform}]`,
           `[${session.type}/${session.channelId}]`,
           `${session.username} (${session.selfId})`,
-          '> ' +
-            session.content?.replace(
-              /\[CQ:image,file=base64:\/\/.+?]/g,
-              '[CQ:image,file=<!-- base64 -->]'
-            )
+          '> ' + seg.join('')
         )
     })
   }
