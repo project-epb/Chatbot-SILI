@@ -14,7 +14,7 @@ export function useFilter(): Mint {
     .split('\n')
     .map((i) => i.trim())
     .filter((i) => !!i && !i.startsWith('//') && !i.startsWith('#'))
-  globalThis.mintFilter = new Mint(words, { transform: 'capital' })
+  globalThis.mintFilter = new Mint(words)
   console.info('[Mint] filter build end', Date.now() - start)
   return globalThis.mintFilter
 }

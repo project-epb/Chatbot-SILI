@@ -66,8 +66,7 @@ export default class MoegirlGroupUtils {
     })
 
     ctx = ctx.channel(
-      process.env.CHANNEL_QQ_MOEGIRL_BFANS_1 as string,
-      process.env.CHANNEL_QQ_MOEGIRL_BFANS_2 as string
+      ...(process.env.CHANNEL_QQ_MOEGIRL_BFANS as string).split('|')
     )
 
     // 指令白名单
