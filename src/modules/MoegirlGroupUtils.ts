@@ -6,7 +6,7 @@
  * @authority -
  */
 
-import { Context, Time } from 'koishi'
+import { Context, segment, Time } from 'koishi'
 import {} from '@koishijs/plugin-adapter-onebot'
 import {} from '@koishijs/plugin-database-mongo'
 
@@ -79,7 +79,8 @@ export default class MoegirlGroupUtils {
 
     // 自动禁言
     ctx.on('message', async (sess) => {
-      const match = KEYWORDS_BLACKLIST_REG.exec(sess.content || '')
+      const textSegs = segment.select(sess.elements!, 'text')
+      const match = KEYWORDS_BLACKLIST_REG.exec(textSegs.join(' ') || '')
       if (!match || sess.author?.roles?.find((i) => i === 'admin')) {
         return
       }
@@ -138,6 +139,27 @@ export default class MoegirlGroupUtils {
       sess.app.database.setUser(sess.platform, sess.userId as string, {
         mgpGroupSpamLogs,
       })
+    })
+
+    // 入群监控
+    ctx.on('guild-member-request', async (session) => {
+      let { mgpGroupSpamLogs } = await session.app.database.getUser(
+        session.platform,
+        session.userId as string,
+        ['mgpGroupSpamLogs']
+      )
+      if (mgpGroupSpamLogs && mgpGroupSpamLogs.length) {
+        session.bot.sendMessage(
+          process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string,
+          [
+            `[MGP_UTILS] 请注意该入群申请：`,
+            `${session.username || '[未知昵称]'} (${session.userId}) 申请加入 ${
+              session.channelId
+            }`,
+            `该用户曾 ${mgpGroupSpamLogs.length} 次触发关键词黑名单。`,
+          ].join('\n')
+        )
+      }
     })
   }
 

@@ -10,14 +10,16 @@ export default class PluginPowerUser extends BasePlugin {
     super(ctx, options, 'power-user')
 
     ctx
-      .command('admin/power <cmd:text>', 'THIS IS 抛瓦！（超级权限）', { authority: -1 })
+      .command('admin/power <cmd:text>', 'THIS IS 抛瓦！（超级权限）', {
+        authority: -1,
+      })
       .alias('root', 'sudo')
       .userFields(['authority', 'id'])
       .check(({ session, options }, cmd) => {
         if (!session) return
 
         this.logger.info({ user: session.user, options, cmd })
-        if (!this.userList.includes(session.user!.id)) {
+        if (!this.userList.includes('' + session.user!.id)) {
           return '您没有足够的抛瓦！'
         }
       })

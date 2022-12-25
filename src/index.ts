@@ -182,7 +182,7 @@ app.plugin(function PluginCollectionConsole(ctx) {
 // 第三方
 app.plugin(async function PluginCollectionThirdParty(ctx) {
   // ctx.plugin('blive')
-  ctx.plugin('bvid')
+  // ctx.plugin('bvid')
   ctx.plugin('github', {
     path: '/api/github',
     appId: env.TOKEN_GITHUB_APPID,
@@ -191,20 +191,7 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   ctx.plugin('image-search', {
     saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
   })
-
   ctx.plugin('schedule')
-  ctx.plugin('dialogue', {
-    prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
-    throttle: {
-      responses: 10,
-      interval: 1 * Time.minute,
-    },
-    preventLoop: {
-      length: 3,
-      participants: 1,
-      debounce: 3 * Time.minute,
-    },
-  })
 
   try {
     const chrome = await findChrome({})
@@ -217,6 +204,25 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   } catch (e) {
     logger.warn('[puppeteer] 未找到合适的 Chrome', e.message)
   }
+})
+
+app.plugin(function PluginCollectionDialogue(ctx) {
+  ctx.plugin('dialogue-author')
+  ctx.plugin('dialogue-context')
+  // ctx.plugin('dialogue-flow')
+  ctx.plugin('dialogue-rate-limit')
+  ctx.plugin('dialogue', {
+    prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
+    throttle: {
+      responses: 10,
+      interval: 1 * Time.minute,
+    },
+    preventLoop: {
+      length: 3,
+      participants: 1,
+      debounce: 3 * Time.minute,
+    },
+  })
 })
 
 // SILI Core
