@@ -80,7 +80,7 @@
     "koishi-plugin-github": "^5.2.2",
     "koishi-plugin-image-search": "^4.1.3",
     "koishi-plugin-mediawiki": "^1.0.0",
-    "mediawiki-api-axios": "^1.0.0",
+    "mediawiki-api-axios": "^1.3.2",
     "mint-filter": "^3.0.1"
   }
 }

@@ -90,6 +90,7 @@ export default class MoegirlGroupUtils {
         sess.userId as string,
         ['mgpGroupSpamLogs']
       )
+      // sess.app.database.getChannel(sess.platform,sess.channelId)
       ;(mgpGroupSpamLogs = mgpGroupSpamLogs || []).push({
         time: new Date().toISOString(),
         match,
@@ -102,13 +103,18 @@ export default class MoegirlGroupUtils {
         ? MUTE_DURATION[count] / 1000
         : Infinity
 
-      const log = `B群触发关键词黑名单: ${match[1]}\n${sess.channelId} > ${
-        sess.username
-      } (${sess.userId}) > ${sess.content}\n已累计触发 ${count} 次，本次将${
-        duration === Infinity
-          ? '踢出群聊'
-          : '禁言 ' + Time.format(duration * 1000)
-      }`
+      const log = [
+        `B群触发关键词黑名单:`,
+        `channel: ${sess.channelId} (${sess.channelName || '未知群名'})`,
+        `user: ${sess.userId} (${sess.author?.nickname || '未知昵称'})`,
+        `keywords: ${match[1]}`,
+        `${sess.content}`,
+        `该用户第【${count}】次触发关键词，本次将【${
+          duration === Infinity
+            ? '踢出群聊'
+            : '禁言 ' + Time.format(duration * 1000)
+        }】`,
+      ].join('\n')
 
       // 打日志
       this.logger.info(log)
@@ -142,21 +148,21 @@ export default class MoegirlGroupUtils {
     })
 
     // 入群监控
-    ctx.on('guild-member-request', async (session) => {
-      let { mgpGroupSpamLogs } = await session.app.database.getUser(
-        session.platform,
-        session.userId as string,
+    ctx.on('guild-member-request', async (sess) => {
+      const data = await sess.app.database.getUser(
+        sess.platform,
+        sess.userId as string,
         ['mgpGroupSpamLogs']
       )
-      if (mgpGroupSpamLogs && mgpGroupSpamLogs.length) {
-        session.bot.sendMessage(
+      const logs = data?.mgpGroupSpamLogs
+      if (logs && logs.length) {
+        sess.bot.sendMessage(
           process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string,
           [
-            `[MGP_UTILS] 请注意该入群申请：`,
-            `${session.username || '[未知昵称]'} (${session.userId}) 申请加入 ${
-              session.channelId
-            }`,
-            `该用户曾 ${mgpGroupSpamLogs.length} 次触发关键词黑名单。`,
+            `[MGP_UTILS] 请注意B群入群申请:`,
+            `channel: ${sess.channelId} (${sess.channelName || '未知群名'})`,
+            `user: ${sess.userId} (${sess.author?.nickname || '未知昵称'})`,
+            `该用户曾【${logs.length}】次触发关键词黑名单。`,
           ].join('\n')
         )
       }

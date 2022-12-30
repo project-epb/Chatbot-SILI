@@ -23,11 +23,7 @@ import {
   parseTitlesFromText,
   useApi,
 } from './utils'
-import FormData from 'form-data'
 import { INFOBOX_MAP } from './infoboxMap'
-
-// @ts-ignore
-globalThis.FormData = FormData
 
 declare module 'koishi' {
   interface Channel {
@@ -148,7 +144,7 @@ export default class PluginMediawiki {
             throw e
           })
 
-        this.logger.debug('PAGES', data.query.pages)
+        this.logger.debug('QUERY DATA', data.query)
 
         // Cache variables
         const { pages, redirects, interwiki, specialpagealiases, namespaces } =
@@ -167,91 +163,94 @@ export default class PluginMediawiki {
         // 获取本地特殊名字空间的标准名称
         const specialNsName = namespaces['-1'].name
 
-        const pageMsgs = pages.map((page) => {
-          // Cache variables
-          const msg: string[] = []
-          let pageRedirect = redirects?.find(({ to }) => to === page.title)
-          let pageAnchor =
-            titles.find(
-              (i) =>
-                i.name.toLocaleLowerCase() === page.title.toLocaleLowerCase()
-            )?.anchor || ''
+        const pageMsgs =
+          pages?.map((page) => {
+            // Cache variables
+            const msg: string[] = []
+            let pageRedirect = redirects?.find(({ to }) => to === page.title)
+            let pageAnchor =
+              titles.find(
+                (i) =>
+                  i.name.toLocaleLowerCase() === page.title.toLocaleLowerCase()
+              )?.anchor || ''
 
-          // 开始判断危险重定向
-          if (
-            // 发生重定向
-            pageRedirect &&
-            // 重定向自特殊页面
-            pageRedirect.from.split(':')[0] === specialNsName &&
-            // 被标记为危险页面
-            dangerPages.includes(
-              pageRedirect.from.split(':')?.[1].split('/')[0] || ''
-            )
-          ) {
-            // 覆写页面资料
-            page = {
-              ...page,
-              ns: -1,
-              title: pageRedirect.from,
-              special: true,
+            // 开始判断危险重定向
+            if (
+              // 发生重定向
+              pageRedirect &&
+              // 重定向自特殊页面
+              pageRedirect.from.split(':')[0] === specialNsName &&
+              // 被标记为危险页面
+              dangerPages.includes(
+                pageRedirect.from.split(':')?.[1].split('/')[0] || ''
+              )
+            ) {
+              // 覆写页面资料
+              page = {
+                ...page,
+                ns: -1,
+                title: pageRedirect.from,
+                special: true,
+              }
+              // 重置重定向信息
+              pageRedirect = undefined
+              delete page.missing
             }
-            // 重置重定向信息
-            pageRedirect = undefined
-            delete page.missing
-          }
 
-          const {
-            pageid,
-            title: pagetitle,
-            missing,
-            invalid,
-            // extract,
-            canonicalurl,
-            special,
-            editurl,
-          } = page
+            const {
+              pageid,
+              title: pagetitle,
+              missing,
+              invalid,
+              // extract,
+              canonicalurl,
+              special,
+              editurl,
+            } = page
 
-          // 打印开头
-          msg.push(`您要的“${pagetitle}”：`)
-          /** 处理特殊情况 */
-          // 重定向
-          if (pageRedirect) {
-            const { from, to, tofragment } = pageRedirect || {}
-            msg.push(
-              `重定向：[${from}] → [${to}${tofragment ? '#' + tofragment : ''}]`
-            )
-            if (tofragment) pageAnchor = '#' + encodeURI(tofragment)
-          }
-          // 页面名不合法
-          if (invalid !== undefined) {
-            msg.push(`页面名称不合法：${page.invalidreason || '原因未知'}`)
-          }
-          // 特殊页面
-          else if (special) {
-            msg.push(
-              `${getUrl(mwApi, {
-                title: pagetitle,
-              })}${pageAnchor} (${missing ? '不存在的' : ''}特殊页面)`
-            )
-          }
-          // 不存在页面
-          else if (missing !== undefined) {
-            if (!options?.search) {
-              msg.push(`${editurl} (页面不存在)`)
+            // 打印开头
+            msg.push(`您要的“${pagetitle}”：`)
+            /** 处理特殊情况 */
+            // 重定向
+            if (pageRedirect) {
+              const { from, to, tofragment } = pageRedirect || {}
+              msg.push(
+                `重定向：[${from}] → [${to}${
+                  tofragment ? '#' + tofragment : ''
+                }]`
+              )
+              if (tofragment) pageAnchor = '#' + encodeURI(tofragment)
+            }
+            // 页面名不合法
+            if (invalid !== undefined) {
+              msg.push(`页面名称不合法：${page.invalidreason || '原因未知'}`)
+            }
+            // 特殊页面
+            else if (special) {
+              msg.push(
+                `${getUrl(mwApi, {
+                  title: pagetitle,
+                })}${pageAnchor} (${missing ? '不存在的' : ''}特殊页面)`
+              )
+            }
+            // 不存在页面
+            else if (missing !== undefined) {
+              if (!options?.search) {
+                msg.push(`${editurl} (页面不存在)`)
+              } else {
+                msg.push(`${editurl} (页面不存在，以下是搜索结果)`)
+              }
             } else {
-              msg.push(`${editurl} (页面不存在，以下是搜索结果)`)
+              const shortUrl = getUrl(mwApi, { curid: pageid })
+              msg.push(
+                (shortUrl.length <= canonicalurl.length
+                  ? shortUrl
+                  : canonicalurl) + pageAnchor
+              )
             }
-          } else {
-            const shortUrl = getUrl(mwApi, { curid: pageid })
-            msg.push(
-              (shortUrl.length <= canonicalurl.length
-                ? shortUrl
-                : canonicalurl) + pageAnchor
-            )
-          }
 
-          return msg.join('\n')
-        })
+            return msg.join('\n')
+          }) || []
 
         const interwikiMsgs =
           interwiki?.map((item) => {
@@ -262,6 +261,7 @@ export default class PluginMediawiki {
           segment.quote(session.messageId as string) +
           [...pageMsgs, ...interwikiMsgs].join('\n----\n')
         if (
+          pages &&
           pages.length === 1 &&
           pages[0].ns === 0 &&
           !pages[0].missing &&
