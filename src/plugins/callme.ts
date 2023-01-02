@@ -5,8 +5,9 @@
  * @authority -
  */
 
-import { Context, Time } from 'koishi'
+import { Context, segment, Time } from 'koishi'
 import {} from '@koishijs/plugin-rate-limit'
+import { useFilter } from './sensitive-words-filter/useFilter'
 
 declare module 'koishi' {
   interface Channel {
@@ -32,10 +33,20 @@ export default class PatchCallme {
         }
         if (!name) {
           return session!.user?.name
-            ? `sili认得你，${session!.user.name}，你好～`
+            ? `sili认得你，${segment.escape(session!.user.name)}，你好～`
             : '你还没有给自己取一个名字呢'
-        } else if (/(sili)/gi.test(name)) {
-          return `拒绝执行：无法接受的昵称。`
+        }
+      })
+      .check((_, name) => {
+        if (!name) return
+        if (/[<>]/.test(name)) {
+          return `警告：非法昵称。`
+        }
+      })
+      .check((_, name) => {
+        if (!name) return
+        if (/(sili)/gi.test(name) || !useFilter().validator(name)) {
+          return `警告：无法接受的昵称。`
         }
       })
   }

@@ -24,6 +24,7 @@ import {
   useApi,
 } from './utils'
 import { INFOBOX_MAP } from './infoboxMap'
+import { BulkMessageBuilder } from '../../utils/BulkMessageBuilder'
 
 declare module 'koishi' {
   interface Channel {
@@ -257,9 +258,18 @@ export default class PluginMediawiki {
             return [`跨语言链接：`, item.url].join('\n')
           }) || []
 
-        const message =
-          segment.quote(session.messageId as string) +
-          [...pageMsgs, ...interwikiMsgs].join('\n----\n')
+        const allMsgList = [...pageMsgs, ...interwikiMsgs]
+        let finalMsg: string | segment = ''
+        if (allMsgList.length === 1) {
+          finalMsg = segment.quote(session.messageId as string) + allMsgList[0]
+        } else if (allMsgList.length > 1) {
+          const msgBuilder = new BulkMessageBuilder(session)
+          allMsgList.forEach((i) => {
+            msgBuilder.botSay(i)
+          })
+          finalMsg = msgBuilder.prependOriginal().all()
+        }
+
         if (
           pages &&
           pages.length === 1 &&
@@ -267,10 +277,10 @@ export default class PluginMediawiki {
           !pages[0].missing &&
           !pages[0].invalid
         ) {
-          await session.send(message)
+          await session.send(finalMsg)
           session.send(await this.shotInfobox(pages[0].canonicalurl))
         } else {
-          return message
+          return finalMsg
         }
       })
 

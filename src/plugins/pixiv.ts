@@ -7,6 +7,7 @@
 
 import { Context, segment, Time } from 'koishi'
 import axios from 'axios'
+import { BulkMessageBuilder } from '../utils/BulkMessageBuilder'
 
 const API_BASE = process.env.API_PIXIVNOW_API
 
@@ -61,20 +62,22 @@ export default class PluginPixiv {
           .replace(/<\/?.+>/g, '')
         const allTags = data.tags.tags.map((i: any) => `#${i.tag}#`)
 
-        const message = [
-          segment.quote(session.messageId as string),
+        const builder = new BulkMessageBuilder(session)
+        builder.prependOriginal()
+        const lines = [
           segment.image(`${API_BASE}${imageUrl}`),
           picNums ? `第 ${page} 张，共 ${picNums} 张` : null,
           `标题：${data.title}`,
           `作者：${data.userName} (${data.userId})`,
-          desc.length > 120 ? desc.substring(0, 120) + '...' : desc,
+          desc.length > 300 ? desc.substring(0, 300) + '...' : desc,
           `标签：${allTags.length > 0 ? allTags.join(' ') : '无'}`,
           `${API_BASE}/i/${data.id}`,
-        ]
-          .join('\n')
-          .replace(/\n+/g, '\n')
+        ].map((i) =>
+          typeof i === 'string' ? i.trim().replace(/\n+/g, '\n') : i
+        )
+        lines.forEach((i) => builder.botSay(i))
 
-        return message
+        return builder.all()
       })
 
     ctx
@@ -97,13 +100,18 @@ export default class PluginPixiv {
 
         const { imageBig, userId, name, comment } = data
 
-        const message = [
+        const builder = new BulkMessageBuilder(session)
+        builder.prependOriginal()
+        const lines = [
           segment.image(`${API_BASE}${imageBig}`),
           `${name} (${userId})`,
           comment,
-        ].join('\n')
+        ].map((i) =>
+          typeof i === 'string' ? i.trim().replace(/\n+/g, '\n') : i
+        )
+        lines.forEach((i) => builder.botSay(i))
 
-        return message
+        return builder.all()
       })
 
     // 快捷方式
