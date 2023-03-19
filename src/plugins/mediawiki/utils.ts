@@ -33,9 +33,9 @@ export function parseTitlesFromText(str: string) {
     new Set(
       Array.from(str.matchAll(reg))
         .map((i) => i[1].split('|')[0])
-        .map(getWikiTitleDBKey),
-    ),
-  )
+        .map(getWikiTitleDBKey)
+    )
+  ).filter((i) => !!i)
 }
 
 export function getUrl(base: string, params = {}, script = 'index'): string {
@@ -44,7 +44,7 @@ export function getUrl(base: string, params = {}, script = 'index'): string {
     : ''
   return `${base.replace(
     '/api.php',
-    `/${script ? script.trim() : 'index'}.php`,
+    `/${script ? script.trim() : 'index'}.php`
   )}${query}`
 }
 

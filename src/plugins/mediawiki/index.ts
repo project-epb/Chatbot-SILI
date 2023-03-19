@@ -101,12 +101,7 @@ export default class PluginMediawiki {
 
         // 去重并缓存用户输入的标题及锚点
         const titles = Array.from(
-          new Set(
-            titlesInput
-              .split('|')
-              .map(getWikiDisplayTitle)
-              .filter((i) => !!i)
-          )
+          new Set(titlesInput.split('|').map(getWikiDisplayTitle))
         )
           .map((i) => {
             return {
@@ -114,6 +109,7 @@ export default class PluginMediawiki {
               anchor: i.split('#')[1] ? '#' + encodeURI(i.split('#')[1]) : '',
             }
           })
+          .filter((i) => !!i.name)
           .reverse()
 
         const { data } = await api
@@ -224,7 +220,11 @@ export default class PluginMediawiki {
             }
             // 页面名不合法
             if (invalid !== undefined) {
-              msg.push(`页面名称不合法：${page.invalidreason || '原因未知'}`)
+              msg.push(
+                `页面名称不合法：${
+                  JSON.stringify(page.invalidreason) || '原因未知'
+                }`
+              )
             }
             // 特殊页面
             else if (special) {
