@@ -5,7 +5,7 @@
  * @author Koishijs(机智的小鱼君) <dragon-fish@qq.com>
  * @license Apache-2.0
  */
-import { Context, segment } from 'koishi'
+import { Context, segment, Time } from 'koishi'
 import {} from '@koishijs/plugin-database-mongo'
 import {} from '@koishijs/plugin-puppeteer'
 import type {
@@ -34,35 +34,32 @@ declare module 'koishi' {
 
 type ConfigInit = {
   /** wikilink 到不存在的页面时是否自动进行搜索 */
-  searchNonExist: boolean
-  wikiAuthority: number
-  linkAuthority: number
-  searchAuthority: number
-  parseAuthority: number
-  parseMinInterval: number
-  shotAuthority: number
+  searchIfNotExist: boolean
+  showDetailsByDefault: boolean
+  cmdAuthWiki: number
+  cmdAuthConnect: number
+  cmdAuthSearch: number
 }
 const defaultConfig = {
-  searchNonExist: false,
-  wikiAuthority: 1,
-  connectAuthority: 2,
-  searchAuthority: 1,
+  searchIfNotExist: false,
+  showDetailsByDefault: false,
+  cmdAuthWiki: 1,
+  cmdAuthConnect: 2,
+  cmdAuthSearch: 1,
 }
 export type Config = Partial<ConfigInit>
 
 export const name = 'mediawiki'
 
 export default class PluginMediawiki {
-  INFOBOX_MAP: typeof INFOBOX_MAP
+  public INFOBOX_MAP = INFOBOX_MAP
 
   constructor(public ctx: Context, public config: Config = {}) {
     this.config = { ...defaultConfig, ...config }
-    // ctx.using(['database', 'puppeteer'], () => {})
     ctx.model.extend('channel', {
       mwApi: 'string',
     })
     this.init()
-    this.INFOBOX_MAP = INFOBOX_MAP
   }
 
   get logger() {
@@ -73,12 +70,18 @@ export default class PluginMediawiki {
     // @command wiki
     this.ctx
       .command('wiki [titles:text]', 'MediaWiki 相关功能', {
-        authority: this.config.wikiAuthority,
+        authority: this.config.cmdAuthWiki,
       })
       .example('wiki 页面 - 获取页面链接')
       .channelFields(['mwApi'])
-      .option('details', '-d 显示页面的更多资讯', { type: 'boolean' })
-      .option('search', '-s 如果页面不存在就进行搜索', { type: 'boolean' })
+      .option('details', '-d 显示页面的更多资讯', {
+        type: 'boolean',
+        fallback: this.config.showDetailsByDefault,
+      })
+      .option('search', '-s 如果页面不存在就进行搜索', {
+        type: 'boolean',
+        fallback: this.config.searchIfNotExist,
+      })
       .option('quiet', '-q 静默执行（忽略未绑定提示）', {
         type: 'boolean',
         hidden: true,
@@ -110,7 +113,7 @@ export default class PluginMediawiki {
             }
           })
           .filter((i) => !!i.name)
-          .reverse()
+          .slice(0, 5)
 
         const { data } = await api
           .get<{
@@ -131,9 +134,11 @@ export default class PluginMediawiki {
             titles: titles.map((i) => i.name),
             redirects: 1,
             converttitles: 1,
-            exchars: '150',
+            exchars: '120',
             exlimit: 'max',
             explaintext: 1,
+            exintro: 1,
+            exsectionformat: 'plain',
             inprop: 'url|displaytitle',
           })
           .catch((e) => {
@@ -221,7 +226,7 @@ export default class PluginMediawiki {
             // 页面名不合法
             if (invalid !== undefined) {
               msg.push(
-                `页面名称不合法：${
+                `😟页面名称不合法：${
                   JSON.stringify(page.invalidreason) || '原因未知'
                 }`
               )
@@ -237,9 +242,9 @@ export default class PluginMediawiki {
             // 不存在页面
             else if (missing !== undefined) {
               if (!options?.search) {
-                msg.push(`${editurl} (页面不存在)`)
+                msg.push(`${editurl} (💔页面不存在)`)
               } else {
-                msg.push(`${editurl} (页面不存在，以下是搜索结果)`)
+                msg.push(`${editurl}\n💡页面不存在，即将搜索wiki……`)
               }
             } else {
               const shortUrl = getUrl(mwApi, { curid: pageid })
@@ -248,6 +253,10 @@ export default class PluginMediawiki {
                   ? shortUrl
                   : canonicalurl) + pageAnchor
               )
+            }
+
+            if (options?.details && page.extract) {
+              msg.push(page.extract)
             }
 
             return msg.join('\n')
@@ -270,6 +279,7 @@ export default class PluginMediawiki {
           finalMsg = msgBuilder.prependOriginal().all()
         }
 
+        // 结果有且仅有一个存在的主名字空间的页面
         if (
           pages &&
           pages.length === 1 &&
@@ -279,7 +289,20 @@ export default class PluginMediawiki {
         ) {
           await session.send(finalMsg)
           session.send(await this.shotInfobox(pages[0].canonicalurl))
-        } else {
+        }
+        // 结果有且仅有一个不存在的主名字空间的页面
+        else if (
+          options?.search &&
+          pages.length === 1 &&
+          pages[0].ns === 0 &&
+          pages[0].missing &&
+          !pages[0].invalid
+        ) {
+          await session.send(finalMsg)
+          await session.execute(`wiki.search ${pages[0].title}`)
+        }
+        // 其他情况
+        else {
           return finalMsg
         }
       })
@@ -297,38 +320,43 @@ export default class PluginMediawiki {
     // @command wiki.link
     this.ctx
       .command('wiki.connect [api:string]', '将群聊与 MediaWiki 网站连接', {
-        authority: this.config.linkAuthority,
+        authority: this.config.cmdAuthConnect,
       })
       .alias('wiki.link')
       .channelFields(['mwApi'])
       .action(async ({ session }, api) => {
         if (!session?.channel) throw new Error()
         const { channel } = session
+
         if (!api) {
           return channel.mwApi
-            ? `本群已与 ${channel.mwApi} 连接。`
+            ? `本群已与 ${channel.mwApi} 连接~`
             : '本群未连接到 MediaWiki 网站，请使用“wiki.connect <api网址>”进行连接。'
-        } else if (isValidApi(api)) {
-          channel.mwApi = api
-          await session.channel.$update()
-          return session.execute('wiki.connect')
-        } else {
+        }
+
+        if (!isValidApi(api)) {
           return '输入的不是合法 api.php 网址。'
         }
+
+        channel.mwApi = api
+        await session.channel.$update()
+        return session.execute('wiki.connect')
       })
 
     // @command wiki.search
     this.ctx
-      .command('wiki.search [srsearch:text]')
+      .command('wiki.search [keywords:text]', '搜索wiki，并展示靠前的结果', {
+        minInterval: 10 * Time.second,
+      })
       .channelFields(['mwApi'])
-      .action(async ({ session }, srsearch) => {
+      .action(async ({ session }, keywords) => {
         if (!session?.channel?.mwApi) {
           return session?.execute('wiki.connect -h')
         }
-        if (!srsearch) {
+        if (!keywords) {
           session.sendQueued('要搜索什么呢？(输入空行或句号取消)')
-          srsearch = (await session.prompt(30 * 1000)).trim()
-          if (!srsearch || srsearch === '.' || srsearch === '。') return ''
+          keywords = (await session.prompt(30 * 1000)).trim()
+          if (!keywords || keywords === '.' || keywords === '。') return ''
         }
         const api = useApi(session.channel.mwApi)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -337,6 +365,7 @@ export default class PluginMediawiki {
             query: {
               searchinfo: { totalhits },
               search,
+              pages,
             },
           },
         } = await api.post<{
@@ -344,63 +373,68 @@ export default class PluginMediawiki {
             searchinfo: {
               totalhits: number
             }
+            pages: {
+              pageid: number
+              ns: number
+              title: string
+              index: number
+              extract: string
+            }[]
             search: {
               ns: number
               title: string
               pageid: number
-              size: number
-              wordcount: number
-              snippet: string
-              timestamp: string
             }[]
           }
         }>({
           action: 'query',
+          prop: 'extracts',
           list: 'search',
-          srsearch,
-          srlimit: 3,
-          redirects: 'true',
+          generator: 'search',
+          exchars: '120',
+          exintro: 1,
+          explaintext: 1,
+          exsectionformat: 'plain',
+          srsearch: keywords,
+          srnamespace: '0',
+          srlimit: '5',
+          srinfo: 'totalhits',
+          srprop: '',
+          gsrsearch: keywords,
+          gsrnamespace: '0',
+          gsrlimit: '5',
         })
 
-        const msg: string[] = []
+        const bulk = new BulkMessageBuilder(session)
 
         if (search.length < 1) {
-          return `关键词“${srsearch}”没有匹配结果。`
+          return `💔找不到与“${keywords}”匹配的结果。`
         } else if (search.length === 1) {
-          return session.execute(`wiki ${search[0].title}`)
+          return session.execute(`wiki -d ${search[0].title}`)
         } else {
-          msg.push(
-            `🔍关键词“${srsearch}”共匹配到 ${totalhits} 个相关结果，展示前 ${search.length} 个：`
+          bulk.prependOriginal()
+          bulk.botSay(
+            `🔍关键词“${keywords}”共匹配到 ${totalhits} 个相关结果，我来简单整理一下前 ${search.length} 个结果：`
           )
         }
-        search.forEach((item, index: number) => {
-          msg.push(
-            `${index + 1} ${item.title}${
-              item.snippet
-                ? '\n    ' +
-                  item.snippet
-                    .trim()
-                    .replace(/<.+?>/g, '')
-                    .replace(/\n/g, '\n    ')
-                : ''
-            }`
-          )
-        })
-        msg.push('✍️请输入想查看的页面编号')
+        pages
+          .sort((a, b) => a.index - b.index)
+          .forEach((item, index: number) => {
+            bulk.botSay(
+              `(${index + 1}) ${item.title}
+${item.extract}
+${getUrl(session.channel!.mwApi!, { curid: item.pageid })}`
+            )
+          })
 
-        await session.sendQueued(msg.join('\n'))
-
-        const choose = parseInt(await session.prompt(30 * 1000))
-        if (!isNaN(choose) && search[choose - 1]) {
-          session.execute('wiki --details ' + search[choose - 1].title)
-        }
+        return bulk.all()
       })
   }
 
   async shotInfobox(url: string) {
     const matched = this.INFOBOX_MAP.find((i) => i.match(new URL(url)))
     if (!matched) return ''
-    this.logger.info('SHOT_INFOBOX', url, matched.cssClasses)
+    this.logger.info('SHOT_INFOBOX', url, matched.selector)
     const start = Date.now()
     const timeSpend = () => ((Date.now() - start) / 1000).toFixed(3) + 's'
 
@@ -436,6 +470,19 @@ export default class PluginMediawiki {
         `(page HAS ${pageLoaded ? '' : 'NOT'} loaded)`,
         e
       )
+
+      await page
+        .$('.mw-parser-output')
+        .then((i) => {
+          this.logger.info(
+            'SHOT_INFOBOX',
+            '`.mw-parser-output` exist, render it anyway'
+          )
+          pageLoaded = true
+          return i
+        })
+        .catch((e) => {})
+
       if (!pageLoaded) {
         await page.close()
         return ''
@@ -450,9 +497,9 @@ export default class PluginMediawiki {
 
     try {
       const target = await page.$(
-        Array.isArray(matched.cssClasses)
-          ? matched.cssClasses.join(', ')
-          : matched.cssClasses
+        Array.isArray(matched.selector)
+          ? matched.selector.join(',')
+          : matched.selector
       )
       if (!target) {
         this.logger.info('SHOT_INFOBOX', 'Canceled', 'Missing target')

@@ -242,7 +242,10 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginYoudao)
 
   // MediaWiki
-  ctx.plugin(PluginMediawiki)
+  ctx.plugin(PluginMediawiki, {
+    searchIfNotExist: true,
+    showDetailsByDefault: true,
+  })
   ctx.command('wiki.connect').config.authority = 2
 })
 
