@@ -170,10 +170,10 @@ app.plugin(function PluginCollectionConsole(ctx) {
     uiPath: '/dash',
     apiPath: '/api/status',
   })
-  ctx.plugin('auth')
   ctx.plugin('dataview')
   ctx.plugin('insight')
   ctx.plugin('status')
+  ctx.plugin('login', { admin: { enabled: false } })
   ctx.plugin('logger')
   ctx.plugin('sandbox')
 })

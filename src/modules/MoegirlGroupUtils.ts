@@ -49,6 +49,7 @@ const COMMAND_WHITELIST = [
   'siliname',
   'mute',
   'recall',
+  'profile',
 ]
 // const EXCEPTION_USERS = []
 

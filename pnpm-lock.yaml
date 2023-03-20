@@ -4,7 +4,6 @@ specifiers:
   '@koishijs/plugin-adapter-discord': ^3.5.7
   '@koishijs/plugin-adapter-onebot': ^5.6.2
   '@koishijs/plugin-admin': ^1.2.1
-  '@koishijs/plugin-auth': ^3.0.2
   '@koishijs/plugin-bind': ^1.4.1
   '@koishijs/plugin-broadcast': ^1.1.2
   '@koishijs/plugin-callme': ^1.3.2
@@ -16,12 +15,12 @@ specifiers:
   '@koishijs/plugin-help': ^2.2.1
   '@koishijs/plugin-insight': ^3.3.3
   '@koishijs/plugin-logger': ^2.2.3
+  '@koishijs/plugin-login': ^3.1.0
   '@koishijs/plugin-puppeteer': ^3.2.0
   '@koishijs/plugin-rate-limit': ^1.3.2
   '@koishijs/plugin-recall': ^1.2.0
   '@koishijs/plugin-repeater': ^1.1.3
   '@koishijs/plugin-sandbox': ^2.7.1
-  '@koishijs/plugin-schedule': ^4.3.2
   '@koishijs/plugin-status': ^7.1.2
   '@koishijs/plugin-switch': ^1.0.6
   '@koishijs/plugin-teach': ^3.2.2
@@ -47,6 +46,7 @@ specifiers:
   koishi-plugin-github: ^5.3.0
   koishi-plugin-image-search: ^4.2.2
   koishi-plugin-mediawiki: ^2.0.0
+  koishi-plugin-schedule: ^4.4.2
   mediawiki-api-axios: ^1.3.2
   mint-filter: ^4.0.2
   tsx: ^3.12.5
@@ -57,7 +57,6 @@ dependencies:
   '@koishijs/plugin-adapter-discord': 3.5.7_koishi@4.12.1
   '@koishijs/plugin-adapter-onebot': 5.6.2_koishi@4.12.1
   '@koishijs/plugin-admin': 1.2.1_koishi@4.12.1
-  '@koishijs/plugin-auth': 3.0.2_zzqqsyervldecsnkbcmxoryaem
   '@koishijs/plugin-bind': 1.4.1_koishi@4.12.1
   '@koishijs/plugin-broadcast': 1.1.2_koishi@4.12.1
   '@koishijs/plugin-callme': 1.3.2_koishi@4.12.1
@@ -69,12 +68,12 @@ dependencies:
   '@koishijs/plugin-help': 2.2.1_koishi@4.12.1
   '@koishijs/plugin-insight': 3.3.3_zzqqsyervldecsnkbcmxoryaem
   '@koishijs/plugin-logger': 2.2.3_zzqqsyervldecsnkbcmxoryaem
+  '@koishijs/plugin-login': 3.1.0_zzqqsyervldecsnkbcmxoryaem
   '@koishijs/plugin-puppeteer': 3.2.0_koishi@4.12.1
   '@koishijs/plugin-rate-limit': 1.3.2_koishi@4.12.1
   '@koishijs/plugin-recall': 1.2.0_koishi@4.12.1
   '@koishijs/plugin-repeater': 1.1.3_koishi@4.12.1
   '@koishijs/plugin-sandbox': 2.7.1_zzqqsyervldecsnkbcmxoryaem
-  '@koishijs/plugin-schedule': 4.3.2_koishi@4.12.1
   '@koishijs/plugin-status': 7.1.2_zzqqsyervldecsnkbcmxoryaem
   '@koishijs/plugin-switch': 1.0.6_koishi@4.12.1
   '@koishijs/plugin-teach': 3.2.2_koishi@4.12.1
@@ -94,6 +93,7 @@ dependencies:
   koishi-plugin-github: 5.3.0_koishi@4.12.1
   koishi-plugin-image-search: 4.2.2_koishi@4.12.1
   koishi-plugin-mediawiki: 2.0.0_koishi@4.12.1
+  koishi-plugin-schedule: 4.4.2_koishi@4.12.1
   mediawiki-api-axios: 1.3.2
   mint-filter: 4.0.2
 
@@ -1503,17 +1503,6 @@ packages:
       koishi: 4.12.1
     dev: false
 
-  /@koishijs/plugin-auth/3.0.2_zzqqsyervldecsnkbcmxoryaem:
-    resolution: {integrity: sha512-G49HCQbCWxgHaEtUxLs/jvndggSaOBWI1Zq91YEXcsdBQKyfhksWe053TZBEpr8gq5/seUaKqoQZnFdZsfXI3w==}
-    deprecated: please use @koishijs/plugin-login instead
-    peerDependencies:
-      '@koishijs/plugin-console': ^5.5.4
-      koishi: ^4.12.0
-    dependencies:
-      '@koishijs/plugin-console': 5.5.5_koishi@4.12.1
-      koishi: 4.12.1
-    dev: false
-
   /@koishijs/plugin-bind/1.4.1_koishi@4.12.1:
     resolution: {integrity: sha512-vECemephpWgtX5CVUFwMrgJ0mMBzMQIfMmgfrZNYWOnZb/0BP/9EFjdiZefomXUg6zMO8Yug2fPFrszfsUojhg==}
     peerDependencies:
@@ -1625,6 +1614,16 @@ packages:
       koishi: 4.12.1
     dev: false
 
+  /@koishijs/plugin-login/3.1.0_zzqqsyervldecsnkbcmxoryaem:
+    resolution: {integrity: sha512-Lga/xlG5jFOvzHxXw2FjaColkOEXKnaXu1kcRSSuCfK7oosehBTJe+jcZyn7OAUC5IhaOoavUVrLrp/S/OOH8g==}
+    peerDependencies:
+      '@koishijs/plugin-console': ^5.5.4
+      koishi: ^4.12.0
+    dependencies:
+      '@koishijs/plugin-console': 5.5.5_koishi@4.12.1
+      koishi: 4.12.1
+    dev: false
+
   /@koishijs/plugin-puppeteer/3.2.0_koishi@4.12.1:
     resolution: {integrity: sha512-DY/03dsI1cNuxNxbwLi+rkGkp7cIbKZlPj4claZ4G2zS4YMOui0UlevxQXoqwAKiFBnPTttKSzaA4iLml2NUsQ==}
     peerDependencies:
@@ -1672,15 +1671,6 @@ packages:
       koishi: ^4.12.0
     dependencies:
       '@koishijs/plugin-console': 5.5.5_koishi@4.12.1
-      koishi: 4.12.1
-    dev: false
-
-  /@koishijs/plugin-schedule/4.3.2_koishi@4.12.1:
-    resolution: {integrity: sha512-I4h4u3Tp48qazNboHBH8YKXayZF/vEYtQ8arpQN4+hg+gMTJS1LDu4gHRrwJrpvy/Lpl6O2G+Y456r4W1a2S0A==}
-    deprecated: please use koishi-plugin-schedule instead
-    peerDependencies:
-      koishi: ^4.10.3
-    dependencies:
       koishi: 4.12.1
     dev: false
 
@@ -3751,6 +3741,14 @@ packages:
       tslib: 2.5.0
     transitivePeerDependencies:
       - debug
+    dev: false
+
+  /koishi-plugin-schedule/4.4.2_koishi@4.12.1:
+    resolution: {integrity: sha512-KEPrLIAQh5Z+iDnhXVMBMjZQzCtAErOb2aKJbiQN5YIUD89w/daMATD9Q10f9xzjZkQP+E8ftjwHgbuhslGByQ==}
+    peerDependencies:
+      koishi: ^4.10.0
+    dependencies:
+      koishi: 4.12.1
     dev: false
 
   /koishi/4.12.1:
