@@ -96,7 +96,6 @@ app.plugin(function PluginCollectionLegacy(ctx) {
   ctx.plugin(function PluginCollectionLegacyCore(ctx) {
     ctx.plugin('help')
     ctx.plugin('commands')
-    ctx.plugin('suggest')
     ctx.plugin('switch')
     ctx.plugin('assets-s3', {
       credentials: {

@@ -5,7 +5,7 @@
  * @author Koishijs(机智的小鱼君) <dragon-fish@qq.com>
  * @license Apache-2.0
  */
-import { Context, segment, Time } from 'koishi'
+import { Context, h, Time } from 'koishi'
 import {} from '@koishijs/plugin-database-mongo'
 import {} from '@koishijs/plugin-puppeteer'
 import type {
@@ -50,7 +50,6 @@ const defaultConfig = {
 export type Config = Partial<ConfigInit>
 
 export const name = 'mediawiki'
-
 export default class PluginMediawiki {
   public INFOBOX_MAP = INFOBOX_MAP
 
@@ -268,9 +267,9 @@ export default class PluginMediawiki {
           }) || []
 
         const allMsgList = [...pageMsgs, ...interwikiMsgs]
-        let finalMsg: string | segment = ''
+        let finalMsg: string | h = ''
         if (allMsgList.length === 1) {
-          finalMsg = segment.quote(session.messageId as string) + allMsgList[0]
+          finalMsg = h.quote(session.messageId as string) + allMsgList[0]
         } else if (allMsgList.length > 1) {
           const msgBuilder = new BulkMessageBuilder(session)
           allMsgList.forEach((i) => {
@@ -510,7 +509,7 @@ ${getUrl(session.channel!.mwApi!, { curid: item.pageid })}`
       console.info('[TIMER]', 'OK', timeSpend())
       this.logger.info('SHOT_INFOBOX', 'OK', img)
       await page.close()
-      return segment.image(img)
+      return h.image(img, 'image/jpeg')
     } catch (e) {
       this.logger.warn('SHOT_INFOBOX', 'Failed', e)
       await page?.close()
