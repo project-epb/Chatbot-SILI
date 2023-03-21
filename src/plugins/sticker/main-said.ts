@@ -1,5 +1,5 @@
 import { BaseSticker } from './_base'
-import { Context, segment as s, Time } from 'koishi'
+import { Context, h, Time } from 'koishi'
 
 export default class 梅因说 extends BaseSticker {
   constructor(ctx: Context) {
@@ -13,7 +13,7 @@ export default class 梅因说 extends BaseSticker {
         if (!session) return
 
         try {
-          const img = await this.render.html(
+          const img = await ctx.html.html(
             `
 <div
   style="position: relative; display: inline-block;"
@@ -40,7 +40,7 @@ export default class 梅因说 extends BaseSticker {
                   `,
             '#sticker'
           )
-          return img ? s.image(img) : '生成表情包时出现问题。'
+          return img ? h.image(img) : '生成表情包时出现问题。'
         } catch (err) {
           this.logger.error(err)
           return '生成表情包时出现问题。'

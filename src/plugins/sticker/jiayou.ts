@@ -1,5 +1,5 @@
 import { BaseSticker } from './_base'
-import { Context, segment as s, Time } from 'koishi'
+import { Context, h, Time } from 'koishi'
 import {} from '@koishijs/plugin-rate-limit'
 
 export default class 加油 extends BaseSticker {
@@ -100,8 +100,8 @@ export default class 加油 extends BaseSticker {
 </span>
 `
 
-        const img = await this.render.html(html, '#sticker')
-        return img ? s.image(img) : ''
+        const img = await ctx.html.html(html, '#sticker')
+        return img ? h.image(img) : ''
       })
   }
 }

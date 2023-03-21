@@ -5,7 +5,7 @@
  * @authority 1
  */
 
-import BasePlugin from '../_bolierplate'
+import BasePlugin from '../_boilerplate'
 import { Context } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
 import {} from '@koishijs/plugin-rate-limit'

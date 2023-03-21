@@ -1,8 +1,12 @@
-import { Context } from 'koishi'
+import { Context, Service } from 'koishi'
 import {} from '@koishijs/plugin-puppeteer'
 
-export class RenderHTML {
-  constructor(public ctx: Context) {}
+export class HTMLService extends Service {
+  static using = ['puppeteer']
+
+  constructor(public ctx: Context) {
+    super(ctx, 'html')
+  }
 
   get ppt() {
     return this.ctx.puppeteer
@@ -72,6 +76,8 @@ ${body}
   }
 
   hljs(code: string, lang = '', startFrom = 1) {
+    const rid = Math.random().toString(36).substring(2)
+
     const html = `
 <link rel="stylesheet" href="https://unpkg.com/highlight.js@11.6.0/styles/atom-one-dark.css">
 <style>
@@ -188,7 +194,7 @@ code.hljs[class~='lang-wiki']:before {
   content: 'wiki';
 }
 </style>
-<pre id="hljs-target" class="hljs"><code class="hljs ${
+<pre id="${rid}" class="hljs"><code class="hljs ${
       lang ? 'lang-' + lang : ''
     }">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
 <script src="https://unpkg.com/@highlightjs/cdn-assets@11.6.0/highlight.min.js"></script>
@@ -206,42 +212,6 @@ code.hljs[class~='lang-wiki']:before {
 })()</script>
 `
 
-    return this.html(html, '#hljs-target')
+    return this.html(html, `#${rid}`)
   }
-}
-
-export function h(
-  tag: string,
-  props?: Record<string, any> | string,
-  children?: string[] | string
-) {
-  const tagName = tag
-    .toLowerCase()
-    .replace(/^\/+/, '')
-    .replace(/\/+$/, '')
-    .split(' ')[0]
-  const isSelfClosed =
-    ['br', 'hr', 'img', 'input', 'link', 'meta'].includes(tagName) ||
-    tag.endsWith('/')
-  const makePropString = (item: Record<string, any>) => {
-    return Object.keys(item)
-      .map((i) => {
-        const key = i
-        const val = item[i]
-        if (typeof val === 'object') {
-          return `${key}="${JSON.stringify(val).replace(/"/g, '&quot;')}"`
-        }
-        return `${key}="${val ?? ''}"`
-      })
-      .join(' ')
-  }
-  return `<${tagName}${
-    !props
-      ? ''
-      : typeof props === 'string'
-      ? ' ' + props.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      : ' ' + makePropString(props)
-  }${isSelfClosed ? ' /' : ''}>${
-    typeof children === 'string' ? children : children?.join('') || ''
-  }${!isSelfClosed ? `</${tagName}>` : ''}`
 }

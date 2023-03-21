@@ -3,13 +3,9 @@
   "version": "4.1.1",
   "private": true,
   "license": "MIT",
-  "workspaces": [
-    "packages/*",
-    "plugins/*"
-  ],
   "scripts": {
-    "dev": "tsx watch ./src",
-    "start": "tsx ./src",
+    "dev": "cross-env KOISHI_ENV=dev tsx watch ./src",
+    "start": "cross-env KOISHI_ENV=prod tsx ./src",
     "env:push": "dotenv-vault push",
     "env:pull": "dotenv-vault pull"
   },
@@ -18,8 +14,6 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.3",
     "dotenv-vault": "^1.18.0",
-    "esbuild": "^0.17.12",
-    "form-data": "^4.0.0",
     "tsx": "^3.12.5",
     "typescript": "^5.0.2",
     "yml-register": "^1.1.0"

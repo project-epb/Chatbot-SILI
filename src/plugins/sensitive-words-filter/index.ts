@@ -1,9 +1,8 @@
 import { Context, Session, segment } from 'koishi'
-import BasePlugin from '../_bolierplate'
-import { useFilter } from './useFilter'
+import BasePlugin from '../_boilerplate'
 
 export default class PluginSensitiveFilter extends BasePlugin {
-  static filter = useFilter()
+  static using = ['mint']
 
   constructor(public ctx: Context) {
     super(ctx, {}, 'sensitive-filter')
@@ -13,15 +12,13 @@ export default class PluginSensitiveFilter extends BasePlugin {
   onBeforeSend(session: Session) {
     if (!session.elements) return
     const textSegs = segment.select(session.elements, 'text')
-    const pass = PluginSensitiveFilter.filter.verify(textSegs.join(' '))
+    const pass = this.ctx.mint.verify(textSegs.join(' '))
     if (!pass) {
       const original = session.content
       session.elements.forEach((i, index) => {
         if (i.type === 'text') {
           session.elements![index].attrs.content =
-            PluginSensitiveFilter.filter
-              .filter(i?.attrs?.content || '')
-              .text?.toString() || ''
+            this.ctx.mint.filter(i?.attrs?.content || '').text?.toString() || ''
         }
       })
       this.logger.info('send-has-sensitive', {

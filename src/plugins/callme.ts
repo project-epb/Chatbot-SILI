@@ -7,7 +7,6 @@
 
 import { Context, segment, Time } from 'koishi'
 import {} from '@koishijs/plugin-rate-limit'
-import { useFilter } from './sensitive-words-filter/useFilter'
 
 declare module 'koishi' {
   interface Channel {
@@ -19,6 +18,8 @@ declare module 'koishi' {
 }
 
 export default class PatchCallme {
+  static using = ['mint']
+
   constructor(public ctx: Context) {
     ctx
       .command('callme', '', { minInterval: Time.hour, maxUsage: 5 })
@@ -45,7 +46,7 @@ export default class PatchCallme {
       })
       .check((_, name) => {
         if (!name) return
-        if (/(sili)/gi.test(name) || !useFilter().validator(name)) {
+        if (/(sili)/gi.test(name) || !ctx.mint.verify(name)) {
           return `警告：无法接受的昵称。`
         }
       })

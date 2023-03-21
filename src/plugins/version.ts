@@ -5,11 +5,12 @@
  * @authority 1
  */
 
-import { Context, segment, version as KOISHI_VERSION } from 'koishi'
+import { Context, h, version as KOISHI_VERSION } from 'koishi'
 import { execSync } from 'child_process'
-import { RenderHTML } from '../utils/RenderHTML'
 
 export default class PluginVersion {
+  static using = ['html']
+
   constructor(public ctx: Context) {
     ctx
       .command('version', '查看SILI版本信息')
@@ -44,16 +45,16 @@ export default class PluginVersion {
               }`
           )
 
-        const render = new RenderHTML(ctx)
-        const img = await render.text(
+        const img = await ctx.html.hljs(
           [
             `[SILI Core] v${SILI_CORE.version} (${GIT_HASH})`,
             `[Onebot] protocol ${ONEBOT.protocol_version} / go-cqhttp ${ONEBOT.version}`,
             `[Koishi.js] v${KOISHI_VERSION}`,
             `  - ${plugins.join('\n  - ')}`,
-          ].join('\n')
+          ].join('\n'),
+          'markdown'
         )
-        return img ? segment.image(img) : '检查版本时发生未知错误。'
+        return img ? h.image(img) : '检查版本时发生未知错误。'
       })
   }
 

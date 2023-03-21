@@ -9,37 +9,51 @@ import 'dotenv/config'
 import { App, type Session, Random, Time } from 'koishi'
 import { findChrome } from 'find-chrome-bin'
 
-import {} from '@koishijs/plugin-help'
+// Types
 import {} from '@koishijs/plugin-database-mongo'
+import {} from '@koishijs/plugin-help'
 import {} from '@koishijs/plugin-rate-limit'
 import {} from '@koishijs/plugin-switch'
 
-import PluginPing from './plugins/ping'
-import MessagesLogger from './modules/MessagesLogger'
+// Services
+import { HTMLService } from './utils/RenderHTML'
+
+// Plugins
 import PatchCallme from './plugins/callme'
-import PluginMute from './plugins/mute'
-import MgpGroupUtils from './modules/MoegirlGroupUtils'
-import PluginPixiv from './plugins/pixiv'
-import PluginVerifyFandomUser from './plugins/verifyFandomUser'
-import FandomDiscordConnect from './modules/fandomDiscordConnect'
 import PluginAbout from './plugins/about'
-import PluginVersion from './plugins/version'
-import ProcessErrorHandler from './modules/ProcessErrorHandler'
+import PluginHljs from './plugins/hljs'
+import PluginMediawiki from './plugins/mediawiki'
+import PluginMute from './plugins/mute'
+import PluginPing from './plugins/ping'
+import PluginPixiv from './plugins/pixiv'
+import PluginPowerUser from './plugins/powerUser'
 import PluginProfile from './plugins/profile'
 import PluginQueue from './plugins/queue'
+import PluginSensitiveFilter from './plugins/sensitive-words-filter'
 import PluginSiliName from './plugins/siliName'
 import PluginSticker from './plugins/sticker'
+import PluginVerifyFandomUser from './plugins/verifyFandomUser'
+import PluginVersion from './plugins/version'
 import PluginYoudao from './plugins/youdao'
-import { PluginHljs } from './plugins/hljs'
-import PluginPowerUser from './plugins/powerUser'
-import PluginMediawiki from './plugins/mediawiki'
-import PluginSensitiveFilter from './plugins/sensitive-words-filter'
+
+// Modules
+import FandomDiscordConnect from './modules/fandomDiscordConnect'
+import MessagesLogger from './modules/MessagesLogger'
+import MintFilterService from './plugins/sensitive-words-filter/MintFilterService'
+import MgpGroupUtils from './modules/MoegirlGroupUtils'
+import ProcessErrorHandler from './modules/ProcessErrorHandler'
 
 interface RepeatState {
   content: string
   repeated: boolean
   times: number
   users: Record<number, number>
+}
+
+declare module 'koishi' {
+  interface Context {
+    html: HTMLService
+  }
 }
 
 const { env } = process
@@ -251,7 +265,9 @@ app.plugin(function PluginCollectionSILICore(ctx) {
 // Internal utils
 app.plugin(function PluginCollectionInternal(ctx) {
   // ctx.plugin(FandomDiscordConnect)
+  ctx.plugin(HTMLService)
   ctx.plugin(MessagesLogger)
+  ctx.plugin(MintFilterService)
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)
   ctx.plugin(ProcessErrorHandler)

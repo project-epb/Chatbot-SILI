@@ -1,5 +1,5 @@
 import { Context } from 'koishi'
-import BasePlugin from './_bolierplate'
+import BasePlugin from './_boilerplate'
 
 export default class PluginPowerUser extends BasePlugin {
   get userList() {
