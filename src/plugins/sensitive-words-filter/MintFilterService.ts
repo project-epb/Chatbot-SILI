@@ -1,13 +1,7 @@
-import { Context, Service } from 'koishi'
+import { Context } from 'koishi'
 import { readFile } from 'fs/promises'
 import Mint from 'mint-filter'
 import { resolve } from 'path'
-
-declare module 'koishi' {
-  interface Context {
-    mint: Mint
-  }
-}
 
 Context.service('mint')
 export default class MintFilterService {

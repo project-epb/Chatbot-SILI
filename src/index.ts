@@ -50,12 +50,6 @@ interface RepeatState {
   users: Record<number, number>
 }
 
-declare module 'koishi' {
-  interface Context {
-    html: HTMLService
-  }
-}
-
 const { env } = process
 
 /** 初始化 Koishi 实例 */

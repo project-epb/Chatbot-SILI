@@ -280,8 +280,7 @@ export default class PluginMediawiki {
 
         // 结果有且仅有一个存在的主名字空间的页面
         if (
-          pages &&
-          pages.length === 1 &&
+          pages?.length === 1 &&
           pages[0].ns === 0 &&
           !pages[0].missing &&
           !pages[0].invalid
@@ -292,7 +291,7 @@ export default class PluginMediawiki {
         // 结果有且仅有一个不存在的主名字空间的页面
         else if (
           options?.search &&
-          pages.length === 1 &&
+          pages?.length === 1 &&
           pages[0].ns === 0 &&
           pages[0].missing &&
           !pages[0].invalid
