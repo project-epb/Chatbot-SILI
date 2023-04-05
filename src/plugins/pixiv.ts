@@ -34,9 +34,12 @@ export default class PluginPixiv {
 
         this.logger.info({ id, options })
 
-        let data
+        let info, pages
         try {
-          data = (await axios.get(`${API_BASE}/api/illust/${id}`)).data
+          ;[{ data: info }, { data: pages }] = await Promise.all([
+            axios.get(`${API_BASE}/ajax/illust/${id}?full=1`),
+            axios.get(`${API_BASE}/ajax/illust/${id}/pages`),
+          ])
         } catch (error) {
           this.logger.warn(error)
           return [
@@ -45,33 +48,27 @@ export default class PluginPixiv {
           ].join('')
         }
 
-        let imageUrl = '',
-          allPics,
-          picNums,
-          page = options!.page as number
+        const totalImages = pages.length
+        const selectedPage = Math.min(totalImages, options!.page as number)
+        const imageUrl = options!.original
+          ? pages[selectedPage - 1].urls.original
+          : pages[selectedPage - 1].urls.regular
 
-        allPics = data.pages
-        picNums = allPics.length
-        page = Math.min(picNums, page)
-        imageUrl = options!.original
-          ? allPics[page - 1].urls.original
-          : allPics[page - 1].urls.regular
-
-        const desc = data.description
+        const desc = info.description
           .replace(/<br.*?\/>/g, '\n')
           .replace(/<\/?.+>/g, '')
-        const allTags = data.tags.tags.map((i: any) => `#${i.tag}#`)
+        const allTags = info.tags.tags.map((i: any) => `#${i.tag}`)
 
         const builder = new BulkMessageBuilder(session)
         builder.prependOriginal()
         const lines = [
           segment.image(`${API_BASE}${imageUrl}`),
-          picNums ? `第 ${page} 张，共 ${picNums} 张` : null,
-          `标题：${data.title}`,
-          `作者：${data.userName} (${data.userId})`,
+          totalImages ? `第 ${selectedPage} 张，共 ${totalImages} 张` : null,
+          `标题：${info.title}`,
+          `作者：${info.userName} (${info.userId})`,
           desc.length > 300 ? desc.substring(0, 300) + '...' : desc,
           `标签：${allTags.length > 0 ? allTags.join(' ') : '无'}`,
-          `${API_BASE}/i/${data.id}`,
+          `${API_BASE}/i/${info.id}`,
         ].map((i) =>
           typeof i === 'string' ? i.trim().replace(/\n+/g, '\n') : i
         )
@@ -89,7 +86,7 @@ export default class PluginPixiv {
 
         let data
         try {
-          data = (await axios.get(`${API_BASE}/api/user/${id}`)).data
+          data = (await axios.get(`${API_BASE}/ajax/user/${id}?full=1`)).data
         } catch (error) {
           this.logger.warn(error)
           return [
