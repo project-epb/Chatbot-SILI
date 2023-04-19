@@ -360,11 +360,7 @@ export default class PluginMediawiki {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const {
           data: {
-            query: {
-              searchinfo: { totalhits },
-              search,
-              pages,
-            },
+            query: { searchinfo, search, pages },
           },
         } = await api.post<{
           query: {
@@ -412,7 +408,9 @@ export default class PluginMediawiki {
         } else {
           bulk.prependOriginal()
           bulk.botSay(
-            `🔍关键词“${keywords}”共匹配到 ${totalhits} 个相关结果，我来简单整理一下前 ${search.length} 个结果：`
+            `🔍关键词“${keywords}”共匹配到 ${
+              searchinfo?.totalhits ?? '∅'
+            } 个相关结果，我来简单整理一下前 ${search.length} 个结果：`
           )
         }
         pages
@@ -420,7 +418,7 @@ export default class PluginMediawiki {
           .forEach((item, index: number) => {
             bulk.botSay(
               `(${index + 1}) ${item.title}
-${item.extract}
+${item.extract || '(无摘要)'}
 ${getUrl(session.channel!.mwApi!, { curid: item.pageid })}`
             )
           })
@@ -439,7 +437,7 @@ ${getUrl(session.channel!.mwApi!, { curid: item.pageid })}`
     // 使用 render 模式或者 fallback 皮肤有效剔除不必要的内容，加快页面加载速度
     const renderUrl = new URL(url)
     // renderUrl.searchParams.set('action', 'render')
-    renderUrl.searchParams.set('useskin', 'fallback')
+    renderUrl.searchParams.set('useskin', 'apioutput')
 
     let pageLoaded = false
     const page = await this.ctx.puppeteer.page()

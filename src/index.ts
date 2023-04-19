@@ -194,6 +194,8 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
     path: '/api/github',
     appId: env.TOKEN_GITHUB_APPID,
     appSecret: env.TOKEN_GITHUB_APPSECRET,
+    replyTimeout: 12 * Time.hour,
+    replyFooter: '',
   })
   ctx.plugin('image-search', {
     saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,

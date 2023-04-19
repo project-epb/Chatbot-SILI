@@ -55,8 +55,8 @@ export default class PluginPixiv {
           : pages[selectedPage - 1].urls.regular
 
         const desc = info.description
-          .replace(/<br.*?\/>/g, '\n')
-          .replace(/<\/?.+>/g, '')
+          .replace(/<br.*?>/g, '\n')
+          .replace(/<\/?.+?>/g, '')
         const allTags = info.tags.tags.map((i: any) => `#${i.tag}`)
 
         const builder = new BulkMessageBuilder(session)
@@ -64,10 +64,12 @@ export default class PluginPixiv {
         const lines = [
           segment.image(`${API_BASE}${imageUrl}`),
           totalImages ? `第 ${selectedPage} 张，共 ${totalImages} 张` : null,
-          `标题：${info.title}`,
-          `作者：${info.userName} (${info.userId})`,
-          desc.length > 300 ? desc.substring(0, 300) + '...' : desc,
-          `标签：${allTags.length > 0 ? allTags.join(' ') : '无'}`,
+          `${info.title}`,
+          desc.length > 500 ? desc.substring(0, 500) + '...' : desc,
+          `作者: ${info.userName} (ID: ${info.userId})`,
+          `👍${info.likeCount} ❤️${info.bookmarkCount} 👀${info.viewCount}`,
+          `发布时间: ${new Date(info.createDate).toLocaleString()}`,
+          allTags.length ? allTags.join(' ') : null,
           `${API_BASE}/i/${info.id}`,
         ].map((i) =>
           typeof i === 'string' ? i.trim().replace(/\n+/g, '\n') : i
