@@ -1,4 +1,4 @@
-import { MediaWikiApi } from 'mediawiki-api-axios'
+import { MediaWikiApi } from 'wiki-saikou'
 
 const MOCK_HEADER = {
   'User-Agent':
