@@ -3,7 +3,6 @@ import { readFile } from 'fs/promises'
 import Mint from 'mint-filter'
 import { resolve } from 'path'
 
-Context.service('mint')
 export default class MintFilterService {
   constructor(public ctx: Context) {
     this.start()
@@ -22,6 +21,7 @@ export default class MintFilterService {
       .map((i) => i.trim())
       .filter((i) => !!i && !i.startsWith('//') && !i.startsWith('#'))
     this.ctx.root.mint = new Mint(words)
+    Context.service('mint')
     console.info(
       `[Mint] filter loaded ${words.length} words`,
       Date.now() - start

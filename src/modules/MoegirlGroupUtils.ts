@@ -22,46 +22,46 @@ declare module 'koishi' {
   }
 }
 
-const MUTE_DURATION = [0, 10 * Time.minute, 2 * Time.hour, 1 * Time.day]
-
-// Constants
-const KEYWORDS_BLACKLIST = JSON.parse(
-  process.env.MOEGIRL_KEYWORDS_BLACKLIST || '[]'
-)
-const COMMAND_WHITELIST = [
-  // functions
-  // 'wiki',
-  // utils
-  'ping',
-  'dialogue',
-  'teach',
-  'schedule',
-  'queue',
-  'help',
-  'switch',
-  // administration
-  'sudo',
-  'echo',
-  'auth',
-  'user',
-  'channel',
-  'dbadmin',
-  'siliname',
-  'mute',
-  'recall',
-  'profile',
-]
-// const EXCEPTION_USERS = []
-
-// Cache RegExp
-const KEYWORDS_BLACKLIST_REG = new RegExp(
-  `(${KEYWORDS_BLACKLIST.join('|')})`,
-  'i'
-)
-const COMMAND_THITELIST_REG = new RegExp(`^(${COMMAND_WHITELIST.join('|')})`)
-
 export default class MoegirlGroupUtils {
+  // Constants
+  MUTE_DURATION = [0, 10 * Time.minute, 2 * Time.hour, 1 * Time.day]
+  KEYWORDS_BLACKLIST =
+    process.env.MOEGIRL_KEYWORDS_BLACKLIST?.split('\n')
+      .map((i) => i.trim())
+      .filter((i) => !!i) || []
+  COMMAND_WHITELIST = [
+    // functions
+    // 'wiki',
+    // utils
+    'ping',
+    'dialogue',
+    'teach',
+    'schedule',
+    'queue',
+    'help',
+    'switch',
+    // administration
+    'sudo',
+    'echo',
+    'auth',
+    'user',
+    'channel',
+    'dbadmin',
+    'siliname',
+    'mute',
+    'recall',
+    'profile',
+  ]
+  // const EXCEPTION_USERS = []
+  // Cache RegExp
+  KEYWORDS_BLACKLIST_REG = this.KEYWORDS_BLACKLIST.length
+    ? new RegExp(`(${this.KEYWORDS_BLACKLIST.join('|')})`, 'i')
+    : null
+  COMMAND_THITELIST_REG = new RegExp(`^(${this.COMMAND_WHITELIST.join('|')})`)
+
   constructor(public ctx: Context) {
+    console.info(this.KEYWORDS_BLACKLIST)
+
     ctx.model.extend('user', {
       mgpGroupSpamLogs: 'list',
     })
@@ -72,7 +72,7 @@ export default class MoegirlGroupUtils {
 
     // 指令白名单
     ctx.on('command/before-execute', ({ command }) => {
-      if (!COMMAND_THITELIST_REG.test(command!.name)) {
+      if (!this.COMMAND_THITELIST_REG.test(command!.name)) {
         this.logger.info(command!.name, '指令不在白名单，已阻断。')
         return ''
       }
@@ -80,8 +80,11 @@ export default class MoegirlGroupUtils {
 
     // 自动禁言
     ctx.on('message', async (sess) => {
+      if (!this.KEYWORDS_BLACKLIST_REG)
+        return this.logger.warn('missing KEYWORDS_BLACKLIST')
+
       const textSegs = segment.select(sess.elements!, 'text')
-      const match = KEYWORDS_BLACKLIST_REG.exec(textSegs.join(' ') || '')
+      const match = this.KEYWORDS_BLACKLIST_REG.exec(textSegs.join(' ') || '')
       if (!match || sess.author?.roles?.find((i) => i === 'admin')) {
         return
       }
@@ -100,8 +103,8 @@ export default class MoegirlGroupUtils {
       })
 
       const count = mgpGroupSpamLogs.length
-      const duration = MUTE_DURATION[count]
-        ? MUTE_DURATION[count] / 1000
+      const duration = this.MUTE_DURATION[count]
+        ? this.MUTE_DURATION[count] / 1000
         : Infinity
 
       const log = [

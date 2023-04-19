@@ -4,8 +4,8 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "cross-env KOISHI_ENV=dev tsx watch ./src",
-    "start": "cross-env KOISHI_ENV=prod tsx ./src",
+    "dev": "cross-env NODE_ENV=development tsx watch ./src",
+    "start": "cross-env NODE_ENV=production tsx ./src",
     "env:push": "dotenv-vault push",
     "env:pull": "dotenv-vault pull"
   },

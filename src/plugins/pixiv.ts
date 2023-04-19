@@ -9,10 +9,17 @@ import { Context, segment, Time } from 'koishi'
 import axios from 'axios'
 import { BulkMessageBuilder } from '../utils/BulkMessageBuilder'
 
-const API_BASE = process.env.API_PIXIVNOW_API
+const API_BASE = process.env.API_PIXIV_BASE
 
 export default class PluginPixiv {
   constructor(public ctx: Context) {
+    const ajax = axios.create({
+      baseURL: API_BASE,
+      headers: {
+        referer: 'https://www.pixiv.net',
+      },
+    })
+
     ctx
       .command('pixiv [id:posint]', 'pixiv.net 相关功能')
       .action(({ session }, id) => {

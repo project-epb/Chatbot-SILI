@@ -5,7 +5,9 @@
  * @license MIT
  */
 
-import 'dotenv/config'
+const PROD = process.env.NODE_ENV === 'production'
+import { config } from 'dotenv'
+import { resolve } from 'path'
 import { App, type Session, Random, Time } from 'koishi'
 import { findChrome } from 'find-chrome-bin'
 
@@ -43,31 +45,22 @@ import MintFilterService from './plugins/sensitive-words-filter/MintFilterServic
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
 
-interface RepeatState {
-  content: string
-  repeated: boolean
-  times: number
-  users: Record<number, number>
-}
+// Setup .env
+config()
+config({
+  path: resolve(__dirname, '..', PROD ? '.env.production' : '.env.development'),
+  override: true,
+})
 
 const { env } = process
 
 /** 初始化 Koishi 实例 */
-const app = new App(
-  env.KOISHI_ENV === 'prod'
-    ? {
-        port: 3100,
-        selfUrl: 'https://sili.wjghj.cn',
-        nickname: ['sili', 'SILI'],
-        prefix: ['!', '！'],
-      }
-    : {
-        port: 3100,
-        selfUrl: 'http://localhost',
-        nickname: ['亚当', 'adam'],
-        prefix: [';', '；'],
-      }
-)
+const app = new App({
+  port: env.KOISHI_PROT ? +env.KOISHI_PROT : undefined,
+  selfUrl: env.KOISHI_SELF_URL,
+  nickname: env.KOISHI_NICKNAME?.split('|'),
+  prefix: env.KOISHI_PREFIX?.split('|'),
+})
 
 const logger = app.logger('INIT')
 
@@ -77,7 +70,7 @@ app.plugin('database-mongo', {
   port: Number(env.DB_MONGO_PORT),
   // username: env.DB_MONGO_USER,
   // password: env.DB_MONGO_PASSWORD,
-  database: env.KOISHI_ENV === 'prod' ? env.DB_MONGO_DATABASE : 'koishi_v4_dev',
+  database: env.DB_MONGO_DATABASE,
 })
 
 /** 安装适配器 */
@@ -85,7 +78,7 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   // QQ
   ctx.plugin('adapter-onebot', {
     protocol: env.ONEBOT_PROTOCOL,
-    selfId: env.KOISHI_ENV === 'prod' ? env.ONEBOT_SELFID : env.ACCOUNT_QQ_ADAM,
+    selfId: env.ONEBOT_SELFID,
     endpoint: env.ONEBOT_ENDPOINT,
   })
   // Discord
@@ -274,3 +267,11 @@ app.plugin(function PluginCollectionInternal(ctx) {
 app.start().then(() => {
   logger.info('🌈', 'SILI启动成功~')
 })
+
+// Types
+interface RepeatState {
+  content: string
+  repeated: boolean
+  times: number
+  users: Record<number, number>
+}
