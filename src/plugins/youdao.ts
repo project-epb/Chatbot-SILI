@@ -124,7 +124,6 @@ const LANGUAGES = {
   南非祖鲁: 'zu',
   自动: 'auto',
 }
-const API_ENDPOINT = process.env.API_YOUDAO as string
 
 export default class PluginYoudao {
   constructor(public ctx: Context) {
@@ -206,7 +205,7 @@ export default class PluginYoudao {
     if (!from) from = 'auto'
     if (!to) to = 'auto'
     const { data } = await axios.post(
-      API_ENDPOINT,
+      process.env.API_YOUDAO,
       new URLSearchParams({ q, from, to }).toString()
     )
     return data

@@ -60,8 +60,6 @@ export default class MoegirlGroupUtils {
   COMMAND_THITELIST_REG = new RegExp(`^(${this.COMMAND_WHITELIST.join('|')})`)
 
   constructor(public ctx: Context) {
-    console.info(this.KEYWORDS_BLACKLIST)
-
     ctx.model.extend('user', {
       mgpGroupSpamLogs: 'list',
     })
