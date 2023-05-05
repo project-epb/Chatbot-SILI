@@ -51,13 +51,12 @@ export const INFOBOX_MAP: {
   {
     match: (url) => url.host.endsWith('fandom.com'),
     selector: ['.mw-parser-output aside.portable-infobox'],
+    injectStyles: `.notifications-placeholder { display: none !important }`,
   },
   // 万界规划局
   {
     match: (url) => url.host.endsWith('wjghj.cn'),
-    selector: [
-      '.mw-parser-output .portable-infobox:not(.pi-theme-顶部提示小)',
-    ],
+    selector: ['.mw-parser-output .portable-infobox:not(.pi-theme-顶部提示小)'],
   },
   // 最终幻想XIV中文维基
   {

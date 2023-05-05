@@ -4,8 +4,8 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development tsx watch ./src",
-    "start": "cross-env NODE_ENV=production tsx ./src",
+    "dev": "cross-env NODE_ENV=development nodemon ./src/index.ts",
+    "start": "cross-env NODE_ENV=production nodemon ./src/index.ts",
     "env:push": "dotenv-vault push",
     "env:pull": "dotenv-vault pull"
   },
@@ -15,7 +15,9 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.3",
     "dotenv-vault": "^1.19.0",
-    "tsx": "^3.12.6",
+    "esbuild": "^0.17.18",
+    "esbuild-register": "^3.4.2",
+    "nodemon": "^2.0.22",
     "typescript": "^5.0.4",
     "yml-register": "^1.1.0"
   },

@@ -21,13 +21,11 @@ export default class PatchCallme {
   static using = ['mint']
 
   constructor(public ctx: Context) {
-    console.info('[callme] injection')
     ctx
       .command('callme', '', { minInterval: Time.hour, maxUsage: 5 })
       .channelFields(['disable'])
       .userFields(['name'])
       .check(({ session, options }, name) => {
-        console.info('[callme] check has-name', name)
         if (
           session!.channel?.disable?.includes('callme') ||
           (options as any).help
@@ -51,7 +49,6 @@ export default class PatchCallme {
       .check((_, name) => {
         if (!name) return
         const invalid = /[<>]/.test(name)
-        console.info('[callme] check invalid-value', name, invalid)
         if (invalid) {
           return `<>
               果咩，
@@ -66,7 +63,6 @@ export default class PatchCallme {
       .check((_, name) => {
         if (!name) return
         const verify = ctx.mint.verify(name)
-        console.info('[callme] check bad-words', name, verify)
         if (/(sili)/gi.test(name) || !verify) {
           return `<>
               哒咩，

@@ -1,7 +1,9 @@
-import { Context, Service } from 'koishi'
+import { Context, Logger, Service } from 'koishi'
 import { readFile } from 'fs/promises'
 import Mint from 'mint-filter'
 import { resolve } from 'path'
+
+const logger = new Logger('MintFilter')
 
 Context.service('mint')
 export default class MintFilterService {
@@ -10,7 +12,7 @@ export default class MintFilterService {
   }
   protected async start() {
     const start = Date.now()
-    console.info('[Mint] filter build start')
+    logger.info('filter build start')
     const text = await readFile(resolve(__dirname, './badwords.ini'))
       .then((val) => val.toString())
       .catch((e) => {
@@ -22,8 +24,8 @@ export default class MintFilterService {
       .map((i) => i.trim())
       .filter((i) => !!i && !i.startsWith('//') && !i.startsWith('#'))
     this.ctx.root.mint = new Mint(words)
-    console.info(
-      `[Mint] filter loaded ${words.length} words in ${Date.now() - start}ms`
+    logger.info(
+      `filter loaded ${words.length} words in ${Date.now() - start}ms`
     )
   }
 }

@@ -1,0 +1,12 @@
+{
+  "ignore": [
+    ".git",
+    "logs",
+    "node_modules"
+  ],
+  "ext": "ts,tsx,js,json",
+  "execMap": {
+    "js": "node -r esbuild-register",
+    "ts": "node -r esbuild-register"
+  }
+}

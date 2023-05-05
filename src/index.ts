@@ -119,6 +119,7 @@ app.plugin(function PluginCollectionLegacy(ctx) {
     ctx.plugin('broadcast')
     ctx.plugin('callme')
     ctx.plugin('echo')
+    ctx.command('echo', { authority: 3 })
     ctx.plugin('rate-limit')
     ctx.plugin('recall')
     const randomHit = (probability: number) => Math.random() < probability
