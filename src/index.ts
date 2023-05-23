@@ -23,6 +23,7 @@ import { HTMLService } from './utils/RenderHTML'
 // Plugins
 import PatchCallme from './plugins/callme'
 import PluginAbout from './plugins/about'
+import PluginChatSummary from './plugins/chat-summary'
 import PluginHljs from './plugins/hljs'
 import PluginMediawiki from './plugins/mediawiki'
 import PluginMute from './plugins/mute'
@@ -39,7 +40,7 @@ import PluginVersion from './plugins/version'
 import PluginYoudao from './plugins/youdao'
 
 // Modules
-import FandomDiscordConnect from './modules/fandomDiscordConnect'
+import FandomDiscordConnect from './modules/FandomDiscordConnect'
 import MessagesLogger from './modules/MessagesLogger'
 import MintFilterService from './plugins/sensitive-words-filter/MintFilterService'
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
@@ -231,6 +232,15 @@ app.plugin(function PluginCollectionDialogue(ctx) {
 // SILI Core
 app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginAbout)
+  ctx.plugin(PluginChatSummary, {
+    openaiConfiguration: {
+      basePath: 'https://api.chatanywhere.com.cn/v1',
+      organization: env.OPENAI_ORGANIZATION,
+      apiKey: env.OPENAI_APIKEY,
+    },
+    maxTokens: 500,
+    recordsPerChannel: 50,
+  })
   ctx.plugin(PluginHljs)
   ctx.plugin(PluginMute)
   ctx.plugin(PluginPing)

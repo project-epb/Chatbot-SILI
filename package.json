@@ -61,6 +61,7 @@
     "koishi-plugin-puppeteer": "^3.5.0",
     "koishi-plugin-schedule": "^4.4.2",
     "mint-filter": "^4.0.2",
+    "openai": "^3.2.1",
     "wiki-saikou": "^1.3.6"
   }
 }
