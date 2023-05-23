@@ -33,6 +33,7 @@ export default class MoegirlGroupUtils {
     // functions
     // 'wiki',
     // utils
+    'chat-summary',
     'ping',
     'dialogue',
     'teach',

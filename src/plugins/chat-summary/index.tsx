@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { Context, Session } from 'koishi/lib'
+import { Context, h, Session } from 'koishi'
 import { OpenAIApi, Configuration, ConfigurationParameters } from 'openai'
 
 interface Configs {
@@ -35,8 +35,8 @@ export default class PluginChatSummary {
   }
 
   #initListeners() {
-    this.ctx.channel().on('message', this.logRecord)
-    this.ctx.channel().on('send', this.logRecord)
+    this.ctx.channel().on('message', this.addRecord.bind(this))
+    this.ctx.channel().on('send', this.addRecord.bind(this))
   }
 
   #initCommands() {
@@ -45,17 +45,10 @@ export default class PluginChatSummary {
       .command('chat-summary', '群里刚刚都聊了些什么', {
         authority: 2,
       })
+      .alias('总结聊天记录', '刚刚群里聊了什么')
       .action(async ({ session }) => {
-        const [placeholderId] = await session.send(
-          <>
-            <quote id={session.messageId}></quote>
-            稍等，让我看看聊天记录……
-          </>
-        )
+        session.send(h.quote(session.messageId) + '稍等，让我看看聊天记录……')
         const msg = await this.summarize(session.channelId)
-        try {
-          session.bot.deleteMessage(session.channelId, placeholderId)
-        } catch (_) {}
         return msg
       })
   }
@@ -79,14 +72,14 @@ export default class PluginChatSummary {
         if (!text) {
           return '💩噗通——进行总结时出现了一些问题：\nError 返回结果为空'
         }
-        return `下面是对最后${records.length}条聊天记录的总结：\n${text}`
+        return `下面是对最后${records.length}条聊天记录的总结：\n\n${text}`
       })
       .catch((e) => {
         return `💩噗通——进行总结时出现了一些问题：\n${e}`
       })
   }
 
-  logRecord(session: Session) {
+  addRecord(session: Session) {
     const records = this.getRecords(session.channelId)
     records.push(session.toJSON())
     this.#chatRecords[session.channelId] = records.slice(
@@ -94,10 +87,8 @@ export default class PluginChatSummary {
     )
   }
   getRecords(channelId: string): Session.Payload[] {
-    return (
-      this.#chatRecords[channelId] ||
-      (() => (this.#chatRecords[channelId] = []))()
-    )
+    this.#chatRecords[channelId] = this.#chatRecords[channelId] || []
+    return this.#chatRecords[channelId]
   }
   formatRecords(records: Session.Payload[]) {
     return records
