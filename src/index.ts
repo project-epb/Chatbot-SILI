@@ -235,7 +235,6 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginChatSummary, {
     openaiConfiguration: {
       basePath: 'https://api.chatanywhere.com.cn/v1',
-      organization: env.OPENAI_ORGANIZATION,
       apiKey: env.OPENAI_APIKEY,
     },
     maxTokens: 500,
