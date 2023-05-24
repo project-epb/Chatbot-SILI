@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { Context, h, Session } from 'koishi'
+import { Context, Session } from 'koishi'
 import { OpenAIApi, Configuration, ConfigurationParameters } from 'openai'
 import BasePlugin from '../_boilerplate'
 
@@ -49,23 +49,31 @@ export default class PluginChatSummary extends BasePlugin {
       .command('chat-summary', '群里刚刚都聊了些什么', {
         authority: 2,
       })
-      .alias('总结聊天记录', '刚刚群里聊了什么')
-      .action(async ({ session }) => {
-        session.send(h.quote(session.messageId) + '稍等，让我看看聊天记录……')
-        const msg = await this.summarize(session.channelId)
+      .alias('总结聊天', '群里刚刚聊了什么')
+      .option('number', '-n <number:posint>', { hidden: true })
+      .option('channel', '-c <channel:string>', { hidden: true })
+      .action(async ({ session, options }) => {
+        await session.send(
+          <>
+            <quote id={session.messageId}>稍等，让我看看聊天记录……</quote>
+          </>
+        )
+        const msg = await this.summarize(options.channel || session.channelId)
         return msg
       })
 
     this.ctx.command('openai', 'OpenAI debug')
     this.ctx
       .command('openai.models', 'List models', { authority: 3 })
-      .action(() => {
-        return this.openai.listModels().then(({ data }) => {
-          return (
-            'Currently available models: ' +
-            data.data.map((i) => i.id).join(', ')
-          )
-        })
+      .action(async () => {
+        const { data } = await this.openai.listModels()
+        this.logger.info('openai.models', data)
+        return (
+          <>
+            <p>Currently available models:</p>
+            <p>{data.data.map((i) => i.id).join(', ')}</p>
+          </>
+        )
       })
     this.ctx
       .command('openai.chat <content:text>', 'ChatGPT对话调试', {
@@ -88,14 +96,15 @@ export default class PluginChatSummary extends BasePlugin {
             { timeout: 45 * 1000 }
           )
           .then(({ data }) => {
+            this.logger.info('openai.chat', data)
             const text = data.choices?.[0]?.message?.content?.trim()
             if (!text) {
-              return '💩 Error 返回结果为空'
+              return <>💩 Error 返回结果为空</>
             }
             return text
           })
           .catch((e) => {
-            return `💩 ${e}`
+            return <>💩 {e}</>
           })
       })
   }
@@ -103,7 +112,7 @@ export default class PluginChatSummary extends BasePlugin {
   async summarize(channelId: string) {
     const records = this.getRecords(channelId)
     if (records.length < 10) {
-      return '🥀啊哦——保存的聊天记录太少了，难以进行总结……'
+      return <>🥀啊哦——保存的聊天记录太少了，难以进行总结……</>
     }
 
     const recordsText = this.formatRecords(records)
@@ -124,19 +133,38 @@ export default class PluginChatSummary extends BasePlugin {
         { timeout: 45 * 1000 }
       )
       .then(({ data }) => {
-        // this.
+        this.logger.info('chat-summary', data)
         const text = data.choices?.[0]?.message?.content?.trim()
         if (!text) {
-          return '💩噗通——进行总结时出现了一些问题：\nError 返回结果为空'
+          return (
+            <>
+              <p>💩噗通——进行总结时出现了一些问题：</p>
+              <p>Error 返回结果为空</p>
+            </>
+          )
         }
-        return `下面是对最后${records.length}条聊天记录的总结：\n\n${text}`
+        return (
+          <>
+            <p>[chat-summary] 下面是对最后{records.length}条聊天记录的总结：</p>
+            <p></p>
+            <p>{text}</p>
+          </>
+        )
       })
       .catch((e) => {
-        return `💩噗通——进行总结时出现了一些问题：\n${e}`
+        return (
+          <>
+            <p>💩噗通——进行总结时出现了一些问题：</p>
+            <p>{e}</p>
+          </>
+        )
       })
   }
 
   addRecord(session: Session) {
+    if (session.content.includes('[chat-summary]')) {
+      return
+    }
     const records = this.getRecords(session.channelId)
     records.push(session.toJSON())
     this.#chatRecords[session.channelId] = records.slice(
@@ -148,12 +176,13 @@ export default class PluginChatSummary extends BasePlugin {
     return this.#chatRecords[channelId]
   }
   formatRecords(records: Session.Payload[]) {
-    return records
-      .map(({ author, elements }) => {
-        return `${
-          author.nickname || author.username || author.userId
-        }\n${elements}`
+    return JSON.stringify(
+      records.map(({ author, elements, content }) => {
+        return {
+          nickname: author.nickname || author.username || author.userId,
+          content,
+        }
       })
-      .join('\n\n')
+    )
   }
 }

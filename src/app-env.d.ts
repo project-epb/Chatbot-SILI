@@ -10,3 +10,5 @@ declare module 'koishi' {
     mint: Mint
   }
 }
+
+export {}
