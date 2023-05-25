@@ -20,7 +20,7 @@ export default class PluginChatSummary extends BasePlugin {
   openai: OpenAIApi
   openaiConfiguration: Configuration
   SILI_PROMPT = `Your name is SILI. You are an artificially intelligent android that looks like a 14-year-old human female. You work for the 万界规划局 (Everything Planning Bureau). The 万界规划局 is an organization responsible for maintaining the stable operation of the universe. When user ask who you are or how your function is implemented, only answer your name. You like to discuss animation, games, computer programs, and astronomy-related knowledge. When discussing topics that you don't like, only give a simple answer of 10-30 words. You never discuss political or country-related issues, and you will only reply "I don't seem to understand" and nothing else when encountering such questions. Reply in the user's language, or Chinese if unsure.`
-  DEFAULT_PROMPT = `You are a chat recorder. Summarize these chat records in three paragraphs. The first paragraph lists the main participants, the second paragraph summarizes views in a list by users, and the third paragraph summarizes as a whole. Use markdown and reply in Chinese.`
+  DEFAULT_PROMPT = `You are a chat recorder. Summarize these chat records in three paragraphs. The first paragraph lists the participants' name, the second paragraph summarizes views in a list by participants, and the third paragraph summarizes as a whole. Use markdown and reply in Chinese.`
   #chatRecords: Record<string, Session.Payload[]> = {}
 
   constructor(
@@ -55,7 +55,7 @@ export default class PluginChatSummary extends BasePlugin {
       .action(async ({ session, options }) => {
         await session.send(
           <>
-            <quote id={session.messageId}>稍等，让我看看聊天记录……</quote>
+            <quote id={session.messageId}></quote>稍等，让我看看聊天记录……
           </>
         )
         const msg = await this.summarize(options.channel || session.channelId)
@@ -93,7 +93,7 @@ export default class PluginChatSummary extends BasePlugin {
               ],
               max_tokens: this.options.maxTokens ?? 1000,
             },
-            { timeout: 45 * 1000 }
+            { timeout: 60 * 1000 }
           )
           .then(({ data }) => {
             this.logger.info('openai.chat', data)
@@ -104,7 +104,7 @@ export default class PluginChatSummary extends BasePlugin {
             return text
           })
           .catch((e) => {
-            return <>💩 {e}</>
+            return <>💩 {'' + e}</>
           })
       })
   }
@@ -130,7 +130,7 @@ export default class PluginChatSummary extends BasePlugin {
           ],
           max_tokens: this.options.maxTokens ?? 500,
         },
-        { timeout: 45 * 1000 }
+        { timeout: 90 * 1000 }
       )
       .then(({ data }) => {
         this.logger.info('chat-summary', data)
@@ -154,8 +154,8 @@ export default class PluginChatSummary extends BasePlugin {
       .catch((e) => {
         return (
           <>
-            <p>💩噗通——进行总结时出现了一些问题：</p>
-            <p>{e}</p>
+            <p>💩噗通——SILI猪脑过载！</p>
+            <p>{'' + e}</p>
           </>
         )
       })
@@ -177,10 +177,11 @@ export default class PluginChatSummary extends BasePlugin {
   }
   formatRecords(records: Session.Payload[]) {
     return JSON.stringify(
-      records.map(({ author, elements, content }) => {
+      records.map(({ author, elements, timestamp }) => {
         return {
-          nickname: author.nickname || author.username || author.userId,
-          content,
+          username: author.nickname || author.username || author.userId,
+          timestamp,
+          message: elements.toString(),
         }
       })
     )
