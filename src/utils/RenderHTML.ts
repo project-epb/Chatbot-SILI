@@ -76,7 +76,7 @@ ${body}
   }
 
   hljs(code: string, lang = '', startFrom = 1) {
-    const rid = Math.random().toString(36).substring(2)
+    const randomId = Math.random().toString(36).substring(2)
 
     const html = `
 <link rel="stylesheet" href="https://unpkg.com/highlight.js@11.6.0/styles/atom-one-dark.css">
@@ -194,13 +194,13 @@ code.hljs[class~='lang-wiki']:before {
   content: 'wiki';
 }
 </style>
-<pre id="${rid}" class="hljs"><code class="hljs ${
+<pre id="${randomId}" class="hljs"><code class="hljs ${
       lang ? 'lang-' + lang : ''
     }">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
 <script src="https://unpkg.com/@highlightjs/cdn-assets@11.6.0/highlight.min.js"></script>
 <script src="https://unpkg.com/highlightjs-line-numbers.js@2.8.0/src/highlightjs-line-numbers.js"></script>
 <script>;(() => {
-  const target = document.querySelector('#hljs-target code')
+  const target = document.querySelector('#${randomId} code')
   if (target.innerText.length > 100000) {
     return
   }
@@ -212,6 +212,6 @@ code.hljs[class~='lang-wiki']:before {
 })()</script>
 `
 
-    return this.html(html, `#${rid}`)
+    return this.html(html, `#${randomId}`)
   }
 }

@@ -23,10 +23,10 @@ import { HTMLService } from './utils/RenderHTML'
 // Plugins
 import PatchCallme from './plugins/callme'
 import PluginAbout from './plugins/about'
-import PluginChatSummary from './plugins/chat-summary'
 import PluginHljs from './plugins/hljs'
 import PluginMediawiki from './plugins/mediawiki'
 import PluginMute from './plugins/mute'
+import PluginOpenAi from './plugins/openai'
 import PluginPing from './plugins/ping'
 import PluginPixiv from './plugins/pixiv'
 import PluginPowerUser from './plugins/powerUser'
@@ -232,7 +232,9 @@ app.plugin(function PluginCollectionDialogue(ctx) {
 // SILI Core
 app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginAbout)
-  ctx.plugin(PluginChatSummary, {
+  ctx.plugin(PluginHljs)
+  ctx.plugin(PluginMute)
+  ctx.plugin(PluginOpenAi, {
     openaiConfiguration: {
       basePath: env.OPENAI_ENDPOINT,
       apiKey: env.OPENAI_APIKEY,
@@ -240,8 +242,6 @@ app.plugin(function PluginCollectionSILICore(ctx) {
     maxTokens: 500,
     recordsPerChannel: 50,
   })
-  ctx.plugin(PluginHljs)
-  ctx.plugin(PluginMute)
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv)
   ctx.plugin(PluginPowerUser)

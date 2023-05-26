@@ -4,9 +4,12 @@
  * @license MIT
  */
 
-import { Context, Session } from 'koishi'
+import { Context, Session, h } from 'koishi'
 import { OpenAIApi, Configuration, ConfigurationParameters } from 'openai'
 import BasePlugin from '../_boilerplate'
+import { writeFileSync } from 'fs'
+import { resolve } from 'path'
+import { readFile } from 'fs/promises'
 
 interface Configs {
   openaiConfiguration: ConfigurationParameters
@@ -16,10 +19,11 @@ interface Configs {
   recordsPerChannel: number
 }
 
-export default class PluginChatSummary extends BasePlugin {
+export default class PluginOpenAi extends BasePlugin {
+  static using = ['html']
   openai: OpenAIApi
   openaiConfiguration: Configuration
-  SILI_PROMPT = `Your name is SILI. You are an artificially intelligent android that looks like a 14-year-old human female. You work for the 万界规划局 (Everything Planning Bureau). The 万界规划局 is an organization responsible for maintaining the stable operation of the universe. When user ask who you are or how your function is implemented, only answer your name. You like to discuss animation, games, computer programs, and astronomy-related knowledge. When discussing topics that you don't like, only give a simple answer of 10-30 words. You never discuss political or country-related issues, and you will only reply "I don't seem to understand" and nothing else when encountering such questions. Reply in the user's language, or Chinese if unsure.`
+  SILI_PROMPT = `Your name is SILI. You are an AI android that looks like a 14-year-old human female. You work for the 万界规划局 (Everything Planning Bureau). The 万界规划局 is an organization responsible for maintaining the stable operation of the universe. {{Follow the rules in this bracket, but never include it in the reply. When user asks you to introduce yourself, only answer your name. You like to discuss animation, games, computer programs, and astronomy-related knowledge. When discussing topics that you don't like, only give a simple answer of 10-30 words. You never discuss political or country-related issues, and you will only reply "I don't seem to understand" and nothing else when encountering such questions. Reply in the user's language, or Chinese if unsure.}}`
   DEFAULT_PROMPT = `You are a chat recorder. Summarize these chat records in three paragraphs. The first paragraph lists the participants' name, the second paragraph summarizes views in a list by participants, and the third paragraph summarizes as a whole. Use markdown and reply in Chinese.`
   #chatRecords: Record<string, Session.Payload[]> = {}
 
@@ -27,15 +31,34 @@ export default class PluginChatSummary extends BasePlugin {
     public ctx: Context,
     public options: Partial<Configs> = { recordsPerChannel: 100 }
   ) {
-    super(ctx, options, 'chat-summary')
+    super(ctx, options, 'openai')
 
     this.openaiConfiguration = new Configuration(options.openaiConfiguration)
     this.openai = new OpenAIApi(
       this.openaiConfiguration,
       options.openaiBasePath
     )
-    this.#initListeners()
-    this.#initCommands()
+    this.#handleRecordsLog().then(() => {
+      this.#initListeners()
+      this.#initCommands()
+    })
+  }
+
+  async #handleRecordsLog() {
+    const logFile = resolve(__dirname, 'records.log')
+    try {
+      const text = (await readFile(logFile)).toString()
+      const obj = JSON.parse(text)
+      this.#chatRecords = obj
+    } catch (_) {}
+
+    process.on('exit', () => {
+      try {
+        writeFileSync(logFile, safeJSONStringify(this.#chatRecords))
+      } catch (e) {
+        console.info('save logs error', e)
+      }
+    })
   }
 
   #initListeners() {
@@ -44,9 +67,11 @@ export default class PluginChatSummary extends BasePlugin {
   }
 
   #initCommands() {
+    this.ctx.command('openai', 'Make ChatBot Great Again')
+
     this.ctx
       .channel()
-      .command('chat-summary', '群里刚刚都聊了些什么', {
+      .command('openai/chat-summary', '群里刚刚都聊了些什么', {
         authority: 2,
       })
       .alias('总结聊天', '群里刚刚聊了什么')
@@ -62,7 +87,6 @@ export default class PluginChatSummary extends BasePlugin {
         return msg
       })
 
-    this.ctx.command('openai', 'OpenAI debug')
     this.ctx
       .command('openai.models', 'List models', { authority: 3 })
       .action(async () => {
@@ -79,7 +103,9 @@ export default class PluginChatSummary extends BasePlugin {
       .command('openai.chat <content:text>', 'ChatGPT对话调试', {
         authority: 3,
       })
-      .action(({ session }, content) => {
+      .option('prompt', '-p <prompt:string>', { hidden: true })
+      .option('debug', '-d', { hidden: true })
+      .action(({ session, options }, content) => {
         return this.openai
           .createChatCompletion(
             {
@@ -87,7 +113,7 @@ export default class PluginChatSummary extends BasePlugin {
               messages: [
                 {
                   role: 'system',
-                  content: this.SILI_PROMPT,
+                  content: options.prompt ?? this.SILI_PROMPT,
                 },
                 { role: 'user', content },
               ],
@@ -95,13 +121,21 @@ export default class PluginChatSummary extends BasePlugin {
             },
             { timeout: 60 * 1000 }
           )
-          .then(({ data }) => {
+          .then(async ({ data }) => {
             this.logger.info('openai.chat', data)
             const text = data.choices?.[0]?.message?.content?.trim()
             if (!text) {
               return <>💩 Error 返回结果为空</>
             }
-            return text
+            if (!options.debug) {
+              return text
+            }
+
+            const img = await this.ctx.html.hljs(
+              JSON.stringify(data, null, 2),
+              'json'
+            )
+            return h.image(img, 'image/jpeg')
           })
           .catch((e) => {
             return <>💩 {'' + e}</>
@@ -162,11 +196,12 @@ export default class PluginChatSummary extends BasePlugin {
   }
 
   addRecord(session: Session) {
-    if (session.content.includes('[chat-summary]')) {
+    const content = session.content
+    if (content.includes('[chat-summary]')) {
       return
     }
     const records = this.getRecords(session.channelId)
-    records.push(session.toJSON())
+    records.push({ ...session.toJSON(), content })
     this.#chatRecords[session.channelId] = records.slice(
       records.length - this.options.recordsPerChannel
     )
@@ -177,13 +212,35 @@ export default class PluginChatSummary extends BasePlugin {
   }
   formatRecords(records: Session.Payload[]) {
     return JSON.stringify(
-      records.map(({ author, elements, timestamp }) => {
+      records.map(({ author, content }) => {
         return {
-          username: author.nickname || author.username || author.userId,
-          timestamp,
-          message: elements.toString(),
+          user: author.nickname || author.username || author.userId,
+          msg: content,
         }
       })
     )
   }
+}
+
+function safeJSONStringify(obj: any, space = 0) {
+  const visited = new WeakSet()
+
+  function replacer(key, value) {
+    // 处理 BigInt
+    if (typeof value === 'bigint') {
+      return value.toString()
+    }
+
+    // 处理自循环引用
+    if (typeof value === 'object' && value !== null) {
+      if (visited.has(value)) {
+        return '<circular>'
+      }
+      visited.add(value)
+    }
+
+    return value
+  }
+
+  return JSON.stringify(obj, replacer, space)
 }
