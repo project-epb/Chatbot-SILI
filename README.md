@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://i.loli.net/2021/02/19/nPzM8qvmyGBI2aL.jpg" alt="SILI t2020 avatar.jpg" title="SILI t2020 avatar.jpg" width="200"/>
+<img src="https://r2.epb.wiki/avatar/SILI.jpeg" alt="SILI avatar" width="200"/>
 
 # Chatbot SILI [v4.0]
 
@@ -33,7 +33,7 @@
 
 Fandom 的全域跨语言链接同样适用，例如 `[[w:c:zh.ngnl:初濑伊纲]]` → https://ngnl.fandom.com/zh/wiki/%E5%88%9D%E6%BF%91%E4%BC%8A%E7%BA%B2
 
-### `genshin`
+### ~~`genshin`~~
 
 查询《原神》玩家信息。
 
@@ -41,7 +41,7 @@ Fandom 的全域跨语言链接同样适用，例如 `[[w:c:zh.ngnl:初濑伊纲
 - `原神角色xxx` 炫耀你的角色
 - `原神深渊` 查看深境螺旋通关情况
 
-### `fandom-community-search`
+### ~~`fandom-community-search`~~
 
 通过小鱼君编写的~~废物~~爬虫爬取 https://community-search.fandom.com 的数据，返回指定关键词的搜索结果。
 

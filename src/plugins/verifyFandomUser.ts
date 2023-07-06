@@ -7,7 +7,7 @@
 
 import { Context, segment, Session } from 'koishi'
 import axios from 'axios'
-import { createHash } from 'crypto'
+import crypto from 'crypto'
 
 export const name = 'verify-fandom-user'
 
@@ -105,70 +105,75 @@ export default class PluginVerifyFandomUser {
 
     // 缓存变量
     let userName = options.user,
-      qqNumber = options.qq || session.userId?.replace('onebot:', ''),
-      encodeNumber = this.qqHashEncode(qqNumber || ''),
-      verifyCode: string,
-      lastEditor: string
+      qqNumber = options.qq || session.userId?.replace('onebot:', '')
 
     // 修正用户名：去除首尾空格
     userName = userName.trim()
     // 修正用户名：去除`User:`前缀
     userName = userName.replace(/^user:/i, '')
-    // 修正用户名：替换空格
-    userName = userName.replace(/[_\s]+/g, ' ')
+    // 修正用户名：替换空格为下划线
+    userName = userName.replace(/[_\s]+/g, '_')
     // 修正用户名：首字母大写
     userName = userName.slice(0, 1).toUpperCase() + userName.slice(1)
 
     const { data } = await this.ajax.get('', {
       params: {
-        action: 'parse',
-        page: `User:${userName}/verify-qq`,
-        prop: 'wikitext|revid',
+        action: 'query',
+        title: `User:${userName}/qq-hash`,
+        prop: 'info|revisions',
+        inprop: 'varianttitles',
+        rvprop: 'ids|timestamp|flags|comment|user|content',
       },
     })
 
-    if (!data?.parse?.revid) {
+    const page = data?.query?.pages?.[0]
+    if (!page || page.missing) {
       msg = `[${segment.at(
         qqNumber as string
-      )}↔${userName}] \n× 验证失败\n页面 User:${userName}/verify-qq 不存在！`
+      )}↔${userName}] \n× 验证失败\n页面 User:${userName}/qq-hash 不存在！`
       return { msg, status }
     }
 
-    verifyCode = data.parse.wikitext
-    if (verifyCode !== encodeNumber) {
+    const lastRev = page.revisions[0]
+    if (!lastRev || lastRev.user.replace(/[\s_]+/g, '_') !== userName) {
+      msg = `[${segment.at(
+        qqNumber as string
+      )}↔${userName}] \n× 验证失败\n验证代码的最后编辑者不是用户本人！`
+      return { msg, status }
+    }
+
+    const [verifyTime, verifyName, verifyHash] = lastRev.content.split('#')
+
+    if (!verifyTime || !verifyName || !verifyHash) {
+      msg = `[${segment.at(
+        qqNumber as string
+      )}↔${userName}] \n× 验证失败\n验证代码格式错误！`
+      return { msg, status }
+    }
+
+    const now = Date.now()
+    // verifyTime 必须在2小时以内
+    if (now - parseInt(verifyTime) > 2 * 60 * 60 * 1000) {
+      msg = `[${segment.at(
+        qqNumber as string
+      )}↔${userName}] \n× 验证失败\n验证代码已过期！`
+      return { msg, status }
+    }
+
+    const promptQqEncode = await this.sha1(
+      `${verifyTime}#${userName}#${qqNumber}`
+    )
+    if (promptQqEncode !== lastRev.content) {
       msg = `[${segment.at(
         qqNumber as string
       )}↔${userName}] \n× 验证失败\n保存在wiki中的验证代码与QQ号不匹配。`
       return { msg, status }
     }
 
-    const { data: revs } = await this.ajax.get('', {
-      params: {
-        action: 'query',
-        prop: 'revisions',
-        revids: data.parse.revid,
-        rvprop: 'user',
-      },
-    })
-
-    lastEditor = revs.query.pages[0].revisions[0].user
-
-    if (lastEditor === userName) {
-      status = true
-      msg = `[${segment.at(qqNumber as string)}↔${userName}] \n√ 验证通过！`
-    } else {
-      msg = `[${segment.at(
-        qqNumber as string
-      )}↔${userName}] \n× 验证失败\n验证代码的最后编辑者为 ${lastEditor}！`
-    }
+    status = true
+    msg = `[${segment.at(qqNumber as string)}↔${userName}] \n√ 验证通过！`
 
     return { msg, status }
-  }
-
-  qqHashEncode(qq: string) {
-    return createHash('md5')
-      .update('' + qq)
-      .digest('hex')
   }
 
   get ajax() {
@@ -179,6 +184,16 @@ export default class PluginVerifyFandomUser {
         formatversion: '2',
       },
     })
+  }
+
+  async sha1(str: string): Promise<string> {
+    const data = await crypto.subtle.digest(
+      'SHA-1',
+      new TextEncoder().encode(str)
+    )
+    return Array.from(new Uint8Array(data))
+      .map((x) => x.toString(16).padStart(2, '0'))
+      .join('')
   }
 
   get logger() {
