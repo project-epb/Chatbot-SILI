@@ -243,7 +243,10 @@ app.plugin(function PluginCollectionSILICore(ctx) {
     recordsPerChannel: 50,
   })
   ctx.plugin(PluginPing)
-  ctx.plugin(PluginPixiv)
+  ctx.plugin(PluginPixiv, {
+    baseURL: env.API_PIXIV_BASE,
+    pximgURL: env.API_PIXIV_IMG,
+  })
   ctx.plugin(PluginPowerUser)
   ctx.plugin(PluginProfile)
   ctx.plugin(PluginQueue)

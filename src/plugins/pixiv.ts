@@ -9,12 +9,25 @@ import { Context, segment, Time } from 'koishi'
 import axios from 'axios'
 import { BulkMessageBuilder } from '../utils/BulkMessageBuilder'
 
-const API_BASE = process.env.API_PIXIV_BASE
+// const API_BASE = process.env.API_PIXIV_BASE
+
+const defaultConfigs = {
+  baseURL: 'https://www.pixiv.net',
+  pximgURL: '',
+}
 
 export default class PluginPixiv {
-  constructor(public ctx: Context) {
+  constructor(
+    public ctx: Context,
+    public configs?: Partial<typeof defaultConfigs>
+  ) {
+    this.configs = {
+      ...defaultConfigs,
+      ...configs,
+    }
+    const { baseURL } = this.configs
     const ajax = axios.create({
-      baseURL: API_BASE,
+      baseURL,
       headers: {
         referer: 'https://www.pixiv.net',
       },
@@ -44,8 +57,8 @@ export default class PluginPixiv {
         let info, pages
         try {
           ;[{ data: info }, { data: pages }] = await Promise.all([
-            axios.get(`${API_BASE}/ajax/illust/${id}?full=1`),
-            axios.get(`${API_BASE}/ajax/illust/${id}/pages`),
+            ajax.get(`/ajax/illust/${id}?full=1`),
+            ajax.get(`/ajax/illust/${id}/pages`),
           ])
         } catch (error) {
           this.logger.warn(error)
@@ -69,7 +82,7 @@ export default class PluginPixiv {
         const builder = new BulkMessageBuilder(session)
         builder.prependOriginal()
         const lines = [
-          segment.image(`${API_BASE}${imageUrl}`),
+          segment.image(`${baseURL}${imageUrl}`),
           totalImages ? `第 ${selectedPage} 张，共 ${totalImages} 张` : null,
           `${info.title}`,
           desc.length > 500 ? desc.substring(0, 500) + '...' : desc,
@@ -77,7 +90,7 @@ export default class PluginPixiv {
           `👍${info.likeCount} ❤️${info.bookmarkCount} 👀${info.viewCount}`,
           `发布时间: ${new Date(info.createDate).toLocaleString()}`,
           allTags.length ? allTags.join(' ') : null,
-          `${API_BASE}/i/${info.id}`,
+          `${baseURL}/i/${info.id}`,
         ].map((i) =>
           typeof i === 'string' ? i.trim().replace(/\n+/g, '\n') : i
         )
@@ -95,7 +108,7 @@ export default class PluginPixiv {
 
         let data
         try {
-          data = (await axios.get(`${API_BASE}/ajax/user/${id}?full=1`)).data
+          data = (await axios.get(`${baseURL}/ajax/user/${id}?full=1`)).data
         } catch (error) {
           this.logger.warn(error)
           return [
@@ -109,7 +122,7 @@ export default class PluginPixiv {
         const builder = new BulkMessageBuilder(session)
         builder.prependOriginal()
         const lines = [
-          segment.image(`${API_BASE}${imageBig}`),
+          segment.image(`${baseURL}${imageBig}`),
           `${name} (${userId})`,
           comment,
         ].map((i) =>
