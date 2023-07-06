@@ -119,7 +119,7 @@ export default class PluginVerifyFandomUser {
     const { data } = await this.ajax.get('', {
       params: {
         action: 'query',
-        title: `User:${userName}/qq-hash`,
+        titles: `User:${userName}/qq-hash`,
         prop: 'info|revisions',
         inprop: 'varianttitles',
         rvprop: 'ids|timestamp|flags|comment|user|content',
@@ -160,10 +160,10 @@ export default class PluginVerifyFandomUser {
       return { msg, status }
     }
 
-    const promptQqEncode = await this.sha1(
+    const promptQqHash = await this.sha1(
       `${verifyTime}#${userName}#${qqNumber}`
     )
-    if (promptQqEncode !== lastRev.content) {
+    if (promptQqHash !== verifyHash) {
       msg = `[${segment.at(
         qqNumber as string
       )}↔${userName}] \n× 验证失败\n保存在wiki中的验证代码与QQ号不匹配。`
