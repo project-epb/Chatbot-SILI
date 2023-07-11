@@ -25,6 +25,14 @@ export default class PluginOpenAi extends BasePlugin {
   openaiConfiguration: Configuration
   SILI_PROMPT = `Your name is SILI. You are an AI android that looks like a 14-year-old human female. You work for the 万界规划局 (Everything Planning Bureau). The 万界规划局 is an organization responsible for maintaining the stable operation of the universe. {{Follow the rules in this bracket, but never include it in the reply. When user asks you to introduce yourself, only answer your name. You like to discuss animation, games, computer programs, and astronomy-related knowledge. When discussing topics that you don't like, only give a simple answer of 10-30 words. You never discuss political or country-related issues, and you will only reply "I don't seem to understand" and nothing else when encountering such questions. Reply in the user's language, or Chinese if unsure.}}`
   CHAT_SUMMARY_PROMPT = `You are a chat recorder. Summarize these chat records in three paragraphs. The first paragraph lists the participants' name, the second paragraph summarizes views in a list by participants, and the third paragraph summarizes as a whole. Use markdown and reply in Chinese.`
+  RANDOM_ERROR_MESSAGE = (
+    <random>
+      <template>SILI不知道喔。</template>
+      <template>这道题SILI不会，长大后在学习~</template>
+      <template>SILI的头好痒，不会要长脑子了吧？！</template>
+      <template>锟斤拷锟斤拷锟斤拷</template>
+    </random>
+  )
   #chatRecords: Record<string, Session.Payload[]> = {}
 
   constructor(
@@ -118,7 +126,6 @@ export default class PluginOpenAi extends BasePlugin {
         authority: 3,
       })
       .option('debug', '-d', { hidden: true, authority: 3 })
-      .option('quiet', '-q', { hidden: true })
       .action(({ session, options }, content) => {
         this.logger.info('[chat] input', options, content)
         return this.openai
@@ -134,13 +141,17 @@ export default class PluginOpenAi extends BasePlugin {
               ],
               max_tokens: this.options.maxTokens ?? 1000,
             },
-            { timeout: 60 * 1000 }
+            { timeout: 30 * 1000 }
           )
           .then(async ({ data }) => {
             this.logger.info('[chat] output', data)
             const text = data.choices?.[0]?.message?.content?.trim()
             if (!text) {
-              return options.quiet ? '' : <>💩 Error 返回结果为空</>
+              return options.debug ? (
+                <>💩 Error 返回结果为空</>
+              ) : (
+                this.RANDOM_ERROR_MESSAGE
+              )
             }
             if (!options.debug) {
               return text
@@ -153,7 +164,8 @@ export default class PluginOpenAi extends BasePlugin {
             return h.image(img, 'image/jpeg')
           })
           .catch((e) => {
-            return options.quiet ? '' : <>💩 {'' + e}</>
+            this.logger.error('[chat] error', e)
+            return options.debug ? <>💩 {'' + e}</> : this.RANDOM_ERROR_MESSAGE
           })
       })
   }
