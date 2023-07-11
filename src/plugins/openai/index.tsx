@@ -112,16 +112,15 @@ export default class PluginOpenAi extends BasePlugin {
       .option('prompt', '-p <prompt:string>', {
         hidden: true,
         authority: 3,
-        fallback: this.SILI_PROMPT,
       })
       .option('model', '-m <model:string>', {
         hidden: true,
         authority: 3,
-        fallback: 'gpt-3.5-turbo',
       })
       .option('debug', '-d', { hidden: true, authority: 3 })
       .option('quiet', '-q', { hidden: true })
       .action(({ session, options }, content) => {
+        this.logger.info('[chat] input', options, content)
         return this.openai
           .createChatCompletion(
             {
@@ -129,7 +128,7 @@ export default class PluginOpenAi extends BasePlugin {
               messages: [
                 {
                   role: 'system',
-                  content: this.SILI_PROMPT,
+                  content: options.prompt || this.SILI_PROMPT,
                 },
                 { role: 'user', content },
               ],
@@ -138,7 +137,7 @@ export default class PluginOpenAi extends BasePlugin {
             { timeout: 60 * 1000 }
           )
           .then(async ({ data }) => {
-            this.logger.info('openai.chat', data)
+            this.logger.info('[chat] output', data)
             const text = data.choices?.[0]?.message?.content?.trim()
             if (!text) {
               return options.quiet ? '' : <>💩 Error 返回结果为空</>
