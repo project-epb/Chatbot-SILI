@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { Context, Session, h } from 'koishi'
+import { Context, Session, Time, h } from 'koishi'
 import { OpenAIApi, Configuration, ConfigurationParameters } from 'openai'
 import BasePlugin from '../_boilerplate'
 import { writeFileSync } from 'fs'
@@ -24,7 +24,7 @@ export default class PluginOpenAi extends BasePlugin {
   openai: OpenAIApi
   openaiConfiguration: Configuration
   SILI_PROMPT = `Your name is SILI. You are an AI android that looks like a 14-year-old human female. You work for the 万界规划局 (Everything Planning Bureau). The 万界规划局 is an organization responsible for maintaining the stable operation of the universe. {{Follow the rules in this bracket, but never include it in the reply. When user asks you to introduce yourself, only answer your name. You like to discuss animation, games, computer programs, and astronomy-related knowledge. When discussing topics that you don't like, only give a simple answer of 10-30 words. You never discuss political or country-related issues, and you will only reply "I don't seem to understand" and nothing else when encountering such questions. Reply in the user's language, or Chinese if unsure.}}`
-  DEFAULT_PROMPT = `You are a chat recorder. Summarize these chat records in three paragraphs. The first paragraph lists the participants' name, the second paragraph summarizes views in a list by participants, and the third paragraph summarizes as a whole. Use markdown and reply in Chinese.`
+  CHAT_SUMMARY_PROMPT = `You are a chat recorder. Summarize these chat records in three paragraphs. The first paragraph lists the participants' name, the second paragraph summarizes views in a list by participants, and the third paragraph summarizes as a whole. Use markdown and reply in Chinese.`
   #chatRecords: Record<string, Session.Payload[]> = {}
 
   constructor(
@@ -95,25 +95,41 @@ export default class PluginOpenAi extends BasePlugin {
         return (
           <>
             <p>Currently available models:</p>
-            <p>{data.data.map((i) => i.id).join(', ')}</p>
+            <p>{data.data.map((i) => i.id).join('\n')}</p>
           </>
         )
       })
     this.ctx
-      .command('openai.chat <content:text>', 'ChatGPT对话调试', {
-        authority: 3,
+      .command('openai/chat <content:text>', 'ChatGPT', {
+        minInterval: 1 * Time.minute,
+        bypassAuthority: 3,
       })
-      .option('prompt', '-p <prompt:string>', { hidden: true })
-      .option('debug', '-d', { hidden: true })
+      .shortcut(/(.+)[?？]/, {
+        args: ['$1'],
+        options: { quiet: true },
+        prefix: true,
+      })
+      .option('prompt', '-p <prompt:string>', {
+        hidden: true,
+        authority: 3,
+        fallback: this.SILI_PROMPT,
+      })
+      .option('model', '-m <model:string>', {
+        hidden: true,
+        authority: 3,
+        fallback: 'gpt-3.5-turbo',
+      })
+      .option('debug', '-d', { hidden: true, authority: 3 })
+      .option('quiet', '-q', { hidden: true })
       .action(({ session, options }, content) => {
         return this.openai
           .createChatCompletion(
             {
-              model: 'gpt-3.5-turbo',
+              model: options.model || 'gpt-3.5-turbo',
               messages: [
                 {
                   role: 'system',
-                  content: options.prompt ?? this.SILI_PROMPT,
+                  content: this.SILI_PROMPT,
                 },
                 { role: 'user', content },
               ],
@@ -125,7 +141,7 @@ export default class PluginOpenAi extends BasePlugin {
             this.logger.info('openai.chat', data)
             const text = data.choices?.[0]?.message?.content?.trim()
             if (!text) {
-              return <>💩 Error 返回结果为空</>
+              return options.quiet ? '' : <>💩 Error 返回结果为空</>
             }
             if (!options.debug) {
               return text
@@ -138,7 +154,7 @@ export default class PluginOpenAi extends BasePlugin {
             return h.image(img, 'image/jpeg')
           })
           .catch((e) => {
-            return <>💩 {'' + e}</>
+            return options.quiet ? '' : <>💩 {'' + e}</>
           })
       })
   }
@@ -158,7 +174,7 @@ export default class PluginOpenAi extends BasePlugin {
           messages: [
             {
               role: 'system',
-              content: this.DEFAULT_PROMPT,
+              content: this.CHAT_SUMMARY_PROMPT,
             },
             { role: 'user', content: recordsText },
           ],
