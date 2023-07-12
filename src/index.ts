@@ -183,7 +183,7 @@ app.plugin(function PluginCollectionConsole(ctx) {
 
 // 第三方
 app.plugin(async function PluginCollectionThirdParty(ctx) {
-  // ctx.plugin('blive')
+  ctx.plugin('blive')
   // ctx.plugin('bvid')
   ctx.plugin('github', {
     path: '/api/github',
