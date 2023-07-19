@@ -2,28 +2,47 @@
 
 <img src="https://r2.epb.wiki/avatar/SILI.jpeg" alt="SILI avatar" width="200"/>
 
-# Chatbot SILI [v4.0]
+# Chatbot SILI v4
 
-**🚧🚧🚧 开发版 🚧🚧🚧**<br>注意：这是正在开发中的 SILI 4.0，并非所有 v3 的功能均可使用
+Brand new SILI: harder, better, faster, stronger.
 
 </div>
 
-万界规划局聊天机器人，主要用于处理 Fandom 官方 QQ 群 ↔ Discord 的消息推送，也附带一些好玩的功能。
+隶属于万界规划局项目组的聊天机器人，一个人工智能小萝莉、一个笨蛋。
 
-名字 SILI，来自作者的原创角色 [苏凛栎](https://epbureau.fandom.com/wiki/苏凛栎)，是一个人工智能小萝莉、一个笨蛋。
+名字是 **The data transmission network with Spatiotemporal Isomorphic and Limitless Interdimensional** (_The S-I-L-I Network_) 的缩写。
 
-## Fandom 中文社区中心
+<div align="right">
 
-- QQ 群: https://community.fandom.com/zh/index.php?curid=3399
-- Discord: https://discord.gg/kK5Ttan
+[查看 SILI 的角色设定](https://epbureau.notion.site/b06b4ac44771484e8cc276a83f030962?pvs=4)
 
-能够实现 QQ 群 ↔ Discord 的双向消息推送。
+</div>
+
+## SILI Powered
+
+### 向 SILI 直截了当地提出问题吧！
+
+<img src="https://github.com/project-epb/Chatbot-SILI/assets/44761872/79e1ac41-c147-48a2-9f0a-11c8fba5b696" width="350">
+
+<div align="right">—— AI powered ☆ 生动有趣又偶尔生草</div>
+
+### 让 SILI 教教你外语怎么说！
+
+<img src="https://github.com/project-epb/Chatbot-SILI/assets/44761872/54433e6b-790b-4f7e-a29f-00eacea1504f" width="350">
+
+<div align="right">—— 月が绮丽ですね</div>
+
+### ~~就要涩涩！~~ 只是搜图而已啦！
+
+<img src="https://github.com/project-epb/Chatbot-SILI/assets/44761872/fc420e88-caea-4ece-a0b6-367e33d425d3" width="350">
+
+<div align="right">—— SILI sama~ Can can word~!</div>
 
 ## 常用指令
 
 可以通过 `@SILI <command>` `sili，<command>` 或者 `!<command>` 使用 SILI 的指令。不过许多指令带有别名和容易记住的中文捷径。
 
-全部指令以及使用说明可以通过`!help -a`获取。
+全部指令以及使用说明可以通过`!help`获取。
 
 ### `wiki <pagename>`
 
@@ -33,6 +52,10 @@
 
 Fandom 的全域跨语言链接同样适用，例如 `[[w:c:zh.ngnl:初濑伊纲]]` → https://ngnl.fandom.com/zh/wiki/%E5%88%9D%E6%BF%91%E4%BC%8A%E7%BA%B2
 
+### `sticker`
+
+生成奇怪的表情包！
+
 ### ~~`genshin`~~
 
 查询《原神》玩家信息。
@@ -40,18 +63,6 @@ Fandom 的全域跨语言链接同样适用，例如 `[[w:c:zh.ngnl:初濑伊纲
 - `我的原神信息` 展示你的游戏信息卡
 - `原神角色xxx` 炫耀你的角色
 - `原神深渊` 查看深境螺旋通关情况
-
-### ~~`fandom-community-search`~~
-
-通过小鱼君编写的~~废物~~爬虫爬取 https://community-search.fandom.com 的数据，返回指定关键词的搜索结果。
-
-`!fandom-community-search <关键词> --lang [语言代码] --nth [第几个结果]`
-
-- **关键词** 就是搜索的关键词，如果有空格则需要用引号包裹起来，例如`"Minecraft Wiki`
-- **语言代码** 预设搜索中文`zh`，语言代码与 MediaWiki 软件设定一致
-- **第几个结果** 预设显示第一个结果，必须是 1-10 的数字，否则显示第一个
-
-范例：`!fms 游戏人生 -l zh`
 
 ### `youdao`
 
@@ -65,7 +76,7 @@ Fandom 的全域跨语言链接同样适用，例如 `[[w:c:zh.ngnl:初濑伊纲
 
 快速查看 P 站插画！
 
-`!p站插画 123456`
+`!pixiv 123456`
 
 ### `bilibili`
 
@@ -75,43 +86,26 @@ Fandom 的全域跨语言链接同样适用，例如 `[[w:c:zh.ngnl:初濑伊纲
 - 查直播间：`查b站xxx的直播间`
 - 直播间订阅：`单推b站主播xxx`
 
-### `inpageedit-search [sitename]`
-
-通过 Wjghj API 查询 [InPageEdit Analysis](https://blog.wjghj.cn/inpageedit-v2/analysis/) 的统计数据。
-
-通过 Wiki 名称查询 InPageEdit 的使用情况，如果查询结果大于 3，只显示前三个。
-
-- **sitename** Wiki 的名称，取`wgSiteName`，
-
-范例：`!ipes 萌娘百科`
-
-## 一些小玩意
-
-### ~~她这么可爱，打一拳一定会哭很久吧~~
-
-如果你的发言触发特定的条件，例如骂她“人工智障”，她会予以回应。
-
-```
-> sili就是笨蛋！
-< ¿你说谁是笨蛋呢?
-```
-
-### 更多有趣的功能
+## 更多有趣的功能
 
 发送`sili，帮助`即可查看完整的帮助！
 
-**PRs Welcome** 想到了什么有意思的功能？欢迎直接通过 PR 来添加！
-
----
+**PRs Welcome** —— 想到了什么有意思的功能？欢迎提交 Issues 或直接 PR！
 
 ## 开发指南
 
 ```sh
+# clone the project
+git clone <remote-url>
 # init dependencies
 pnpm i
-# start
+# sync env configs
+pnpm env:pull
+# SILI，启动！
 pnpm start
 ```
+
+\* 确保 MongoDB 服务正在运行中
 
 ---
 
