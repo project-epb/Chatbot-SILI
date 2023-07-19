@@ -31,7 +31,7 @@ export default class PluginOpenAi extends BasePlugin {
     .trim()
   /** =========================================== */
   CHAT_SUMMARY_PROMPT = `You are a chat recorder. Summarize these chat records in three paragraphs. The first paragraph lists the participants' name, the second paragraph summarizes views in a list by participants, and the third paragraph summarizes as a whole. Use markdown and reply in Chinese.`
-  RandomErrorMsg = () => (
+  RANDOM_ERROR_MSG = (
     <random>
       <template>SILI不知道喔。</template>
       <template>这道题SILI不会，长大后在学习~</template>
@@ -155,9 +155,7 @@ export default class PluginOpenAi extends BasePlugin {
                 },
                 {
                   role: 'assistant',
-                  content: `Hi ${
-                    userName || ''
-                  }, I'm SILI. What do you want to talk about?`,
+                  content: `Hi ${userName || ''}~ SILI is here~ What's up?`,
                 },
                 { role: 'user', content },
               ],
@@ -172,11 +170,9 @@ export default class PluginOpenAi extends BasePlugin {
               return (
                 <>
                   <quote id={session.messageId}></quote>
-                  {options.debug ? (
-                    '💩 Error 返回结果为空'
-                  ) : (
-                    <this.RandomErrorMsg />
-                  )}
+                  {options.debug
+                    ? '💩 Error 返回结果为空'
+                    : this.RANDOM_ERROR_MSG}
                 </>
               )
             }
@@ -195,7 +191,7 @@ export default class PluginOpenAi extends BasePlugin {
             return (
               <>
                 <quote id={session.messageId}></quote>
-                {options.debug ? <>💩 {e}</> : <this.RandomErrorMsg />}
+                {options.debug ? <>💩 {e}</> : this.RANDOM_ERROR_MSG}
               </>
             )
           })
