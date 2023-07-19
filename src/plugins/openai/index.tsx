@@ -160,6 +160,9 @@ export default class PluginOpenAi extends BasePlugin {
                 { role: 'user', content },
               ],
               max_tokens: this.options.maxTokens ?? 1000,
+              temperature: 0.9,
+              presence_penalty: 0.6,
+              frequency_penalty: 0,
             },
             { timeout: 30 * 1000 }
           )
