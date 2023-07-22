@@ -181,9 +181,8 @@ export default class PluginOpenAi extends BasePlugin {
           'user'
 
         const conversation_id: string =
-          (session.user.openai_last_conversation_id ??= crypto.randomUUID())
+          (session.user.openai_last_conversation_id ||= crypto.randomUUID())
 
-        console.info(this.ctx.database)
         const histories = await this.getChatHistoriesById(conversation_id)
         this.logger.info('[chat] user data', {
           conversation_owner,
