@@ -10,6 +10,21 @@ import BasePlugin from '../_boilerplate'
 import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { readFile } from 'fs/promises'
+import crypto from 'crypto'
+
+declare module 'koishi' {
+  interface Tables {
+    openai_chat: OpenAIConversationLog
+  }
+}
+
+interface OpenAIConversationLog {
+  conversation_id: string
+  conversation_owner: string
+  role: 'system' | 'user' | 'assistant'
+  content: string
+  time: number
+}
 
 interface Configs {
   openaiConfiguration: ConfigurationParameters
@@ -52,12 +67,33 @@ export default class PluginOpenAi extends BasePlugin {
       this.openaiConfiguration,
       options.openaiBasePath
     )
+    this.#initDatabase()
     this.#handleRecordsLog().then(() => {
       this.#initListeners()
       this.#initCommands()
     })
   }
 
+  async #initDatabase() {
+    this.ctx.model.extend('user', {
+      openai_last_conversation_id: 'string',
+    })
+    this.ctx.model.extend(
+      'openai_chat',
+      {
+        id: 'number',
+        conversation_id: 'string',
+        conversation_owner: 'string',
+        role: 'string',
+        content: 'string',
+        time: 'number',
+      },
+      {
+        primary: 'id',
+        autoInc: true,
+      }
+    )
+  }
   async #handleRecordsLog() {
     const logFile = resolve(__dirname, 'records.log')
     try {
@@ -113,12 +149,13 @@ export default class PluginOpenAi extends BasePlugin {
           </>
         )
       })
+
     this.ctx
       .command('openai/chat <content:text>', 'ChatGPT', {
         minInterval: 1 * Time.minute,
         bypassAuthority: 3,
       })
-      .shortcut(/(.+)[?？]/, {
+      .shortcut(/(.+)[?？]$/, {
         args: ['$1'],
         prefix: true,
       })
@@ -131,15 +168,29 @@ export default class PluginOpenAi extends BasePlugin {
         authority: 3,
       })
       .option('debug', '-d', { hidden: true, authority: 3 })
-      .userFields(['name'])
-      .action(({ session, options }, content) => {
+      .userFields(['name', 'openai_last_conversation_id'])
+      .action(async ({ session, options }, content) => {
         this.logger.info('[chat] input', options, content)
-        const Reply = () => <quote id={session.messageId}></quote>
+
+        const startTime = Date.now()
+        const conversation_owner = `${session.platform}:${session.userId}`
         const userName =
           session.user?.name ||
           session.author?.nickname ||
           session?.author?.username ||
           'user'
+
+        const conversation_id: string =
+          (session.user.openai_last_conversation_id ??= crypto.randomUUID())
+
+        console.info(this.ctx.database)
+        const histories = await this.getChatHistoriesById(conversation_id)
+        this.logger.info('[chat] user data', {
+          conversation_owner,
+          conversation_id,
+          historiesLenth: histories.length,
+        })
+
         return this.openai
           .createChatCompletion(
             {
@@ -149,14 +200,7 @@ export default class PluginOpenAi extends BasePlugin {
                   role: 'system',
                   content: options.prompt || this.SILI_PROMPT,
                 },
-                {
-                  role: 'user',
-                  content: `Hi, this is ${userName} speaking.`,
-                },
-                {
-                  role: 'assistant',
-                  content: `Hi ${userName || ''}~ SILI is here~ What's up?`,
-                },
+                ...histories,
                 { role: 'user', content },
               ],
               max_tokens: this.options.maxTokens ?? 1000,
@@ -179,6 +223,19 @@ export default class PluginOpenAi extends BasePlugin {
                 </>
               )
             }
+
+            ;[
+              { role: 'user', content, time: startTime },
+              { role: 'assistant', content: text, time: Date.now() },
+            ].forEach((item) =>
+              // @ts-ignore
+              this.ctx.database.create('openai_chat', {
+                ...item,
+                conversation_owner,
+                conversation_id,
+              })
+            )
+
             if (!options.debug) {
               return text
             }
@@ -199,6 +256,32 @@ export default class PluginOpenAi extends BasePlugin {
             )
           })
       })
+    this.ctx
+      .command('openai/chat.reset', '开始新的对话')
+      .userFields(['openai_last_conversation_id'])
+      .action(async ({ session }) => {
+        session.user.openai_last_conversation_id = ''
+        return '让我们开始新话题吧！'
+      })
+  }
+
+  async getChatHistoriesById(
+    conversation_id: string,
+    limit = 10
+  ): Promise<OpenAIConversationLog[]> {
+    return (
+      ((
+        await this.ctx.database.get(
+          'openai_chat',
+          { conversation_id },
+          {
+            sort: { time: 'desc' },
+            limit: Math.min(25, Math.max(0, limit)),
+            fields: ['content', 'role'],
+          }
+        )
+      ).reverse() as OpenAIConversationLog[]) || []
+    )
   }
 
   async summarize(channelId: string) {
