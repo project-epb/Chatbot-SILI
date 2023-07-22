@@ -195,11 +195,26 @@ export default class PluginOpenAi extends BasePlugin {
             {
               model: options.model || 'gpt-3.5-turbo',
               messages: [
+                // magic
+                // {
+                //   role: 'system',
+                //   content: `You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2021-09\nCurrent model: ${
+                //     options.model || 'gpt-3.5-turbo'
+                //   }\nCurrent time: ${new Date().toLocaleString()}`,
+                // },
+                // base prompt
                 {
                   role: 'system',
                   content: options.prompt || this.SILI_PROMPT,
                 },
+                // provide user info
+                {
+                  role: 'system',
+                  content: `The person talking to you: ${userName}\nCurrent time: ${new Date().toLocaleString()}\n`,
+                },
+                // chat history
                 ...histories,
+                // current user input
                 { role: 'user', content },
               ],
               max_tokens: this.options.maxTokens ?? 1000,
@@ -223,6 +238,7 @@ export default class PluginOpenAi extends BasePlugin {
               )
             }
 
+            // save conversations to database
             ;[
               { role: 'user', content, time: startTime },
               { role: 'assistant', content: text, time: Date.now() },
