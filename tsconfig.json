@@ -1,17 +1,27 @@
 {
-  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "target": "ESNext",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": false,
+    // "strictNullChecks": false,
+    // "noImplicitAny": true,
+    "sourceMap": true,
+    "declaration": true,
+    "resolveJsonModule": true,
+    "composite": true,
+    "incremental": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@satorijs/element",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
     "paths": {
       "koishi-plugin-*": ["plugins/*/src"],
       "*": ["packages/*/src"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.d.ts",
-    "node_modules/**/*.d.ts"
-  ],
-  "files": []
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"]
 }
