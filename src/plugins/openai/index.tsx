@@ -154,8 +154,9 @@ export default class PluginOpenAi extends BasePlugin {
       .command('openai/chat <content:text>', 'ChatGPT', {
         minInterval: 1 * Time.minute,
         bypassAuthority: 3,
+        maxUsage: 10,
       })
-      .shortcut(/(.+)[?？]$/, {
+      .shortcut(/(.+)[\?？]$/, {
         args: ['$1'],
         prefix: true,
       })
