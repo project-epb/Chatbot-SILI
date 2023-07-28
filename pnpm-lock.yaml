@@ -6,74 +6,74 @@ settings:
 
 dependencies:
   '@koishijs/plugin-adapter-discord':
-    specifier: ^3.6.0
-    version: 3.6.0(@satorijs/satori@2.3.1)(koishi@4.12.5)
+    specifier: ^3.8.4
+    version: 3.8.4(@satorijs/satori@2.5.4)(koishi@4.13.9)
   '@koishijs/plugin-adapter-onebot':
-    specifier: ^5.6.6
-    version: 5.6.6(@satorijs/satori@2.3.1)(koishi@4.12.5)
+    specifier: ^5.7.3
+    version: 5.7.3(@satorijs/satori@2.5.4)(koishi@4.13.9)
   '@koishijs/plugin-admin':
-    specifier: ^1.2.1
-    version: 1.2.1(koishi@4.12.5)
+    specifier: ^1.3.1
+    version: 1.3.1(koishi@4.13.9)
   '@koishijs/plugin-bind':
-    specifier: ^1.4.1
-    version: 1.4.1(koishi@4.12.5)
+    specifier: ^1.4.2
+    version: 1.4.2(koishi@4.13.9)
   '@koishijs/plugin-broadcast':
-    specifier: ^1.1.2
-    version: 1.1.2(koishi@4.12.5)
+    specifier: ^1.1.4
+    version: 1.1.4(koishi@4.13.9)
   '@koishijs/plugin-callme':
-    specifier: ^1.3.2
-    version: 1.3.2(koishi@4.12.5)
+    specifier: ^1.3.3
+    version: 1.3.3(koishi@4.13.9)
   '@koishijs/plugin-commands':
-    specifier: ^3.1.3
-    version: 3.1.3(@koishijs/plugin-console@5.6.1)(koishi@4.12.5)
+    specifier: ^3.2.2
+    version: 3.2.2(@koishijs/plugin-console@5.12.1)(koishi@4.13.9)
   '@koishijs/plugin-console':
-    specifier: ^5.6.1
-    version: 5.6.1(koishi@4.12.5)
+    specifier: ^5.12.1
+    version: 5.12.1(koishi@4.13.9)
   '@koishijs/plugin-database-mongo':
-    specifier: ^4.5.1
-    version: 4.5.1(@minatojs/core@2.3.1)(koishi@4.12.5)
+    specifier: ^4.5.3
+    version: 4.5.3(@minatojs/core@2.3.2)(koishi@4.13.9)
   '@koishijs/plugin-dataview':
-    specifier: ^2.2.6
-    version: 2.2.6(@koishijs/plugin-console@5.6.1)(koishi@4.12.5)
+    specifier: ^2.3.1
+    version: 2.3.1(@koishijs/plugin-console@5.12.1)(koishi@4.13.9)
   '@koishijs/plugin-echo':
-    specifier: ^2.2.3
-    version: 2.2.3(koishi@4.12.5)
+    specifier: ^2.2.4
+    version: 2.2.4(koishi@4.13.9)
   '@koishijs/plugin-help':
-    specifier: ^2.2.2
-    version: 2.2.2(koishi@4.12.5)
+    specifier: ^2.2.4
+    version: 2.2.4(koishi@4.13.9)
   '@koishijs/plugin-insight':
-    specifier: ^3.3.3
-    version: 3.3.3(@koishijs/plugin-console@5.6.1)(koishi@4.12.5)
+    specifier: ^3.4.1
+    version: 3.4.1(@koishijs/plugin-console@5.12.1)(koishi@4.13.9)
   '@koishijs/plugin-logger':
-    specifier: ^2.2.3
-    version: 2.2.3(@koishijs/plugin-console@5.6.1)(koishi@4.12.5)
+    specifier: ^2.3.2
+    version: 2.3.2(@koishijs/plugin-console@5.12.1)(koishi@4.13.9)
   '@koishijs/plugin-login':
     specifier: ^3.1.0
-    version: 3.1.0(@koishijs/plugin-console@5.6.1)(koishi@4.12.5)
+    version: 3.1.0(@koishijs/plugin-console@5.12.1)(koishi@4.13.9)
   '@koishijs/plugin-rate-limit':
-    specifier: ^1.3.2
-    version: 1.3.2(koishi@4.12.5)
+    specifier: ^1.3.3
+    version: 1.3.3(koishi@4.13.9)
   '@koishijs/plugin-recall':
     specifier: ^1.2.0
-    version: 1.2.0(koishi@4.12.5)
+    version: 1.2.0(koishi@4.13.9)
   '@koishijs/plugin-repeater':
     specifier: ^1.1.3
-    version: 1.1.3(koishi@4.12.5)
+    version: 1.1.3(koishi@4.13.9)
   '@koishijs/plugin-sandbox':
-    specifier: ^3.1.0
-    version: 3.1.0(@koishijs/plugin-console@5.6.1)(koishi@4.12.5)
+    specifier: ^3.1.10
+    version: 3.1.10(@koishijs/plugin-console@5.12.1)(koishi@4.13.9)
   '@koishijs/plugin-status':
-    specifier: ^7.1.2
-    version: 7.1.2(@koishijs/plugin-console@5.6.1)(koishi@4.12.5)
+    specifier: ^7.1.3
+    version: 7.1.3(@koishijs/plugin-console@5.12.1)(koishi@4.13.9)
   '@koishijs/plugin-switch':
     specifier: ^1.0.6
-    version: 1.0.6(koishi@4.12.5)
+    version: 1.0.6(koishi@4.13.9)
   '@koishijs/plugin-teach':
     specifier: ^3.2.2
-    version: 3.2.2(koishi@4.12.5)
+    version: 3.2.2(koishi@4.13.9)
   '@koishijs/plugin-verifier':
     specifier: ^1.0.6
-    version: 1.0.6(koishi@4.12.5)
+    version: 1.0.6(koishi@4.13.9)
   axios:
     specifier: ^1.4.0
     version: 1.4.0
@@ -81,50 +81,50 @@ dependencies:
     specifier: ^1.0.5
     version: 1.0.5
   koishi:
-    specifier: ^4.12.5
-    version: 4.12.5
+    specifier: ^4.13.9
+    version: 4.13.9
   koishi-plugin-assets-s3:
     specifier: ^1.2.1
-    version: 1.2.1(koishi@4.12.5)
+    version: 1.2.1(koishi@4.13.9)
   koishi-plugin-baidu:
     specifier: ^1.1.1
-    version: 1.1.1(koishi@4.12.5)
+    version: 1.1.1(koishi@4.13.9)
   koishi-plugin-blive:
     specifier: ^1.5.1
-    version: 1.5.1(koishi@4.12.5)
+    version: 1.5.1(koishi@4.13.9)
   koishi-plugin-bvid:
     specifier: ^1.1.0
-    version: 1.1.0(koishi@4.12.5)
+    version: 1.1.0(koishi@4.13.9)
   koishi-plugin-dialogue:
     specifier: ^4.0.9
-    version: 4.0.9(koishi@4.12.5)
+    version: 4.0.9(koishi@4.13.9)
   koishi-plugin-dialogue-author:
     specifier: ^1.0.4
-    version: 1.0.4(koishi-plugin-dialogue@4.0.9)(koishi@4.12.5)
+    version: 1.0.4(koishi-plugin-dialogue@4.0.9)(koishi@4.13.9)
   koishi-plugin-dialogue-context:
     specifier: ^1.0.3
-    version: 1.0.3(koishi-plugin-dialogue@4.0.9)(koishi@4.12.5)
+    version: 1.0.3(koishi-plugin-dialogue@4.0.9)(koishi@4.13.9)
   koishi-plugin-dialogue-flow:
     specifier: ^1.0.4
-    version: 1.0.4(koishi-plugin-dialogue@4.0.9)(koishi@4.12.5)
+    version: 1.0.4(koishi-plugin-dialogue@4.0.9)(koishi@4.13.9)
   koishi-plugin-dialogue-rate-limit:
     specifier: ^1.0.3
-    version: 1.0.3(koishi-plugin-dialogue@4.0.9)(koishi@4.12.5)
+    version: 1.0.3(koishi-plugin-dialogue@4.0.9)(koishi@4.13.9)
   koishi-plugin-github:
     specifier: ^5.3.1
-    version: 5.3.1(koishi-plugin-puppeteer@3.5.0)(koishi@4.12.5)
+    version: 5.3.1(koishi-plugin-puppeteer@3.5.0)(koishi@4.13.9)
   koishi-plugin-image-search:
-    specifier: ^4.2.2
-    version: 4.2.2(koishi@4.12.5)
+    specifier: ^4.2.3
+    version: 4.2.3(koishi@4.13.9)
   koishi-plugin-mediawiki:
-    specifier: ^2.0.3
-    version: 2.0.3(koishi-plugin-puppeteer@3.5.0)(koishi@4.12.5)
+    specifier: ^2.1.0
+    version: 2.1.0(koishi-plugin-puppeteer@3.5.0)(koishi@4.13.9)
   koishi-plugin-puppeteer:
     specifier: ^3.5.0
-    version: 3.5.0(koishi@4.12.5)(typescript@5.1.6)
+    version: 3.5.0(koishi@4.13.9)(typescript@5.1.6)
   koishi-plugin-schedule:
     specifier: ^4.4.2
-    version: 4.4.2(koishi@4.12.5)
+    version: 4.4.2(koishi@4.13.9)
   mint-filter:
     specifier: ^4.0.3
     version: 4.0.3
@@ -132,8 +132,8 @@ dependencies:
     specifier: ^3.3.0
     version: 3.3.0
   wiki-saikou:
-    specifier: ^2.0.0
-    version: 2.0.0
+    specifier: ^3.0.0
+    version: 3.0.0
 
 devDependencies:
   '@satorijs/element':
@@ -2122,23 +2122,24 @@ packages:
       - supports-color
     dev: false
 
-  /@koishijs/assets@1.0.2(koishi@4.12.5):
+  /@koishijs/assets@1.0.2(koishi@4.13.9):
     resolution: {integrity: sha512-6Y/mjlQ8wfgb/5Li/r+von0ou9fkahQhPt7FFtjyu698nw9Pvd0lX3axa9svKCQtmQg2ZxAb/X/MT7ngEu5baA==}
     peerDependencies:
       koishi: ^4.10.1
     dependencies:
       file-type: 16.5.4
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/core@4.12.5:
-    resolution: {integrity: sha512-7BW5GWe1p+9fmIk4cRKFJvzEimiXaazNCzqZzHcN40fc+KjeUv+JBf61oOzL1LR46lXL3Jd9QgseFpbNGJM2bg==}
+  /@koishijs/core@4.13.9:
+    resolution: {integrity: sha512-ocybW+mZplls0c/yplFxwrV+28tFxVxjxDExhSfLEKfitk+AbtUM07IqmtlM/bFvqlzZZh3Z4ribOj+yxvkESQ==}
     dependencies:
-      '@koishijs/utils': 7.0.1
-      '@minatojs/core': 2.3.1
-      '@satorijs/core': 2.3.1
-      cordis: 2.7.4
-      cosmokit: 1.4.1
+      '@koishijs/i18n-utils': 1.0.0
+      '@koishijs/utils': 7.0.3
+      '@minatojs/core': 2.3.2
+      '@satorijs/core': 2.5.4
+      cordis: 2.8.6
+      cosmokit: 1.4.3
       fastest-levenshtein: 1.0.16
     transitivePeerDependencies:
       - bufferutil
@@ -2146,99 +2147,105 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@koishijs/helpers@1.2.4(koishi@4.12.5):
+  /@koishijs/helpers@1.2.4(koishi@4.13.9):
     resolution: {integrity: sha512-DNrN/B1WuEWo7isSDKc6492Nu//jyRn6K5Sh8yrQgaekQoihu2yM4VGHQJwGLJoQwFH7BEGs80wg1qkRVEl2sw==}
     peerDependencies:
       koishi: ^4.8.7
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/loader@3.1.5(@koishijs/core@4.12.5):
-    resolution: {integrity: sha512-Q2O0EYBZcjS4iaTgt8qv6i3GncwEWf8UZCw5rFCN1piAfMegI4TlHPCTwfqGHmPI8ISZhpBl51jqSMkNC4TuXA==}
-    peerDependencies:
-      '@koishijs/core': 4.12.5
+  /@koishijs/i18n-utils@1.0.0:
+    resolution: {integrity: sha512-eCGDBg7KQLJ76G+h8NJ8QePDLyliQ9DDoM89g3xeEInLLv+Gh6VWHqpgCw2XkxFwI7zJfmG5nyJAS7H31rS/TQ==}
     dependencies:
-      '@koishijs/core': 4.12.5
+      cosmokit: 1.4.3
+    dev: false
+
+  /@koishijs/loader@4.0.5(@koishijs/core@4.13.9):
+    resolution: {integrity: sha512-cJH/amg2FtCMrlyCq3NnJOagbENFF0RNlcRdGVvJ9F5o7LvOxCphu4ag3gwu3+4FOiXzeMf/CLrMRl55nvrpNw==}
+    peerDependencies:
+      '@koishijs/core': 4.13.9
+    dependencies:
+      '@koishijs/core': 4.13.9
       dotenv: 16.3.1
       js-yaml: 4.1.0
       ns-require: 1.1.4
     dev: false
 
-  /@koishijs/plugin-adapter-discord@3.6.0(@satorijs/satori@2.3.1)(koishi@4.12.5):
-    resolution: {integrity: sha512-VeosEkZ1zkpDUR+lbI8xi7nFYYCUdEnk6Gg6WN7/GR7km24eYX+6YFgFA1Cfqyj4xbWng4bK6te5zuvy5aAppA==}
+  /@koishijs/plugin-adapter-discord@3.8.4(@satorijs/satori@2.5.4)(koishi@4.13.9):
+    resolution: {integrity: sha512-NFHEZ2nxqbru5jhP1MD/6L8+s+gB3kGuo0XauRF55gTAEH83XNwYAv7ZtgvtB6w4etB1cD1h5i3PbH35u0c2oQ==}
     peerDependencies:
-      koishi: ^4.12.2
+      koishi: ^4.13.7
     dependencies:
-      '@satorijs/adapter-discord': 3.6.0(@satorijs/satori@2.3.1)
-      koishi: 4.12.5
+      '@satorijs/adapter-discord': 3.8.4(@satorijs/satori@2.5.4)
+      koishi: 4.13.9
     transitivePeerDependencies:
       - '@satorijs/satori'
     dev: false
 
-  /@koishijs/plugin-adapter-onebot@5.6.6(@satorijs/satori@2.3.1)(koishi@4.12.5):
-    resolution: {integrity: sha512-tbMvrEmL32k4j7AUcx97VRVcXypkUUo8zPJvdITnv3v49/bLT1qafKgrjw+E3rkb61MKFHzBJvNN8aPciG+sXg==}
+  /@koishijs/plugin-adapter-onebot@5.7.3(@satorijs/satori@2.5.4)(koishi@4.13.9):
+    resolution: {integrity: sha512-QBmdq8ssTwUXWZzf3b/Vl4urdjDrpNNOWURiY2jrTEKHEThV2uC0VfPLeizTQgOpF5mwor+/ivKxu1Q0+fKQuA==}
     peerDependencies:
-      koishi: ^4.12.4
+      koishi: ^4.13.7
     dependencies:
-      '@satorijs/adapter-onebot': 5.6.6(@satorijs/satori@2.3.1)
-      koishi: 4.12.5
+      '@satorijs/adapter-onebot': 5.7.3(@satorijs/satori@2.5.4)
+      koishi: 4.13.9
     transitivePeerDependencies:
       - '@satorijs/satori'
     dev: false
 
-  /@koishijs/plugin-admin@1.2.1(koishi@4.12.5):
-    resolution: {integrity: sha512-1ntQeMcfyGuaZslTqV/GRn/jVukSA8sKI4Sa9DS/o0lBpO7hQgn2BTDgEmjquged+UjeeFErg3lSRrRqaenspg==}
+  /@koishijs/plugin-admin@1.3.1(koishi@4.13.9):
+    resolution: {integrity: sha512-0aByMxdA/3Zaggxgxji5WKPUkxASU/hiByyDHeG4V9MOqdcsbe1jFKLEdTIIBCZSdru+1blmyqO3pCTP6jCf0g==}
     peerDependencies:
-      koishi: ^4.12.0
+      koishi: ^4.13.6
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-bind@1.4.1(koishi@4.12.5):
-    resolution: {integrity: sha512-vECemephpWgtX5CVUFwMrgJ0mMBzMQIfMmgfrZNYWOnZb/0BP/9EFjdiZefomXUg6zMO8Yug2fPFrszfsUojhg==}
+  /@koishijs/plugin-bind@1.4.2(koishi@4.13.9):
+    resolution: {integrity: sha512-+Qv8Jol/YyRUGxQxgD8LAds4KMZCTk1As4GdkFLFB9whNylBh/mF8jmdnt4fJeQly6zc3Q15nIAtWg/dSqIsmg==}
     peerDependencies:
-      koishi: ^4.12.0
+      koishi: ^4.13.6
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-broadcast@1.1.2(koishi@4.12.5):
-    resolution: {integrity: sha512-KHEweeyYoa5dVwTWIqakmdHNldV6bND9XzHwVnQxpQr1kPOORYy35MnoX9rNWO+I3DBrGTIsSUgM2WJ3aTR2xQ==}
+  /@koishijs/plugin-broadcast@1.1.4(koishi@4.13.9):
+    resolution: {integrity: sha512-yWu4O2WzXv7HLRjRiMbdtxLIyBwdE39in3I7WoOdzZfVhU0QW0ObkNMr5hHL7OpQBuNJ28D46RFUZ2qEwUcU+A==}
     peerDependencies:
-      koishi: ^4.8.5
+      koishi: ^4.13.6
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-callme@1.3.2(koishi@4.12.5):
-    resolution: {integrity: sha512-X0LjzFFD7U72UTpFOKy9cqVZh0Rhbozsp16jGfQwKg5nw5tbUiL5RAowaXnbrSiJPCPdwJg/y6+53STPWpsq7w==}
+  /@koishijs/plugin-callme@1.3.3(koishi@4.13.9):
+    resolution: {integrity: sha512-fWAbOPRiKKe/rL4mW38xYpcDKLIOizVp1/4p1NMcVSb+0vR6s+8/ipxD9IbxHEfIfx/TS9HALXMetFS1JcKxsA==}
     peerDependencies:
-      koishi: ^4.11.6
+      koishi: ^4.13.6
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-commands@3.1.3(@koishijs/plugin-console@5.6.1)(koishi@4.12.5):
-    resolution: {integrity: sha512-kKueGd3sIgpEclo8P3ztHdqNHb6yceD3B+Pyxg1gOiscuvJ+e92WHH66YrvNQxXM2j9zYsZQJStWD7rVbs/oXg==}
+  /@koishijs/plugin-commands@3.2.2(@koishijs/plugin-console@5.12.1)(koishi@4.13.9):
+    resolution: {integrity: sha512-VCCMwkx6MlpHO5KAdnrbdEWfPzFAinosveL/nJc6nA5reC763fIMGoXg0Cacou3PoLlB9TwApHaJTX5UJMJIeQ==}
     peerDependencies:
-      '@koishijs/plugin-console': ^5.6.1
-      koishi: ^4.12.4
+      '@koishijs/plugin-console': ^5.11.6
+      koishi: ^4.13.6
     peerDependenciesMeta:
       '@koishijs/plugin-console':
         optional: true
     dependencies:
-      '@koishijs/plugin-console': 5.6.1(koishi@4.12.5)
-      koishi: 4.12.5
+      '@koishijs/plugin-console': 5.12.1(koishi@4.13.9)
+      koishi: 4.13.9
       throttle-debounce: 3.0.1
     dev: false
 
-  /@koishijs/plugin-console@5.6.1(koishi@4.12.5):
-    resolution: {integrity: sha512-Vk8JY9wgtLqjftrbeQXwPbbR5y9i8b9Ob38MO9yjSrliNMxUKZZxNjy2CaWUL6gMgqMtrR22C4TgpyswZwquNg==}
+  /@koishijs/plugin-console@5.12.1(koishi@4.13.9):
+    resolution: {integrity: sha512-FtBlpWSq27vQJdV8u11uYh59qWYlbL9gWjXJVtKy95L1LHyqsDxHyWG1eN7fZQ3JmahaDYm2Jv2ddIcG3Mn6ng==}
     peerDependencies:
-      koishi: ^4.12.3
+      koishi: ^4.13.9
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
       open: 8.4.2
       uuid: 8.3.2
       ws: 8.13.0
@@ -2247,175 +2254,171 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@koishijs/plugin-database-mongo@4.5.1(@minatojs/core@2.3.1)(koishi@4.12.5):
-    resolution: {integrity: sha512-XEZa4ztIopsRRCoKGMT25NfewK49PWdYx5Vsk/pB8IXvLXhVR91oz36guIGRjvSc64+TbBw3E4TSlVAaj127sw==}
+  /@koishijs/plugin-database-mongo@4.5.3(@minatojs/core@2.3.2)(koishi@4.13.9):
+    resolution: {integrity: sha512-FBvftVGiixG4/dTtMNMzbb8gF3SSjza+jTLylXeBUJXxfC6mtiNacIwaSjIsB+3aO7EIj4KTrupR0AJ9Y4YgQQ==}
     peerDependencies:
-      koishi: ^4.11.9
+      koishi: ^4.13.4
     dependencies:
-      '@minatojs/driver-mongo': 2.5.1(@minatojs/core@2.3.1)
-      koishi: 4.12.5
+      '@minatojs/driver-mongo': 2.5.3(@minatojs/core@2.3.2)
+      koishi: 4.13.9
     transitivePeerDependencies:
       - '@minatojs/core'
       - aws-crt
     dev: false
 
-  /@koishijs/plugin-dataview@2.2.6(@koishijs/plugin-console@5.6.1)(koishi@4.12.5):
-    resolution: {integrity: sha512-Zxc++UQSZIRhiqnoM0xYrycz6iHdVtdEEL01dUQtd+5+hwDi3Qa5rZqZSFeVLXQv+yu1M15lT7dTjM+pNKhrVA==}
+  /@koishijs/plugin-dataview@2.3.1(@koishijs/plugin-console@5.12.1)(koishi@4.13.9):
+    resolution: {integrity: sha512-Xn1MSmKGmxBGMe5uFN5RrGTtiPxAbniq200P1vBWh8Yya6fzk57bO6PkmG8KAxjA4R0epPcat1QOhNqHad5nUw==}
     peerDependencies:
-      '@koishijs/plugin-console': ^5.5.4
-      koishi: ^4.12.0
+      '@koishijs/plugin-console': ^5.7.5
+      koishi: ^4.12.8
     dependencies:
-      '@koishijs/plugin-console': 5.6.1(koishi@4.12.5)
-      koishi: 4.12.5
+      '@koishijs/plugin-console': 5.12.1(koishi@4.13.9)
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-echo@2.2.3(koishi@4.12.5):
-    resolution: {integrity: sha512-wt2Ax4pWjl9D21yW2V72YIxVQfOXsU1DizaQ8Qzop7ZxnD2AwQBgvD30vqA3bpJ0aUnsa+LsRwJYawsY+GCV7w==}
+  /@koishijs/plugin-echo@2.2.4(koishi@4.13.9):
+    resolution: {integrity: sha512-Yl6REuiwpZ68IYpmgW9/mkV9PFb+EKVzqOTwnAe6rXVz2EOxTuHspJ1TdUbi6V1i+eTPanpg1Rbjnn1F0AJm6Q==}
     peerDependencies:
-      koishi: ^4.12.3
+      koishi: ^4.13.6
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-help@2.2.2(koishi@4.12.5):
-    resolution: {integrity: sha512-fokfz58x4CTdedCRwdIjzu1mr0dU1EtuQOFHAVVMOXgZb+A+0gFGwg1ufqluRbHESUpqMhalK10cyVQT2lYkyw==}
+  /@koishijs/plugin-help@2.2.4(koishi@4.13.9):
+    resolution: {integrity: sha512-sKYzJY5tWVbH9Jwa5bqIVt4MJhJARY/FSorfIzOTqHU5lwTjymOPHeBOq2MmUaT+HipfxSkd0slhi6IgiRMjUA==}
     peerDependencies:
-      koishi: ^4.12.1
+      koishi: ^4.13.6
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-insight@3.3.3(@koishijs/plugin-console@5.6.1)(koishi@4.12.5):
-    resolution: {integrity: sha512-tCPcgChBRaMgXInYVrcYi12jiw5aGcsglQMGckUSH/q2f6h67nLN1cv6VyEcTjeUf3Pd3ah17lZjtGdNSXjCFg==}
+  /@koishijs/plugin-insight@3.4.1(@koishijs/plugin-console@5.12.1)(koishi@4.13.9):
+    resolution: {integrity: sha512-oLZRLkt9Dtvs4SkZnUlpoSqz9n/PH526Q+205y9W2hBfLnkIzmw3Uq4BJNXoNBNJiAIRUVfCaF4v+8OSqXjQCg==}
     peerDependencies:
-      '@koishijs/plugin-console': ^5.3.2
-      koishi: ^4.11.6
+      '@koishijs/plugin-console': ^5.9.4
+      koishi: ^4.13.0
     dependencies:
-      '@koishijs/plugin-console': 5.6.1(koishi@4.12.5)
-      koishi: 4.12.5
+      '@koishijs/plugin-console': 5.12.1(koishi@4.13.9)
+      koishi: 4.13.9
       throttle-debounce: 3.0.1
     dev: false
 
-  /@koishijs/plugin-logger@2.2.3(@koishijs/plugin-console@5.6.1)(koishi@4.12.5):
-    resolution: {integrity: sha512-OqZK6UOVJUtcqhdOvcABqWYraALzwDhN+Apr32F4DF3fDtjJ9ld0fX9ndFMgPBucfSXYrCM7ciJ2Cqj563Tdjg==}
+  /@koishijs/plugin-logger@2.3.2(@koishijs/plugin-console@5.12.1)(koishi@4.13.9):
+    resolution: {integrity: sha512-CtuibnGjODuBpqwLqYsDcd7x9gvDpoSGkkjB3JnJdLZiQu4V1+MJVXFce9aNC/04hmAlAXpPnjJ/Jovuhd23+w==}
     peerDependencies:
-      '@koishijs/plugin-console': ^5.3.2
-      koishi: ^4.11.6
+      '@koishijs/plugin-console': ^5.11.9
+      koishi: ^4.13.6
     dependencies:
-      '@koishijs/plugin-console': 5.6.1(koishi@4.12.5)
-      koishi: 4.12.5
+      '@koishijs/plugin-console': 5.12.1(koishi@4.13.9)
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-login@3.1.0(@koishijs/plugin-console@5.6.1)(koishi@4.12.5):
+  /@koishijs/plugin-login@3.1.0(@koishijs/plugin-console@5.12.1)(koishi@4.13.9):
     resolution: {integrity: sha512-Lga/xlG5jFOvzHxXw2FjaColkOEXKnaXu1kcRSSuCfK7oosehBTJe+jcZyn7OAUC5IhaOoavUVrLrp/S/OOH8g==}
     peerDependencies:
       '@koishijs/plugin-console': ^5.5.4
       koishi: ^4.12.0
     dependencies:
-      '@koishijs/plugin-console': 5.6.1(koishi@4.12.5)
-      koishi: 4.12.5
+      '@koishijs/plugin-console': 5.12.1(koishi@4.13.9)
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-rate-limit@1.3.2(koishi@4.12.5):
-    resolution: {integrity: sha512-DqvXz8owZlBpIdVqmQQYcjce/n6hPlKUlyt7UIwriPX+jE5mfVitrufxhDMqDohAldIB60+p6Vi0KDPPtQ6Z3A==}
+  /@koishijs/plugin-rate-limit@1.3.3(koishi@4.13.9):
+    resolution: {integrity: sha512-ha78tAHd5/BxIeQubcm/6rCJPqFtSFgXHAf0AWya9ozv5k67scoqkxAeM/6bm7YmV4VZQsbwEN9FlUiQHFKa6g==}
     peerDependencies:
-      koishi: ^4.12.0
+      koishi: ^4.13.6
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-recall@1.2.0(koishi@4.12.5):
+  /@koishijs/plugin-recall@1.2.0(koishi@4.13.9):
     resolution: {integrity: sha512-s5mTa1RrQ8xliWFNSdQNlvdcj+kxQRV4SGp4kbghAsBsdm96r8ndadi+wI7CIq7mbZE6sz0bfazeGuzBGydQIg==}
     peerDependencies:
       koishi: ^4.9.9
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-repeater@1.1.3(koishi@4.12.5):
+  /@koishijs/plugin-repeater@1.1.3(koishi@4.13.9):
     resolution: {integrity: sha512-bM4L5JAX6kv+q+NCoYhD4wrAZy1bPvh70AQ1uWNCE3USvaChV01BdZu9cyXr/nH9XBuesz6oMkTtoJNsO/07FQ==}
     peerDependencies:
       koishi: ^4.9.1
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-sandbox@3.1.0(@koishijs/plugin-console@5.6.1)(koishi@4.12.5):
-    resolution: {integrity: sha512-yvwgUzOgy3+al344EcWJ6k8eh+NlBpakjaMH9YHEotSGSrbaww60/zQqhbIvjhDDuJSlphzFbqoTd86Botu+tw==}
+  /@koishijs/plugin-sandbox@3.1.10(@koishijs/plugin-console@5.12.1)(koishi@4.13.9):
+    resolution: {integrity: sha512-jSejtjF/mR4ZxGt1BeFjrDnPCJwemj2pq09KRixuuvaj0zPmea2c+wNXl+0c08JX3S9UD1+gxncK4B7eL8VnMg==}
     peerDependencies:
-      '@koishijs/plugin-console': ^5.6.1
-      koishi: ^4.12.4
+      '@koishijs/plugin-console': ^5.11.9
+      koishi: ^4.13.7
     dependencies:
-      '@koishijs/plugin-console': 5.6.1(koishi@4.12.5)
-      koishi: 4.12.5
+      '@koishijs/plugin-console': 5.12.1(koishi@4.13.9)
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-status@7.1.2(@koishijs/plugin-console@5.6.1)(koishi@4.12.5):
-    resolution: {integrity: sha512-3DcGyiyBNNZNPMhPG1SNrbOwwYWWzmkmwFDrolPi6E6ZKTIssWMnBqP8ePuyrR19zro+OzxDtEyVIG9UVFQcBA==}
+  /@koishijs/plugin-status@7.1.3(@koishijs/plugin-console@5.12.1)(koishi@4.13.9):
+    resolution: {integrity: sha512-aihWhW+SztS6NBt7i+GS4Kwa3TL/20P+Ff8fGhhBgm4x4ABanaxRF9P9boGpfE9Z0rNpoOa3R6jyySUY2ItkHg==}
     peerDependencies:
-      '@koishijs/plugin-console': ^5.5.3
-      koishi: ^4.11.8
+      '@koishijs/plugin-console': ^5.9.0
+      koishi: ^4.13.0
     dependencies:
-      '@koishijs/plugin-console': 5.6.1(koishi@4.12.5)
+      '@koishijs/plugin-console': 5.12.1(koishi@4.13.9)
       envinfo: 7.8.1
-      koishi: 4.12.5
+      koishi: 4.13.9
       which-pm-runs: 1.1.0
     dev: false
 
-  /@koishijs/plugin-switch@1.0.6(koishi@4.12.5):
+  /@koishijs/plugin-switch@1.0.6(koishi@4.13.9):
     resolution: {integrity: sha512-OQQC7A9CtlK5FxT193QKxHsRtbESIVwVGZXbxhrwuFKKWaS9QuANhKh3EZngL7yrQdf/X33RsL3CqSHOeb3lzw==}
     peerDependencies:
       koishi: ^4.8.5
     dependencies:
-      '@koishijs/helpers': 1.2.4(koishi@4.12.5)
-      koishi: 4.12.5
+      '@koishijs/helpers': 1.2.4(koishi@4.13.9)
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/plugin-teach@3.2.2(koishi@4.12.5):
+  /@koishijs/plugin-teach@3.2.2(koishi@4.13.9):
     resolution: {integrity: sha512-2HFs8rZ9M7/9h6wjHg3hzcIRqTmm8zfINa8yMZJK8xkNaYVOTYcWCiHmNGYFLUFmebLncz9LrxOmVIFZSkRFXA==}
     engines: {node: '>=12.0.0'}
     peerDependencies:
       koishi: ^4.6.0
     dependencies:
       fastest-levenshtein: 1.0.16
-      koishi: 4.12.5
+      koishi: 4.13.9
       simplify-chinese: 1.1.0
     dev: false
 
-  /@koishijs/plugin-verifier@1.0.6(koishi@4.12.5):
+  /@koishijs/plugin-verifier@1.0.6(koishi@4.13.9):
     resolution: {integrity: sha512-nRlk2K7YR1WKzA9ofoiYh5VXTf0ZE2M080h0v6wEA97cNmMPvZjHaYPYJ8sJItct83XbUM2EB3Doq59uT2vsPg==}
     peerDependencies:
       koishi: ^4.8.5
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /@koishijs/utils@7.0.1:
-    resolution: {integrity: sha512-in0vSfgmsjURf8aw+Wagve5thVXGpZRawYZiN9/w0AElPZ0Y/nQtGDvI0UMRcjubizb/mZgO7j0FcdYMm24dqg==}
+  /@koishijs/utils@7.0.3:
+    resolution: {integrity: sha512-4764zq6frinrR+jZtfhWS2Ty53FCzgJK65VAm2rEd40WLnNLII9o1WZQCyRrqRYY5CNyhD+ffvkqxTmjrYbsVA==}
     dependencies:
-      cosmokit: 1.4.1
+      cosmokit: 1.4.3
       inaba: 1.1.1
     dev: false
 
-  /@lylajs/core@1.2.0:
-    resolution: {integrity: sha512-JFkOzbi3i6g2Ho4Ec9AknOuL8lyr8jinQh3XPuv8QSJ0PIJG1wGMDgKPUEOeXJbKY5tKu7Y97+dP7oidpAehvw==}
-    dev: false
-
-  /@minatojs/core@2.3.1:
-    resolution: {integrity: sha512-3q37agKnVq9QHrJozw3ACk/Gt+i1xDY/o7363kFJmjQSxQfaQg5dHT0NqjwVxe4AyqYpTWh3487IVyEAAMe9kw==}
+  /@minatojs/core@2.3.2:
+    resolution: {integrity: sha512-EbqdOiVrii3j4TDsGRGMAHkhxKYHFeXMDKcNA1ZYBdI+4Ev3spNOhL71I46AkO9QzLzk/vRISNfL99vU/WZkPA==}
     dependencies:
-      cosmokit: 1.4.1
+      cosmokit: 1.4.3
     dev: false
 
-  /@minatojs/driver-mongo@2.5.1(@minatojs/core@2.3.1):
-    resolution: {integrity: sha512-1RQpzx6EUCohodT6QCPgcYDpQYLv2DMkvpZSojdhSNTt9ZZsNTyuwUleiKjc4B2VsFFzyz/iz5OvpBscfc1M7g==}
+  /@minatojs/driver-mongo@2.5.3(@minatojs/core@2.3.2):
+    resolution: {integrity: sha512-vbQzYUBJlqlQ3iG92oEwF+rbDWnuvE8hoXWvneOnXGmc5rBCWjFQI6ZZj/CZE/FyXK70GPEcEwhN2V/vUPV/9g==}
     peerDependencies:
-      '@minatojs/core': ^2.3.1
+      '@minatojs/core': ^2.3.2
     dependencies:
-      '@minatojs/core': 2.3.1
-      cosmokit: 1.4.1
-      mongodb: 4.14.0
-      reggol: 1.3.5
+      '@minatojs/core': 2.3.2
+      cosmokit: 1.4.3
+      mongodb: 4.16.0
+      reggol: 1.4.4
     transitivePeerDependencies:
       - aws-crt
     dev: false
@@ -2633,33 +2636,33 @@ packages:
       - supports-color
     dev: false
 
-  /@satorijs/adapter-discord@3.6.0(@satorijs/satori@2.3.1):
-    resolution: {integrity: sha512-zoLNZrFeNbxXomi18+T+nOKHMccQjau+aPs+fifHuR8FCIHF58+lcSnfWOBf9KO+EPhExffWv55qg2CrTdK17w==}
+  /@satorijs/adapter-discord@3.8.4(@satorijs/satori@2.5.4):
+    resolution: {integrity: sha512-oSg4slSsT/lqNEbYRXBcDG3cfkom8FLSQCwohZEbzWpsjWOqw40BvOBCAhhRL921PC11bqN07CFxLUxyY+vP1A==}
     peerDependencies:
-      '@satorijs/satori': ^2.2.3
+      '@satorijs/satori': ^2.5.2
     dependencies:
-      '@satorijs/satori': 2.3.1
+      '@satorijs/satori': 2.5.4
       form-data: 4.0.0
     dev: false
 
-  /@satorijs/adapter-onebot@5.6.6(@satorijs/satori@2.3.1):
-    resolution: {integrity: sha512-Plb4fhXvWMOTCj4OVTX2pDF4MKszh3Mq5lGauGI+/eby2m/hW22TFLe6K4Mnpa8QupSoqpGEgB2cofk3bDUJxg==}
+  /@satorijs/adapter-onebot@5.7.3(@satorijs/satori@2.5.4):
+    resolution: {integrity: sha512-cFyF6S1sq0I5pXFh/avJ2s6rdku+Iw2sL60yXq7Dx0lNqYj2rUgEU40jMhq0RN53rHMRSl3SqgR+iUXWathzMQ==}
     peerDependencies:
-      '@satorijs/satori': ^2.3.1
+      '@satorijs/satori': ^2.5.2
     dependencies:
-      '@satorijs/satori': 2.3.1
+      '@satorijs/satori': 2.5.4
       qface: 1.4.1
     dev: false
 
-  /@satorijs/core@2.3.1:
-    resolution: {integrity: sha512-IAEPN2GW5m6ZEQIRA1uZlQIiq5VHQFvY+rMbZGjdtbX3bioIhtIBtwUseilUW/BtSl3XrjDgOVRuziGxQeyXwg==}
+  /@satorijs/core@2.5.4:
+    resolution: {integrity: sha512-k2olnGvfVts+s6F1JZNDmux0FbsSWidf2w81IeJ9ExZ3sWpXrpFoE1dOJQzH/WMpZOW5cK8aNgDYv5x9sbIJ1Q==}
     dependencies:
       '@satorijs/element': 2.4.2
-      cordis: 2.7.4
-      cordis-axios: 3.1.1(cordis@2.7.4)
-      cosmokit: 1.4.1
-      reggol: 1.3.5
-      schemastery: 3.7.2
+      cordis: 2.8.6
+      cordis-axios: 3.1.3(cordis@2.8.6)
+      cosmokit: 1.4.3
+      reggol: 1.4.4
+      schemastery: 3.11.1
       ws: 8.13.0
     transitivePeerDependencies:
       - bufferutil
@@ -2672,20 +2675,20 @@ packages:
     dependencies:
       cosmokit: 1.4.2
 
-  /@satorijs/satori@2.3.1:
-    resolution: {integrity: sha512-wsToUdPRzCWgqZcFHeeaA8uyvqPCVSSsVWfNPP+hY9pEJoB/Pe3vREYHBemzy0UJ3o29S08z05pt81AbeJxOTQ==}
+  /@satorijs/satori@2.5.4:
+    resolution: {integrity: sha512-ARSEuB336L4eW4tl8Ky6wj42pZaFDWkkNrR7NHzL2nFIBUbdJCbjStA80zCRK+NKaelJS9ZRqAwq327XgZgP7A==}
     engines: {node: '>=12.0.0'}
     dependencies:
       '@koa/router': 10.1.1
-      '@satorijs/core': 2.3.1
+      '@satorijs/core': 2.5.4
       '@types/koa': 2.13.5
       '@types/koa__router': 8.0.11
-      '@types/ws': 8.5.4
+      '@types/ws': 8.5.5
       file-type: 16.5.4
       http-proxy-agent: 5.0.0
       https-proxy-agent: 5.0.1
-      koa: 2.14.1
-      koa-bodyparser: 4.4.0
+      koa: 2.14.2
+      koa-bodyparser: 4.4.1
       parseurl: 1.3.3
       path-to-regexp: 6.2.1
       socks-proxy-agent: 5.0.1
@@ -2847,8 +2850,8 @@ packages:
       '@types/webidl-conversions': 6.1.1
     dev: false
 
-  /@types/ws@8.5.4:
-    resolution: {integrity: sha512-zdQDHKUgcX/zBc4GrwsE/7dVdAD8JR4EuiAXiiUhhfyIJXXb2+PrGshFyeXWQPMmmZ2XxgaqclgpIC7eTXc1mg==}
+  /@types/ws@8.5.5:
+    resolution: {integrity: sha512-lwhs8hktwxSjf9UaZ9tG5M03PGogvFaH8gUgLNbN9HKIg0dvv6q+gkSuJ8HN4/VbyxkuLzCjlN7GquQ0gUJfIg==}
     dependencies:
       '@types/node': 18.16.19
     dev: false
@@ -2977,16 +2980,6 @@ packages:
       - debug
     dev: true
 
-  /axios@1.1.3:
-    resolution: {integrity: sha512-00tXVRwKx/FZr/IDVFt4C+f9FYairX517WoGCL6dpOntqLkZofjhu43F/Xl44UOpqa+9sLFDrG/XAnFsUYgkDA==}
-    dependencies:
-      follow-redirects: 1.15.1
-      form-data: 4.0.0
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
-    dev: false
-
   /axios@1.4.0:
     resolution: {integrity: sha512-S4XCWMEmzvo64T9GfvQDOXgYRDJ/wsSZc7Jvdgx5u1sd0JwsuPLqb3SYmusag+edF6ziyMensPVqLTSc1PiSEA==}
     dependencies:
@@ -3039,8 +3032,8 @@ packages:
       fill-range: 7.0.1
     dev: true
 
-  /bson@4.7.0:
-    resolution: {integrity: sha512-VrlEE4vuiO1WTpfof4VmaVolCVYkYTgB9iWgYNOrVlnifpME/06fhFRmONgBhClD5pFC1t9ZWqFUQEQAzY43bA==}
+  /bson@4.7.2:
+    resolution: {integrity: sha512-Ry9wCtIZ5kGqkJoi6aD8KjxFZEx78guTQDnpXWiNthsxzrxAK/i8E6pCHAIZTbaEFWcOCvbecMukfK7XUvyLpQ==}
     engines: {node: '>=6.9.0'}
     dependencies:
       buffer: 5.7.1
@@ -3247,32 +3240,32 @@ packages:
     resolution: {integrity: sha512-3DdaFaU/Zf1AnpLiFDeNCD4TOWe3Zl2RZaTzUvWiIk5ERzcCodOE20Vqq4fzCbNoHURFHT4/us/Lfq+S2zyY4w==}
     dev: false
 
-  /cordis-axios@3.1.1(cordis@2.7.4):
-    resolution: {integrity: sha512-zBdLVIfnp8jAerS24T4JY689tmYQl2WpOFMv0Y1g3j3BwwUO/ScveEhfR5Oix3J2JepxIUoA2q18nTBJj2RaFQ==}
+  /cordis-axios@3.1.3(cordis@2.8.6):
+    resolution: {integrity: sha512-0gjkl29G7//Quhbp4OGqsdmSXSM6/8UWY4lZ5Iw6HGGHfrX6NO0KDxIKTwyDpaSWZgaGEC2PUHPfdMJzAc0+tg==}
     engines: {node: '>=12.0.0'}
     peerDependencies:
-      cordis: ^2.7.4
+      cordis: ^2.8.6
     dependencies:
-      axios: 1.1.3
-      cordis: 2.7.4
-      cosmokit: 1.4.1
+      axios: 1.4.0
+      cordis: 2.8.6
+      cosmokit: 1.4.3
       mime-db: 1.52.0
     transitivePeerDependencies:
       - debug
     dev: false
 
-  /cordis@2.7.4:
-    resolution: {integrity: sha512-SNP9JAhSjVHtozfmvU8HvREjsVSWTsQLuyHBH8PVnLZDJExe7l3srqNWs7vkKCrKWCqw8JH1Zj7kDF1bCbpwzw==}
+  /cordis@2.8.6:
+    resolution: {integrity: sha512-PF1uDNy9CuZ4BVDukspUZlx3UvT5VwosNqEMsxI6aL1uYf8JINHKdSiUx8ixUiSj06wXYVy20YqgOR2qb9lczg==}
     dependencies:
-      cosmokit: 1.4.1
-    dev: false
-
-  /cosmokit@1.4.1:
-    resolution: {integrity: sha512-d3ZRpKFahJRvLbo1T4y0ELCudjk9AeDUsfgKm+iAti6yPCeoPLGNUGT4expTWsNkrSA1uk7CKhtBPiizFYvDgA==}
+      cosmokit: 1.4.3
     dev: false
 
   /cosmokit@1.4.2:
     resolution: {integrity: sha512-sUf9VhXySAHqH/CvTb8ATDDQWiMs115DKz+SLTdcjY4h9txWUhbRvUUrtgr8dhmWJdLN6o+Ow7UvvtBdvbaH2g==}
+
+  /cosmokit@1.4.3:
+    resolution: {integrity: sha512-8fPeXub0hs29i5glD4mKntJGdCIcQ55K7qCeXYPAMvPUO4ydpFADWOVwhITSaTcxMzim/JhC2/iFihY/BIsVHA==}
+    dev: false
 
   /create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
@@ -3606,6 +3599,11 @@ packages:
     resolution: {integrity: sha512-cE1qsB/VwyQozZ+q1dGxR8LBYNZeofhEdUNGSMbQD3Gw2lAzX9Zb3uIU6Ebc/Fmyjo9AWWfnn0AUCHqtevs/8g==}
     dependencies:
       pend: 1.2.0
+    dev: false
+
+  /fexios@1.3.0:
+    resolution: {integrity: sha512-OFRMKUkEE/hqIS6fG2WD5tmFTPqpCwhuBu1iwJho41ufHUPsNna+vLokzTuFGk2gMNF1fqy2M0pXwEUqKhza2g==}
+    engines: {node: ^16.15.0 || >=18.0.0}
     dev: false
 
   /figures@3.2.0:
@@ -4031,12 +4029,13 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
-  /koa-bodyparser@4.4.0:
-    resolution: {integrity: sha512-AXPY7wwKZUmbgb8VkTEUFoRNOlx6aWRJwEnQD+zfNf33/7KSAkN4Oo9BqlIk80D+5TvuqlhpQT5dPVcyxl5Zsw==}
+  /koa-bodyparser@4.4.1:
+    resolution: {integrity: sha512-kBH3IYPMb+iAXnrxIhXnW+gXV8OTzCu8VPDqvcDHW9SQrbkHmqPQtiZwrltNmSq6/lpipHnT7k7PsjlVD7kK0w==}
     engines: {node: '>=8.0.0'}
     dependencies:
       co-body: 6.1.0
       copy-to: 2.0.1
+      type-is: 1.6.18
     dev: false
 
   /koa-compose@4.1.0:
@@ -4051,8 +4050,8 @@ packages:
       koa-compose: 4.1.0
     dev: false
 
-  /koa@2.14.1:
-    resolution: {integrity: sha512-USJFyZgi2l0wDgqkfD27gL4YGno7TfUkcmOe6UOLFOVuN+J7FwnNu4Dydl4CUQzraM1lBAiGed0M9OVJoT0Kqw==}
+  /koa@2.14.2:
+    resolution: {integrity: sha512-VFI2bpJaodz6P7x2uyLiX6RLYpZmOJqNmoCst/Yyd7hQlszyPwG/I9CQJ63nOtKSxpt5M7NH67V6nJL2BwCl7g==}
     engines: {node: ^4.8.4 || ^6.10.1 || ^7.10.1 || >= 8.1.4}
     dependencies:
       accepts: 1.3.8
@@ -4082,94 +4081,94 @@ packages:
       - supports-color
     dev: false
 
-  /koishi-plugin-assets-s3@1.2.1(koishi@4.12.5):
+  /koishi-plugin-assets-s3@1.2.1(koishi@4.13.9):
     resolution: {integrity: sha512-NqaUOT1P5ID9bn9V4Qh03E4M7hQODh0/2KA8JBGk1omWPPPGSwapNG5VzsgYE1kb8QHRhwVwADlK4nRSg0SE8g==}
     peerDependencies:
       koishi: ^4.10.3
     dependencies:
       '@aws-sdk/client-s3': 3.315.0
-      '@koishijs/assets': 1.0.2(koishi@4.12.5)
-      koishi: 4.12.5
+      '@koishijs/assets': 1.0.2(koishi@4.13.9)
+      koishi: 4.13.9
     transitivePeerDependencies:
       - '@aws-sdk/signature-v4-crt'
       - aws-crt
     dev: false
 
-  /koishi-plugin-baidu@1.1.1(koishi@4.12.5):
+  /koishi-plugin-baidu@1.1.1(koishi@4.13.9):
     resolution: {integrity: sha512-b4m9Jtu/tk4urrMJEvLSxcLNs4JcPO1/gBZg2aPFnmZbxN0wiigdT7u8Qxf8Xm02PUnWV4cFjTmGiZRiZBb3Fg==}
     peerDependencies:
       koishi: ^4.8.3
     dependencies:
       cheerio: 1.0.0-rc.12
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /koishi-plugin-blive@1.5.1(koishi@4.12.5):
+  /koishi-plugin-blive@1.5.1(koishi@4.13.9):
     resolution: {integrity: sha512-nReegJ7EZECtGO4HIxQtZDD6sNBisMV+LHhfT88ThEsXXVLkQqYgdKPUkhKEbxzVdS/IvUPnTbrJu9BtodsEIg==}
     peerDependencies:
       koishi: ^4.9.0
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /koishi-plugin-bvid@1.1.0(koishi@4.12.5):
+  /koishi-plugin-bvid@1.1.0(koishi@4.13.9):
     resolution: {integrity: sha512-g+cxiTB+LuGdvhg+DSNPCMVa0NRznldd15Cqly9KYKuJqQe8oI9Uj+EFpEh1SHcONvxtXz7o2JYOkfXuEYHJ8g==}
     peerDependencies:
       koishi: ^4.8.0
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /koishi-plugin-dialogue-author@1.0.4(koishi-plugin-dialogue@4.0.9)(koishi@4.12.5):
+  /koishi-plugin-dialogue-author@1.0.4(koishi-plugin-dialogue@4.0.9)(koishi@4.13.9):
     resolution: {integrity: sha512-VD9QmGOkmw+ZS6XPewy8wE6SAb1wnJDQtcY445tfikzERxgL6r+FY7puYuGEA1txYPiBGL79RBAbh4G7Ggpzww==}
     peerDependencies:
       koishi: ^4.11.6
       koishi-plugin-dialogue: ^4.0.8
     dependencies:
-      koishi: 4.12.5
-      koishi-plugin-dialogue: 4.0.9(koishi@4.12.5)
+      koishi: 4.13.9
+      koishi-plugin-dialogue: 4.0.9(koishi@4.13.9)
     dev: false
 
-  /koishi-plugin-dialogue-context@1.0.3(koishi-plugin-dialogue@4.0.9)(koishi@4.12.5):
+  /koishi-plugin-dialogue-context@1.0.3(koishi-plugin-dialogue@4.0.9)(koishi@4.13.9):
     resolution: {integrity: sha512-2hPEubRZ1VSG0qC/C402ONV8Fy7piosXFZU+SnIB//D4sWNudPsnwJ8+s1SJQ9kdf05AZM78kW0lbmue7upLsQ==}
     peerDependencies:
       koishi: ^4.11.6
       koishi-plugin-dialogue: ^4.0.8
     dependencies:
-      koishi: 4.12.5
-      koishi-plugin-dialogue: 4.0.9(koishi@4.12.5)
+      koishi: 4.13.9
+      koishi-plugin-dialogue: 4.0.9(koishi@4.13.9)
     dev: false
 
-  /koishi-plugin-dialogue-flow@1.0.4(koishi-plugin-dialogue@4.0.9)(koishi@4.12.5):
+  /koishi-plugin-dialogue-flow@1.0.4(koishi-plugin-dialogue@4.0.9)(koishi@4.13.9):
     resolution: {integrity: sha512-fM/TqjMgz2Vf/BTQ3PtTvXgi1/TNMT+nNAZMb2EbVZ2gX17LABWZOBWyapOxO61K7Xu/dmzbVM80ezmHbifq5A==}
     peerDependencies:
       koishi: ^4.11.6
       koishi-plugin-dialogue: ^4.0.8
     dependencies:
-      koishi: 4.12.5
-      koishi-plugin-dialogue: 4.0.9(koishi@4.12.5)
+      koishi: 4.13.9
+      koishi-plugin-dialogue: 4.0.9(koishi@4.13.9)
     dev: false
 
-  /koishi-plugin-dialogue-rate-limit@1.0.3(koishi-plugin-dialogue@4.0.9)(koishi@4.12.5):
+  /koishi-plugin-dialogue-rate-limit@1.0.3(koishi-plugin-dialogue@4.0.9)(koishi@4.13.9):
     resolution: {integrity: sha512-onhxh+A4HW3uTo1x5ZdcAZmoyoIpdohwKfjLo002TO3IOJ/btGNrTrFIKvb/4ncziewaWQ5to7ZS7BhMXz9Qdg==}
     peerDependencies:
       koishi: ^4.11.6
       koishi-plugin-dialogue: ^4.0.8
     dependencies:
-      koishi: 4.12.5
-      koishi-plugin-dialogue: 4.0.9(koishi@4.12.5)
+      koishi: 4.13.9
+      koishi-plugin-dialogue: 4.0.9(koishi@4.13.9)
     dev: false
 
-  /koishi-plugin-dialogue@4.0.9(koishi@4.12.5):
+  /koishi-plugin-dialogue@4.0.9(koishi@4.13.9):
     resolution: {integrity: sha512-FFacL303TsaIXSk/EaNeJjlbDnMKKy9dWew6Ia+t0RMjHp48UppV5C3cGBjuuS9L2XErLwlM4Hz9FmfF19Onnw==}
     peerDependencies:
       koishi: ^4.12.4
     dependencies:
       fastest-levenshtein: 1.0.16
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /koishi-plugin-github@5.3.1(koishi-plugin-puppeteer@3.5.0)(koishi@4.12.5):
+  /koishi-plugin-github@5.3.1(koishi-plugin-puppeteer@3.5.0)(koishi@4.13.9):
     resolution: {integrity: sha512-tMcCgGwaEUtC4+ir3R9UMy66VOp5WM4ajxezzBIZPYswt+s1n8kvEO8xu66ILobcNF7bteOM1fB8GsOxXNiFSQ==}
     peerDependencies:
       koishi: ^4.8.4
@@ -4179,53 +4178,51 @@ packages:
         optional: true
     dependencies:
       '@octokit/webhooks-types': 5.8.0
-      koishi: 4.12.5
-      koishi-plugin-markdown: 1.1.1(koishi@4.12.5)
-      koishi-plugin-puppeteer: 3.5.0(koishi@4.12.5)(typescript@5.1.6)
+      koishi: 4.13.9
+      koishi-plugin-markdown: 1.1.1(koishi@4.13.9)
+      koishi-plugin-puppeteer: 3.5.0(koishi@4.13.9)(typescript@5.1.6)
     dev: false
 
-  /koishi-plugin-image-search@4.2.2(koishi@4.12.5):
-    resolution: {integrity: sha512-1SdawxHQhhOyqiyBrH5TT1B9jQNwG0RDK+q8J7oydvcDjRKaZg0woY2MD222KN52EMezBC5H6b+oFS0bcfmsOg==}
+  /koishi-plugin-image-search@4.2.3(koishi@4.13.9):
+    resolution: {integrity: sha512-VXcb+fwUmD/S7vq4Uldk2hZEiQ0ZxbmQIa0Syal2iUtnVsRo6zwx3PwSBzrHv1Fb0cU9VTl2W/UO8eOf8nwCSg==}
     peerDependencies:
       koishi: ^4.8.3
     dependencies:
       cheerio: 1.0.0-rc.12
       iqdb-client: 1.1.0
-      koishi: 4.12.5
+      koishi: 4.13.9
       nhentai-api: 3.4.3
     transitivePeerDependencies:
       - encoding
     dev: false
 
-  /koishi-plugin-markdown@1.1.1(koishi@4.12.5):
+  /koishi-plugin-markdown@1.1.1(koishi@4.13.9):
     resolution: {integrity: sha512-PM3WMFoiMjhHKQV1341wfGl/qsHB5wasqwS5Ga0g/yb1kC7k8gXM+DlKMS3E/tT3Vtc4yyS0DGS5BO2hdwLAbQ==}
     peerDependencies:
       koishi: ^4.10.5
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
       marked: 4.2.12
     dev: false
 
-  /koishi-plugin-mediawiki@2.0.3(koishi-plugin-puppeteer@3.5.0)(koishi@4.12.5):
-    resolution: {integrity: sha512-Yn5Yez88t0CBKI5JV67BGWCwU++kOgPE/7p7bDGvjvH9y0Mn9Z0j38Yw3tsADEwx0uUC4VbkhaOk/U+lkPLIgg==}
+  /koishi-plugin-mediawiki@2.1.0(koishi-plugin-puppeteer@3.5.0)(koishi@4.13.9):
+    resolution: {integrity: sha512-mKhdN49uu96L6xIhYk+VvNp41vDVMzRyYm7d+/4TwZ4nsWfpOkXzPItMklA5wTuMIvNGo7G/8r9WbLoCOwqHqg==}
     peerDependencies:
       koishi: ^4.12.3
       koishi-plugin-puppeteer: ^3.5.0
     dependencies:
-      koishi: 4.12.5
-      koishi-plugin-puppeteer: 3.5.0(koishi@4.12.5)(typescript@5.1.6)
-      mediawiki-api-axios: 1.3.4
-      tslib: 2.5.0
-    transitivePeerDependencies:
-      - debug
+      koishi: 4.13.9
+      koishi-plugin-puppeteer: 3.5.0(koishi@4.13.9)(typescript@5.1.6)
+      tslib: 2.6.1
+      wiki-saikou: 3.0.0
     dev: false
 
-  /koishi-plugin-puppeteer@3.5.0(koishi@4.12.5)(typescript@5.1.6):
+  /koishi-plugin-puppeteer@3.5.0(koishi@4.13.9)(typescript@5.1.6):
     resolution: {integrity: sha512-i6achrOL8eYQ32I31hYqtq8aVbRazNuOTpttKpFT7+Vr3OrNrdbDPNBaesoIptZ6P0SdIRwV1/f5MNxAvNEX5g==}
     peerDependencies:
       koishi: ^4.11.0
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
       puppeteer-core: 19.9.1(typescript@5.1.6)
       puppeteer-finder: 1.1.0
     transitivePeerDependencies:
@@ -4236,23 +4233,23 @@ packages:
       - utf-8-validate
     dev: false
 
-  /koishi-plugin-schedule@4.4.2(koishi@4.12.5):
+  /koishi-plugin-schedule@4.4.2(koishi@4.13.9):
     resolution: {integrity: sha512-KEPrLIAQh5Z+iDnhXVMBMjZQzCtAErOb2aKJbiQN5YIUD89w/daMATD9Q10f9xzjZkQP+E8ftjwHgbuhslGByQ==}
     peerDependencies:
       koishi: ^4.10.0
     dependencies:
-      koishi: 4.12.5
+      koishi: 4.13.9
     dev: false
 
-  /koishi@4.12.5:
-    resolution: {integrity: sha512-UqtxuLxjAiqmx+TDZzGVS4MJsWLSuyyVWpPP0clzGUjfdPWSbbYeZ4aPnYyIpvMOqli/uxxpizDhUxha5rgPYg==}
+  /koishi@4.13.9:
+    resolution: {integrity: sha512-AwF+i9WEICC8mg4rwKKE6K6eREYKfAtnasIFyaLsAZ7kL61zbxB5up4byV27vWM9Cc47Ck+KV5Bf65fizgGrMA==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
-      '@koishijs/core': 4.12.5
-      '@koishijs/loader': 3.1.5(@koishijs/core@4.12.5)
-      '@koishijs/utils': 7.0.1
-      '@satorijs/satori': 2.3.1
+      '@koishijs/core': 4.13.9
+      '@koishijs/loader': 4.0.5(@koishijs/core@4.13.9)
+      '@koishijs/utils': 7.0.3
+      '@satorijs/satori': 2.5.4
       cac: 6.7.14
       kleur: 4.1.5
       ns-require: 1.1.4
@@ -4306,16 +4303,6 @@ packages:
   /media-typer@0.3.0:
     resolution: {integrity: sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==}
     engines: {node: '>= 0.6'}
-    dev: false
-
-  /mediawiki-api-axios@1.3.4:
-    resolution: {integrity: sha512-NNvF4GNtTS0WTWajo1j0uEpunRNFGxpWKy9DStGLL1xRYEaOFV5HDH0b0RXmtcN602Iiu7w9y4OPIi3fg//TWw==}
-    deprecated: This library has been renamed to wiki-saikou. Please use wiki-saikou instead.
-    dependencies:
-      '@vue/reactivity': 3.3.4
-      axios: 1.4.0
-    transitivePeerDependencies:
-      - debug
     dev: false
 
   /memory-pager@1.5.0:
@@ -4387,11 +4374,11 @@ packages:
       whatwg-url: 11.0.0
     dev: false
 
-  /mongodb@4.14.0:
-    resolution: {integrity: sha512-coGKkWXIBczZPr284tYKFLg+KbGPPLlSbdgfKAb6QqCFt5bo5VFZ50O3FFzsw4rnkqjwT6D8Qcoo9nshYKM7Mg==}
+  /mongodb@4.16.0:
+    resolution: {integrity: sha512-0EB113Fsucaq1wsY0dOhi1fmZOwFtLOtteQkiqOXGklvWMnSH3g2QS53f0KTP+/6qOkuoXE2JksubSZNmxeI+g==}
     engines: {node: '>=12.9.0'}
     dependencies:
-      bson: 4.7.0
+      bson: 4.7.2
       mongodb-connection-string-url: 2.6.0
       socks: 2.7.1
     optionalDependencies:
@@ -4448,8 +4435,8 @@ packages:
       boolbase: 1.0.0
     dev: false
 
-  /object-inspect@1.12.2:
-    resolution: {integrity: sha512-z+cPxW0QGUp0mcqcsgQyLVRDoXFQbXOwBaqyF7VIgI4TWNQsDHrBpUQslRmIfAoYWdYzs6UlKJtB2XJpTaNSpQ==}
+  /object-inspect@1.12.3:
+    resolution: {integrity: sha512-geUvdk7c+eizMNUDkRpW1wJwgfOiOeHbxBR/hLXK1aT6zmVSO0jsQcs7fj6MGw89jC/cjGfLcNOrtMYtGqm81g==}
     dev: false
 
   /object-treeify@1.1.33:
@@ -4682,11 +4669,11 @@ packages:
       esprima: 4.0.1
     dev: true
 
-  /reggol@1.3.5:
-    resolution: {integrity: sha512-kzkzs4nhZeiphyh+amekq25/3PndZDq+5Yt8qCJqPSyMXPC1pkwhfYCQyJdXxoRz3/uqt0+VqHulagUCVY84vA==}
+  /reggol@1.4.4:
+    resolution: {integrity: sha512-gbiFjh2o6rF+ZkDNCuv72qVKuEUdJSLzjxEZt56vpOMCO7erF2k6eyI84roe/i41R6f5N9HKLs8M7yy4bsqEWQ==}
     dependencies:
-      cosmokit: 1.4.1
-      object-inspect: 1.12.2
+      cosmokit: 1.4.3
+      object-inspect: 1.12.3
       supports-color: 8.1.1
     dev: false
 
@@ -4740,10 +4727,10 @@ packages:
     dev: false
     optional: true
 
-  /schemastery@3.7.2:
-    resolution: {integrity: sha512-CiDDwMQeNq7eusS4TSuo5bMfi/RORPXbBNMpd1s8a5I2ukD5NOpExNKfgHJSK6Sy4PcjY35luIw7bVo84dkPHw==}
+  /schemastery@3.11.1:
+    resolution: {integrity: sha512-rXxze+Wyga7oAVFxFyURh5cuzUhcGC4L5DKGmcNrs/LWEOrlrwVTyd+RgMfcs8WWk1hOAUj1EvumGGQAjy4JjA==}
     dependencies:
-      cosmokit: 1.4.1
+      cosmokit: 1.4.3
     dev: false
 
   /semver@5.7.1:
@@ -4800,7 +4787,7 @@ packages:
     dependencies:
       call-bind: 1.0.2
       get-intrinsic: 1.1.2
-      object-inspect: 1.12.2
+      object-inspect: 1.12.3
     dev: false
 
   /signal-exit@3.0.7:
@@ -5036,6 +5023,10 @@ packages:
   /tslib@2.5.0:
     resolution: {integrity: sha512-336iVw3rtn2BUK7ORdIAHTyxHGRIHVReokCR3XjbckJMK7ms8FysBfhLR8IXnAgy7T0PTPNBWKiH514FOW/WSg==}
 
+  /tslib@2.6.1:
+    resolution: {integrity: sha512-t0hLfiEKfMUoqhG+U1oid7Pva4bbDPHYfJNiB7BiIjRkj1pyC++4N3huJfqY6aRH6VTB0rvtzQwjM4K6qpfOig==}
+    dev: false
+
   /tsscmp@1.0.6:
     resolution: {integrity: sha512-LxhtAkPDTkVCMQjt2h6eBVY28KCjikZqZfMcC15YBeNjkgUpdCfBu5HoiOTDu86v6smE8yOjyEktJ8hlbANHQA==}
     engines: {node: '>=0.6.x'}
@@ -5167,11 +5158,12 @@ packages:
       string-width: 4.2.3
     dev: true
 
-  /wiki-saikou@2.0.0:
-    resolution: {integrity: sha512-ITeNHXEIHs4auCssPwCsTIKt0EHlZNuysSNlZRGzOltNgUUteQhv5YvtaW8R9l6GBWc68cERiWqq1oQlTvt06Q==}
+  /wiki-saikou@3.0.0:
+    resolution: {integrity: sha512-pCEWAoTgwj/lXCtb/EXgNc9qCVOg6Wo9QvWoeR9ZS9BdrOA+Np5pAdDDtmnWC8hH/eEHg31H9pd077u22Gmehw==}
     dependencies:
-      '@lylajs/core': 1.2.0
       '@vue/reactivity': 3.3.4
+      fexios: 1.3.0
+      tslib: 2.6.1
     dev: false
 
   /wordwrap@1.0.0:
