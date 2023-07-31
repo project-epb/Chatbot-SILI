@@ -6,8 +6,8 @@ import { safelyStringify } from '../utils/safelyStringify'
 
 enum LogFile {
   signal = '.koishi_signal',
-  commandLogs = '.koishi_command_cmdlogs',
-  lastSession = '.koishi_command_lastsession',
+  commandLogs = '.koishi_signal_cmdlogs',
+  lastSession = '.koishi_signal_lastsession',
 }
 enum KSignal {
   isReboot = 1 << 0,

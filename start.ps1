@@ -55,7 +55,7 @@ function RunAndLog($command) {
     $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     "[$time] > $command" | Out-File -FilePath $CMDLOG_FILE -Append
     $out = Invoke-Expression -Command $command
-    AddIndentation $out 1 | Out-File -FilePath $CMDLOG_FILE -Append
+    AddIndentation $out 2 | Out-File -FilePath $CMDLOG_FILE -Append
 }
 function WriteLogLine($line) {
     $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
@@ -81,7 +81,7 @@ function GetSignal() {
 
 function AddIndentation($inputString, $numSpaces) {
     $indentedString = foreach ($line in $inputString -split "`n") {
-        $indentation = '	' * $numSpaces
+        $indentation = ' ' * $numSpaces
         $line = $indentation + $line
         $line
     }
@@ -90,10 +90,9 @@ function AddIndentation($inputString, $numSpaces) {
 }
 
 function CheckBit($value, $index) {
-    if ($index -lt 1) {
+    if ($index -lt 0) {
         throw "Index must be a positive integer."
     }
-    $index = $index - 1
     if ($value -is [string]) {
         if (![int]::TryParse($value, [ref]$value)) {
             throw "Invalid numeric value."
