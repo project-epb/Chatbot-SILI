@@ -45,6 +45,8 @@ function Main() {
             WriteLogLine "正在检查 NPM 依赖..."
             RunAndLog "pnpm install"
         }
+
+        RunAndLog "git log --pretty=`"format:%h %s @%an`" HEAD^1..HEAD"
     } while ($true)
 }
 
@@ -53,13 +55,17 @@ function ResetLog() {
 }
 function RunAndLog($command) {
     $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    "[$time] > $command" | Out-File -FilePath $CMDLOG_FILE -Append
-    $out = Invoke-Expression -Command $command
-    AddIndentation $out 2 | Out-File -FilePath $CMDLOG_FILE -Append
+    WriteLogLine "> $command"
+    $result = Invoke-Expression -Command $command
+    $result = AddIndentation $result 2
+    Write-Host $result
+    $result | Out-File -FilePath $CMDLOG_FILE -Append
 }
 function WriteLogLine($line) {
     $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    "[$time] $line" | Out-File -FilePath $CMDLOG_FILE -Append
+    $line = "[$time] $line"
+    Write-Host $line
+    $line | Out-File -FilePath $CMDLOG_FILE -Append
 }
 
 function ResetSignal() {

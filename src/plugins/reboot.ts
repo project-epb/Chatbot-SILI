@@ -119,10 +119,10 @@ export default class PluginReboot extends BasePlugin {
 
       bot.sendMessage(
         session.channelId,
-        `SILI 已完成重启 (${(+kSignal).toString(2).padStart(6, '0')})
+        `SILI 重启完毕 (SIGNAL-${(+kSignal).toString(2).padStart(6, '0')})
 共耗时: ${((now - lastSession.time) / 1000).toFixed(2)}s
 请求者: ${h.at(session.userId)}
-启动日志: ${cmdLogsImg || '-'}`
+${cmdLogsImg || '(没有详细日志)'}`
       )
     }
   }
