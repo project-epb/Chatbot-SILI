@@ -40,13 +40,26 @@ function Main() {
         }
 
         if ($isGitSync) {
-            WriteLogLine "正在从 GitHub 拉取最新内容..."
-            RunAndLog "git pull"
-            WriteLogLine "正在检查 NPM 依赖..."
-            RunAndLog "pnpm install"
+            WriteLogLine "正在从远程 Git 仓库拉取更新..."
+            RunAndLog "git fetch"
+
+            $curGitHash = git rev-parse --short "HEAD"
+            $originGitHash = git rev-parse --short "origin/HEAD"
+            WriteLogLine "本地仓库当前 Git Hash: $curGitHash"
+            WriteLogLine "远程仓库当前 Git Hash: $originGitHash"
+
+            if ($curGitHash -ne $originGitHash) {
+                RunAndLog "git pull"
+
+                WriteLogLine "正在更新 NPM 依赖..."
+                RunAndLog "pnpm install"
+            } else {
+                WriteLogLine "本地仓库已是最新版本，无需更新。"
+            }
+
+            RunAndLog "git log --graph $curGitHash..$originGitHash"
         }
 
-        RunAndLog "git log --pretty=`"format:%h %s @%an`" HEAD^1..HEAD"
     } while ($true)
 }
 
