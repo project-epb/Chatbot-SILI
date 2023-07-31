@@ -11,10 +11,14 @@ import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { readFile } from 'fs/promises'
 import crypto from 'crypto'
+import { safelyStringify } from '../../utils/safelyStringify'
 
 declare module 'koishi' {
   interface Tables {
     openai_chat: OpenAIConversationLog
+  }
+  interface User {
+    openai_last_conversation_id: string
   }
 }
 
@@ -38,14 +42,8 @@ export default class PluginOpenAi extends BasePlugin {
   static using = ['html']
   openai: OpenAIApi
   openaiConfiguration: Configuration
-  /** =========================================== */
-  SILI_PROMPT = readFileSync(resolve(__dirname, './prompts/SILI.txt'), {
-    encoding: 'utf-8',
-  })
-    .toString()
-    .trim()
-  /** =========================================== */
-  CHAT_SUMMARY_PROMPT = `You are a chat recorder. Summarize these chat records in three paragraphs. The first paragraph lists the participants' name, the second paragraph summarizes views in a list by participants, and the third paragraph summarizes as a whole. Use markdown and reply in Chinese.`
+  SILI_PROMPT = PluginOpenAi.readPromptFile('SILI.txt')
+  CHAT_SUMMARY_PROMPT = PluginOpenAi.readPromptFile('chat-summary.txt')
   RANDOM_ERROR_MSG = (
     <random>
       <template>SILI不知道喔。</template>
@@ -104,7 +102,7 @@ export default class PluginOpenAi extends BasePlugin {
 
     process.on('exit', () => {
       try {
-        writeFileSync(logFile, safeJSONStringify(this.#chatRecords))
+        writeFileSync(logFile, safelyStringify(this.#chatRecords))
       } catch (e) {
         console.info('save logs error', e)
       }
@@ -281,6 +279,18 @@ export default class PluginOpenAi extends BasePlugin {
       })
   }
 
+  static readPromptFile(file: string) {
+    try {
+      return readFileSync(resolve(__dirname, `./prompts/${file}`), {
+        encoding: 'utf-8',
+      })
+        .toString()
+        .trim()
+    } catch (e) {
+      return ''
+    }
+  }
+
   async getChatHistoriesById(
     conversation_id: string,
     limit = 10
@@ -377,27 +387,4 @@ export default class PluginOpenAi extends BasePlugin {
       })
     )
   }
-}
-
-function safeJSONStringify(obj: any, space = 0) {
-  const visited = new WeakSet()
-
-  function replacer(key, value) {
-    // 处理 BigInt
-    if (typeof value === 'bigint') {
-      return value.toString()
-    }
-
-    // 处理自循环引用
-    if (typeof value === 'object' && value !== null) {
-      if (visited.has(value)) {
-        return '<circular>'
-      }
-      visited.add(value)
-    }
-
-    return value
-  }
-
-  return JSON.stringify(obj, replacer, space)
 }
