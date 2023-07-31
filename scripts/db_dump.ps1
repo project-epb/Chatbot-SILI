@@ -7,7 +7,7 @@ param(
 )
 
 $cur_date = Get-Date -Format "yyyyMMddhhmmss"
-$dump_dir = "$env:USERPROFILE\mongo_dump\$cur_date"
+$dump_dir = "$env:USERPROFILE\mongo_dump\$db-$cur_date"
 
 mongodump --host 127.0.0.1 --port 27017 --db $db --out $dump_dir
 
