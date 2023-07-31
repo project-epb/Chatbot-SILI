@@ -45,6 +45,7 @@ import MessagesLogger from './modules/MessagesLogger'
 import MintFilterService from './plugins/sensitive-words-filter/MintFilterService'
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
+import PluginReboot from './plugins/reboot'
 
 // Setup .env
 config()
@@ -84,10 +85,7 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   })
   // Discord
   // ctx.plugin('adapter-discord', {
-  //   token:
-  //     env.KOISHI_ENV === 'prod'
-  //       ? env.TOKEN_DISCORD_BOT_SILI
-  //       : env.TOKEN_DISCORD_BOT_XIAOYUJUN,
+  //   token: env.TOKEN_DISCORD_BOT,
   // })
 })
 
@@ -173,10 +171,11 @@ app.plugin(function PluginCollectionConsole(ctx) {
     uiPath: '/dash',
     apiPath: '/api/status',
   })
+  ctx.plugin('auth', { admin: { enabled: false } })
   ctx.plugin('dataview')
+  ctx.plugin('explorer')
   ctx.plugin('insight')
   ctx.plugin('status')
-  ctx.plugin('login', { admin: { enabled: false } })
   ctx.plugin('logger')
   ctx.plugin('sandbox')
 })
@@ -273,6 +272,7 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)
   ctx.plugin(ProcessErrorHandler)
+  ctx.plugin(PluginReboot)
   ctx.plugin(PluginSensitiveFilter)
 })
 
