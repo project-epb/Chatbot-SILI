@@ -1,4 +1,4 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
 
 settings:
   autoInstallPeers: true
@@ -80,6 +80,9 @@ dependencies:
   koishi:
     specifier: ^4.13.9
     version: 4.13.9
+  koishi-plugin-analytics:
+    specifier: ^0.0.1
+    version: 0.0.1
   koishi-plugin-assets-s3:
     specifier: ^1.2.1
     version: 1.2.1(koishi@4.13.9)
@@ -4103,6 +4106,10 @@ packages:
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /koishi-plugin-analytics@0.0.1:
+    resolution: {integrity: sha512-YyhfMZLVKLZibgTudWEJGhCpwM1LzdDPKmc6q41n57R/AiJOfBab3gY0DKk3OIzPAYgojDzG7YqsKsLU2faWVQ==}
     dev: false
 
   /koishi-plugin-assets-s3@1.2.1(koishi@4.13.9):
