@@ -110,7 +110,10 @@ app.plugin(function PluginCollectionAdapters(ctx) {
     secret: process.env.VILLA_APPSECRET,
     pubKey: process.env.VILLA_PUBKEY,
     path: '/api/villa',
-    verifyCallback: false,
+    /**
+     * @TODO: `underscores_in_headers on;` should be set in nginx config
+     */
+    // verifyCallback: false,
   })
 })
 
