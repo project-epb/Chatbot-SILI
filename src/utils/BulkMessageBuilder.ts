@@ -1,7 +1,7 @@
 import { segment, Universal, Session } from 'koishi'
 
 export class BulkMessageBuilder {
-  #figure = segment('figure')
+  #figure = segment('message', { forward: '' })
   #bot: Universal.Author
   #author: Universal.Author
   #content: string

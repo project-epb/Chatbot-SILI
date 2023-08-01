@@ -1,10 +1,13 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@koishijs/plugin-adapter-dingtalk':
+    specifier: ^1.0.0
+    version: 1.0.0(@satorijs/satori@2.5.4)(koishi@4.13.9)
   '@koishijs/plugin-adapter-discord':
     specifier: ^3.8.4
     version: 3.8.4(@satorijs/satori@2.5.4)(koishi@4.13.9)
@@ -2172,6 +2175,17 @@ packages:
       ns-require: 1.1.4
     dev: false
 
+  /@koishijs/plugin-adapter-dingtalk@1.0.0(@satorijs/satori@2.5.4)(koishi@4.13.9):
+    resolution: {integrity: sha512-TirslT9YpncEM+Eedvnue3QrtJ68sc+WXpLO2wygJpjN+McNPSpfulXDjZgfHnPb+pPTy0xDg7BNpZ/indDDqg==}
+    peerDependencies:
+      koishi: ^4.13.7
+    dependencies:
+      '@satorijs/adapter-dingtalk': 1.0.0(@satorijs/satori@2.5.4)
+      koishi: 4.13.9
+    transitivePeerDependencies:
+      - '@satorijs/satori'
+    dev: false
+
   /@koishijs/plugin-adapter-discord@3.8.4(@satorijs/satori@2.5.4)(koishi@4.13.9):
     resolution: {integrity: sha512-NFHEZ2nxqbru5jhP1MD/6L8+s+gB3kGuo0XauRF55gTAEH83XNwYAv7ZtgvtB6w4etB1cD1h5i3PbH35u0c2oQ==}
     peerDependencies:
@@ -2639,6 +2653,14 @@ packages:
       yargs: 17.7.1
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /@satorijs/adapter-dingtalk@1.0.0(@satorijs/satori@2.5.4):
+    resolution: {integrity: sha512-08iJN9FB8qfaSheuFBqEwvEbxoe5sCD3AYS7qawrsf0UqYSjX+RYiDgqWxcvpCGkzoIggrxJBrQRuyOrj8oVOA==}
+    peerDependencies:
+      '@satorijs/satori': ^2.5.3
+    dependencies:
+      '@satorijs/satori': 2.5.4
     dev: false
 
   /@satorijs/adapter-discord@3.8.4(@satorijs/satori@2.5.4):

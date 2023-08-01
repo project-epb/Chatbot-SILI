@@ -87,6 +87,20 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   // ctx.plugin('adapter-discord', {
   //   token: env.TOKEN_DISCORD_BOT,
   // })
+  // DingTalk
+  const dingTokens = process.env.DINGTALK_TOKENS?.split('|')
+  if (dingTokens && dingTokens.length) {
+    dingTokens.forEach((token) => {
+      const [agentId, appkey, secret] = token?.split('/')
+      if (!agentId || !appkey || !secret) return
+      ctx.plugin('adapter-dingtalk', {
+        protocol: 'ws',
+        agentId: +agentId,
+        appkey,
+        secret,
+      })
+    })
+  }
 })
 
 /** 安装插件 */
