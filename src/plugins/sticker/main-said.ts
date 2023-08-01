@@ -40,7 +40,7 @@ export default class 梅因说 extends BaseSticker {
                   `,
             '#sticker'
           )
-          return img ? h.image(img) : '生成表情包时出现问题。'
+          return img ? h.image(img, 'image/jpeg') : '生成表情包时出现问题。'
         } catch (err) {
           this.logger.error(err)
           return '生成表情包时出现问题。'

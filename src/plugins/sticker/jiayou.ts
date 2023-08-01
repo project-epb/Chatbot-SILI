@@ -101,7 +101,7 @@ export default class 加油 extends BaseSticker {
 `
 
         const img = await ctx.html.html(html, '#sticker')
-        return img ? h.image(img) : ''
+        return img ? h.image(img, 'image/jpeg') : ''
       })
   }
 }
