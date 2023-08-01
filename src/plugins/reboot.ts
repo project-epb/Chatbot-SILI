@@ -38,11 +38,14 @@ export default class PluginReboot extends BasePlugin {
     ctx
       .command('reboot', '重启机器人', { authority: 4 })
       .option('sync', '-s')
+      .option('yes', '-y')
       .action(async ({ session, options }) => {
-        await session.send('请在 10 秒内发送句号以确认重启……')
-        const ensure = await (session as Session).prompt(10 * 1000)
-        if (!['.', '。'].includes(ensure)) {
-          return '重启申请已被 SILI 驳回。'
+        if (!options.yes) {
+          await session.send('请在 10 秒内发送句号以确认重启……')
+          const ensure = await (session as Session).prompt(10 * 1000)
+          if (!['.', '。'].includes(ensure)) {
+            return '重启申请被 SILI 驳回。'
+          }
         }
 
         let kSignal = 0

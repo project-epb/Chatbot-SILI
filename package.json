@@ -50,6 +50,7 @@
     "axios": "^1.4.0",
     "find-chrome-bin": "^1.0.5",
     "koishi": "^4.13.9",
+    "koishi-plugin-adapter-villa": "^0.5.1",
     "koishi-plugin-assets-s3": "^1.2.1",
     "koishi-plugin-baidu": "^1.1.1",
     "koishi-plugin-blive": "^1.5.1",

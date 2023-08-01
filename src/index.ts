@@ -83,10 +83,12 @@ app.plugin(function PluginCollectionAdapters(ctx) {
     selfId: env.ONEBOT_SELFID,
     endpoint: env.ONEBOT_ENDPOINT,
   })
+
   // Discord
   // ctx.plugin('adapter-discord', {
   //   token: env.TOKEN_DISCORD_BOT,
   // })
+
   // DingTalk
   const dingTokens = process.env.DINGTALK_TOKENS?.split('|')
   if (dingTokens && dingTokens.length) {
@@ -101,6 +103,15 @@ app.plugin(function PluginCollectionAdapters(ctx) {
       })
     })
   }
+
+  // Villa
+  ctx.plugin('adapter-villa', {
+    id: process.env.VILLA_APPID,
+    secret: process.env.VILLA_APPSECRET,
+    pubKey: process.env.VILLA_PUBKEY,
+    path: '/api/villa',
+    verifyCallback: false,
+  })
 })
 
 /** 安装插件 */
