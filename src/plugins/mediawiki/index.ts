@@ -447,7 +447,7 @@ ${getUrl(session.channel!.mwApi!, { curid: item.pageid })}`
       // 开始竞速，load 事件触发后最多再等 5s
       await Promise.race([
         page.goto(renderUrl.toString(), {
-          timeout: 15 * 1000,
+          timeout: 10 * 1000,
           waitUntil: 'networkidle0',
         }),
         new Promise((resolve) => {
