@@ -13,7 +13,9 @@ export default class PluginHljs extends BasePlugin {
       .action(async ({ session, options }, code) => {
         if (!code) return session?.execute('hljs -h')
         const img = await ctx.html.hljs(code, options?.lang, options?.from)
-        return img ? segment.image(img) : '渲染代码时出现了一些问题。'
+        return img
+          ? segment.image(img, 'image/jpeg')
+          : '渲染代码时出现了一些问题。'
       })
   }
 }

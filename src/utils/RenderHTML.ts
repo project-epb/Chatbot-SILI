@@ -1,5 +1,5 @@
 import { Context, Service } from 'koishi'
-import {} from '@koishijs/plugin-puppeteer'
+import {} from 'koishi-plugin-puppeteer'
 
 export class HTMLService extends Service {
   static using = ['puppeteer']
