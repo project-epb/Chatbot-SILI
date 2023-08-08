@@ -54,7 +54,7 @@ export default class PluginVersion {
           ].join('\n'),
           'markdown'
         )
-        return img ? h.image(img, 'image/jpeg') : '检查版本时发生未知错误。'
+        return img || '检查版本时发生未知错误。'
       })
   }
 

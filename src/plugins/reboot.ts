@@ -1,4 +1,4 @@
-import { readFile, writeFile, rm } from 'fs/promises'
+import { readFile, writeFile } from 'fs/promises'
 import { Context, Session, h } from 'koishi'
 import { resolve } from 'path'
 import BasePlugin from './_boilerplate'
@@ -13,6 +13,7 @@ enum KSignal {
   isReboot = 1 << 0,
   isGitSync = 1 << 1,
   isFastReboot = 1 << 2,
+  isDumpDB = 1 << 3,
 }
 
 type SessionLog = {
@@ -37,8 +38,9 @@ export default class PluginReboot extends BasePlugin {
 
     ctx
       .command('reboot', '重启机器人', { authority: 4 })
-      .option('sync', '-s')
-      .option('yes', '-y')
+      .option('sync', '-s 从 Git 同步并处理依赖')
+      .option('dumpdb', '-d 备份数据库')
+      .option('yes', '-y 跳过确认', { hidden: true })
       .action(async ({ session, options }) => {
         if (!options.yes) {
           await session.send('请在 10 秒内发送句号以确认重启……')
@@ -52,6 +54,7 @@ export default class PluginReboot extends BasePlugin {
         kSignal |= KSignal.isReboot
         if (options.sync) kSignal |= KSignal.isGitSync
         kSignal |= KSignal.isFastReboot
+        if (options.dumpdb) kSignal |= KSignal.isDumpDB
 
         await Promise.all([
           await this.writeLogFile(LogFile.signal, kSignal.toString()),
@@ -107,11 +110,10 @@ export default class PluginReboot extends BasePlugin {
     const cmdLogsRaw = await this.readLogFile(LogFile.commandLogs)
     let cmdLogsImg: h | string = ''
     if (cmdLogsRaw) {
-      const [buf] = await Promise.all([
+      ;[cmdLogsImg] = await Promise.all([
         await this.ctx.root.html.hljs(cmdLogsRaw, 'shell'),
         await this.removeLogFile(LogFile.commandLogs),
       ])
-      cmdLogsImg = h.image(buf, 'image/jpeg')
     }
 
     if (lastSession && lastSession.session) {
@@ -125,7 +127,8 @@ export default class PluginReboot extends BasePlugin {
         `SILI 重启完毕 (SIGNAL-${(+kSignal).toString(2).padStart(6, '0')})
 共耗时: ${((now - lastSession.time) / 1000).toFixed(2)}s
 请求者: ${h.at(session.userId)}
-${cmdLogsImg || '(没有详细日志)'}`
+${cmdLogsImg || '(没有详细日志)'}`,
+        session.guildId
       )
     }
   }

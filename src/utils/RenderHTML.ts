@@ -1,4 +1,4 @@
-import { Context, Service } from 'koishi'
+import { Context, Service, h } from 'koishi'
 import {} from 'koishi-plugin-puppeteer'
 
 export class HTMLService extends Service {
@@ -12,7 +12,7 @@ export class HTMLService extends Service {
     return this.ctx.puppeteer
   }
 
-  async rawHtml(html: string, selector: string = 'body') {
+  async rawHtml(html: string, selector: string = 'body', quality = 90) {
     const page = await this.ppt.page()
     let file: Buffer | undefined
     try {
@@ -23,12 +23,12 @@ export class HTMLService extends Service {
       const $el = await page.$(selector)
       file = await $el?.screenshot({
         type: 'jpeg',
-        quality: 90,
+        quality,
       })
     } finally {
       await page?.close()
     }
-    return file
+    return file ? h.image(file, 'image/jpeg') : ''
   }
 
   async html(body: string, selector: string = 'body') {
@@ -75,7 +75,7 @@ ${body}
     return this.rawHtml(svg, 'svg')
   }
 
-  hljs(code: string, lang = '', startFrom = 1) {
+  hljs(code: string, lang = '', startFrom: number | false = 1) {
     const html = `
 <link rel="stylesheet" href="https://unpkg.com/highlight.js@11.6.0/styles/atom-one-dark.css">
 <style>
@@ -203,10 +203,12 @@ code.hljs[class~='lang-wiki']:before {
     return
   }
   hljs.highlightElement(target)
-  hljs.lineNumbersBlock(target, {
-    startFrom: ${Math.max(1, Number(startFrom))},
-    singleLine: true,
-  })
+  const startFrom = (${startFrom})
+  typeof startFrom === 'number &&
+    hljs.lineNumbersBlock(target, {
+      startFrom: ${Math.max(1, +startFrom)},
+      singleLine: true,
+    })
 })()</script>
 `
 

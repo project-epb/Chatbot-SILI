@@ -20,5 +20,5 @@ if ($open) {
 if (!$silent) {
     Write-Host "Dump directory: $dump_dir"
     Write-Host "Press any key to continue..."
-    $x = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

@@ -23,6 +23,7 @@ function Main() {
         $isReboot = CheckBit $KSignal 0
         $isGitSync = CheckBit $KSignal 1
         $isSkipWait = CheckBit $KSignal 2
+        $isDumpDB = CheckBit $KSignal 3
 
         # 退出循环
         if ($exitCode -ne 0) {
@@ -39,6 +40,11 @@ function Main() {
             Start-Sleep -Seconds 5
         }
 
+        if ($isDumpDB) {
+            WriteLogLine "正在备份数据库..."
+            RunAndLog ".\scripts\db_dump.ps1 -silent"
+        }
+
         if ($isGitSync) {
             WriteLogLine "正在从远程 Git 仓库拉取更新..."
             RunAndLog "git fetch"
@@ -53,7 +59,8 @@ function Main() {
 
                 WriteLogLine "正在更新 NPM 依赖..."
                 RunAndLog "pnpm install"
-            } else {
+            }
+            else {
                 WriteLogLine "本地仓库已是最新版本，无需更新。"
             }
 

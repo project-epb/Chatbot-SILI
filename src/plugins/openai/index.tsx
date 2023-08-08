@@ -258,7 +258,7 @@ export default class PluginOpenAi extends BasePlugin {
               JSON.stringify(data, null, 2),
               'json'
             )
-            return h.image(img, 'image/jpeg')
+            return img
           })
           .catch((e) => {
             this.logger.error('[chat] error', e)
