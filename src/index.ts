@@ -40,7 +40,7 @@ import PluginVersion from './plugins/version'
 import PluginYoudao from './plugins/youdao'
 
 // Modules
-import FandomDiscordConnect from './modules/FandomDiscordConnect'
+// import FandomDiscordConnect from './modules/FandomDiscordConnect'
 import MessagesLogger from './modules/MessagesLogger'
 import MintFilterService from './plugins/sensitive-words-filter/MintFilterService'
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
@@ -61,7 +61,11 @@ const app = new App({
   port: env.KOISHI_PROT ? +env.KOISHI_PROT : undefined,
   selfUrl: env.KOISHI_SELF_URL,
   nickname: env.KOISHI_NICKNAME?.split('|'),
-  prefix: env.KOISHI_PREFIX?.split('|'),
+  prefix: (ctx) => {
+    const items = env.KOISHI_PREFIX?.split('|') || []
+    if (ctx.platform === 'villa') items.unshift('/')
+    return items
+  },
 })
 
 const logger = app.logger('INIT')
