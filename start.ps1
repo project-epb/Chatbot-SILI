@@ -42,7 +42,7 @@ function Main() {
 
         if ($isDumpDB) {
             WriteLogLine "正在备份数据库..."
-            RunAndLog ".\scripts\db_dump.ps1 -silent"
+            RunAndLog ".\scripts\db_dump.ps1 -silent 1"
         }
 
         if ($isGitSync) {

@@ -87,8 +87,8 @@ dependencies:
     specifier: ^4.13.9
     version: 4.13.9
   koishi-plugin-adapter-villa:
-    specifier: ^0.6.1
-    version: 0.6.1(koishi@4.13.9)
+    specifier: ^0.6.3
+    version: 0.6.3(koishi@4.13.9)
   koishi-plugin-assets-s3:
     specifier: ^1.2.1
     version: 1.2.1(koishi@4.13.9)
@@ -4143,8 +4143,8 @@ packages:
       - supports-color
     dev: false
 
-  /koishi-plugin-adapter-villa@0.6.1(koishi@4.13.9):
-    resolution: {integrity: sha512-5+E79VbxqhFyxPkKuFKX5Xr74jkD8CRkKzFgr3VIMhmDkjR1ZRj5n0EA1fCyIkT2nvP1mwG8uCfwYypHHMRGOA==}
+  /koishi-plugin-adapter-villa@0.6.3(koishi@4.13.9):
+    resolution: {integrity: sha512-MIKGxm8c8hPQwyh2G3l+joeRQ62lrl2bWmUlsrgq1GiOdE8+G8gVGxOBYX2SU53VDgh9hYvF7ICTUgM1+9kMbg==}
     peerDependencies:
       koishi: ^4.14.0
     dependencies:
