@@ -9,10 +9,10 @@ import { Context, segment, Time } from 'koishi'
 import {} from '@koishijs/plugin-rate-limit'
 
 declare module 'koishi' {
-  interface Channel {
+  export interface Channel {
     disable: string[]
   }
-  interface User {
+  export interface User {
     name: string
   }
 }

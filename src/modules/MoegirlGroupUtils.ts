@@ -17,7 +17,7 @@ interface SpamLog {
   channelId: string
 }
 declare module 'koishi' {
-  interface User {
+  export interface User {
     mgpGroupSpamLogs: SpamLog[]
   }
 }

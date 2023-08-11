@@ -12,7 +12,7 @@ import crypto from 'crypto'
 export const name = 'verify-fandom-user'
 
 declare module 'koishi' {
-  interface Channel {
+  export interface Channel {
     userBlacklist: string[]
   }
 }

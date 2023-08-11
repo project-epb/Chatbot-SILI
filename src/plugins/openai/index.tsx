@@ -14,10 +14,10 @@ import crypto from 'crypto'
 import { safelyStringify } from '../../utils/safelyStringify'
 
 declare module 'koishi' {
-  interface Tables {
+  export interface Tables {
     openai_chat: OpenAIConversationLog
   }
-  interface User {
+  export interface User {
     openai_last_conversation_id: string
   }
 }

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "target": "ESNext",
-    "module": "CommonJS",
+    "module": "ESNext",
     "moduleResolution": "Node",
     "strict": false,
     // "strictNullChecks": false,
@@ -16,12 +16,10 @@
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "jsxImportSource": "@satorijs/element",
-    "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment",
     "paths": {
       "koishi-plugin-*": ["plugins/*/src"],
       "*": ["packages/*/src"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx"]
 }

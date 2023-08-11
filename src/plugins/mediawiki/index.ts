@@ -27,7 +27,7 @@ import { INFOBOX_MAP } from './infoboxMap'
 import { BulkMessageBuilder } from '../../utils/BulkMessageBuilder'
 
 declare module 'koishi' {
-  interface Channel {
+  export interface Channel {
     mwApi?: string
   }
 }
