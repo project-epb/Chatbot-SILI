@@ -9,13 +9,6 @@ const PROD = process.env.NODE_ENV === 'production'
 import { config } from 'dotenv'
 import { resolve } from 'path'
 import { App, type Session, Random, Time } from 'koishi'
-import { findChrome } from 'find-chrome-bin'
-
-// Types
-import {} from '@koishijs/plugin-database-mongo'
-import {} from '@koishijs/plugin-help'
-import {} from '@koishijs/plugin-rate-limit'
-import {} from '@koishijs/plugin-switch'
 
 // Services
 import { HTMLService } from './utils/RenderHTML'
@@ -230,17 +223,7 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   })
   ctx.plugin('schedule')
 
-  try {
-    const chrome = await findChrome({})
-    logger.info('[puppeteer] 找到了合适的 Chrome', chrome)
-    ctx.plugin('puppeteer', {
-      browser: {
-        executablePath: chrome.executablePath,
-      },
-    })
-  } catch (e) {
-    logger.warn('[puppeteer] 未找到合适的 Chrome', e.message)
-  }
+  ctx.plugin('puppeteer', {})
 })
 
 app.plugin(function PluginCollectionDialogue(ctx) {
