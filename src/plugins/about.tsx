@@ -12,7 +12,7 @@ export default class PluginAbout extends BasePlugin {
   constructor(public ctx: Context) {
     super(ctx, null, 'about')
 
-    ctx.command('about', '自我介绍').action(() => (
+    ctx.command('about', '自我介绍').alias('自我介绍', '关于').action(() => (
       <>
         <image url="https://r2.epb.wiki/avatar/SILI.jpeg" />
         <p>✨ 自我介绍</p>

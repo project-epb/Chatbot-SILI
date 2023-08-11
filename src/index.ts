@@ -127,6 +127,7 @@ app.plugin(function PluginCollectionLegacy(ctx) {
   // [core]
   ctx.plugin(function PluginCollectionLegacyCore(ctx) {
     ctx.plugin('help')
+    ctx.command('help').alias('帮助')
     ctx.plugin('commands')
     ctx.plugin('switch')
     ctx.plugin('assets-s3', {
