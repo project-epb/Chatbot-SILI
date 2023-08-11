@@ -27,6 +27,7 @@ import PluginProfile from './plugins/profile'
 import PluginQueue from './plugins/queue'
 import PluginSensitiveFilter from './plugins/sensitive-words-filter'
 import PluginSiliName from './plugins/siliName'
+import PluginSpawn from './plugins/spawn'
 import PluginSticker from './plugins/sticker'
 import PluginVerifyFandomUser from './plugins/verifyFandomUser'
 import PluginVersion from './plugins/version'
@@ -282,6 +283,8 @@ app.plugin(function PluginCollectionSILICore(ctx) {
 
 // Internal utils
 app.plugin(function PluginCollectionInternal(ctx) {
+  ctx.command('admin', '维护指令集')
+  ctx.command('tools', '实用工具集')
   // ctx.plugin(FandomDiscordConnect)
   ctx.plugin(HTMLService)
   ctx.plugin(MessagesLogger)
@@ -291,6 +294,7 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(ProcessErrorHandler)
   ctx.plugin(PluginReboot)
   ctx.plugin(PluginSensitiveFilter)
+  ctx.plugin(PluginSpawn, { shell: 'pwsh' })
 })
 
 /** 启动应用程序 */

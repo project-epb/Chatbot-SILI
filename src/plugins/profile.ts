@@ -5,38 +5,63 @@
  * @authority 1
  */
 
-import { Context, segment } from 'koishi'
+import { Context, Session, User, h } from 'koishi'
 import { BulkMessageBuilder } from '../utils/BulkMessageBuilder'
+import BasePlugin from './_boilerplate'
 
-export default class PluginProfile {
+export default class PluginProfile extends BasePlugin {
   constructor(public ctx: Context) {
+    super(ctx, null, 'profile')
+
     ctx
-      .command('admin/profile', '基本资料', {})
-      // @ts-ignore
-      .userFields(['id', 'authority', 'name', 'github.accessToken'])
-      .action(async ({ session }) => {
+      .command('admin/profile', '个人资料', {})
+      .option('user', '-u <user:string> platform:uid', { authority: 2 })
+      .action(async ({ session, options }) => {
         if (!session) return
-        const nickname = session.user?.name
-          ? segment.escape(session.user?.name)
-          : ''
+        let user: User
+        const authorUniqId = `${session.platform}:${session.author.userId}`
+        let platform: string, uid: string
+        if (options.user) {
+          let [platform, uid] = options.user.split(':')
+          if (!uid) {
+            uid = platform
+            platform = session.platform
+          }
+        } else {
+          platform = session.platform
+          uid = session.author.userId
+        }
+        const isTargetEqualAuthor = `${platform}:${uid}` === authorUniqId
+        user = await session.app.database.getUser(platform, uid, [
+          'id',
+          'authority',
+          'name',
+          // @ts-ignore
+          'github.accessToken',
+        ])
+        if (!user) return 'SILI没有找到这个用户'
         const bindings = await session.app.database.get('binding', {
-          aid: session.user.id,
+          aid: user.id,
         })
+        const curPlatformBinding = bindings.find(
+          (i) => i.platform === session.platform
+        )
+        const nickname = user?.name ? h.escape(user?.name) : ''
         const isBoundText = (i: boolean) => (i ? '√ 已绑定' : '× 未绑定')
         const isPlatformBoundText = (platform: string) => {
           return isBoundText(!!bindings.find((i) => i.platform === platform))
         }
-        const msgBuilder = new BulkMessageBuilder(session)
+        const msgBuilder = new BulkMessageBuilder(session as Session)
         msgBuilder
           .prependOriginal()
           .botSay(
-            `个人资料\n平台ID: ${session.userId}\n平台昵称/群名片: ${
-              session.author?.nickname || ''
+            `个人资料\n平台ID: ${curPlatformBinding.pid}\n平台昵称/群名片: ${
+              (user as any)?.nickname || ''
             }`
           )
-          .botSay(`UID: ${session.user?.id}`)
-          .botSay(`SILI称你为: ${nickname}`)
-          .botSay(`权限: ${session.user?.authority || 0}`)
+          .botSay(`UID: ${user.id}`)
+          .botSay(`SILI称${isTargetEqualAuthor ? '你' : 'TA'}为: ${nickname}`)
+          .botSay(`权限: ${user.authority || 0}`)
           .botSay(
             [
               `账号绑定情况:`,
@@ -46,15 +71,10 @@ export default class PluginProfile {
               `${isPlatformBoundText('kooka')} Kook`,
               `${isPlatformBoundText('villa')} 大别野`,
               `${isPlatformBoundText('dingtalk')} 钉钉`,
-              // @ts-ignore
-              `${isBoundText(!!session.user?.github?.accessToken)} GitHub`,
+              `${isBoundText(!!user?.github?.accessToken)} GitHub`,
             ].join('\n')
           )
         return msgBuilder.all()
       })
-  }
-
-  get logger() {
-    return this.ctx.logger('PLUGIN')
   }
 }

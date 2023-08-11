@@ -9,7 +9,7 @@ export default class PluginHljs extends BasePlugin {
     ctx
       .command('tools/hljs <code:text>', 'Highlight.js')
       .option('lang', '-l <lang:string> language')
-      .option('from', '<from:posint> line from', { fallback: 1 })
+      .option('from', '-f <from:posint> line from', { fallback: 1 })
       .action(async ({ session, options }, code) => {
         if (!code) return session?.execute('hljs -h')
         const img = await ctx.html.hljs(code, options?.lang, options?.from)

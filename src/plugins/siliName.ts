@@ -19,15 +19,18 @@ export default class PluginSiliName {
       })
       .action(async ({ session }, name) => {
         if (!name || !session) return
+        if (!session.bot?.internal?.setGroupCard) {
+          return '对不起，SILI目前无法修改群名片。'
+        }
         try {
-          await session?.onebot?.setGroupCard(
+          await session.bot.internal.setGroupCard(
             session.channelId as string,
             session.bot.selfId,
             resolveBrackets(name)
           )
           return `明白了，请叫我“${name}”。`
         } catch (err) {
-          return '对不起，我目前无法修改称呼。'
+          return `哎呀，SILI在修改群名片时遇到问题：${err}`
         }
       })
   }

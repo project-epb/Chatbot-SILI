@@ -137,7 +137,7 @@ export default class PluginPixiv {
     ctx.middleware(async (session, next) => {
       await next()
       const reg =
-        /(?:(?:https?:)?\/\/)?(?:www\.pixiv\.net|pixiv\.js\.org)\/(?:en\/)?(?:artworks|i)\/(\d+)/i
+        /(?:(?:https?:)?\/\/)?(?:pixiv\.net|www\.pixiv\.net|pixiv\.js\.org)\/(?:en\/)?(?:artworks|i)\/(\d+)/i
       const pixivId = reg.exec(session.content as string)
       if (pixivId && pixivId[1]) {
         session.execute(`pixiv.illust ${pixivId[1]}`)
