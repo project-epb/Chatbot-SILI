@@ -1,4 +1,4 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
 
 settings:
   autoInstallPeers: true
@@ -12,7 +12,7 @@ dependencies:
     specifier: ^3.8.5
     version: 3.8.5(@satorijs/satori@2.6.1)(koishi@4.14.1)
   '@koishijs/plugin-adapter-onebot':
-    specifier: ^5.7.3
+    specifier: ^5.7.4
     version: 5.7.4(@satorijs/satori@2.6.1)(koishi@4.14.1)
   '@koishijs/plugin-admin':
     specifier: ^1.4.0
@@ -39,7 +39,7 @@ dependencies:
     specifier: ^5.13.1
     version: 5.13.1(koishi@4.14.1)
   '@koishijs/plugin-database-mongo':
-    specifier: ^4.5.3
+    specifier: ^4.6.0
     version: 4.6.0(@minatojs/core@2.3.2)(koishi@4.14.1)
   '@koishijs/plugin-dataview':
     specifier: ^2.3.1
