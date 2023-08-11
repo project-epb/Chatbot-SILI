@@ -1,13 +1,18 @@
 param(
     [string]$command = "pnpm start",
-    [string]$SIGNAL_FILE = ".\.koishi_signal",
-    [string]$CMDLOG_FILE = ".\.koishi_signal_cmdlogs"
+    [string]$SIGNAL_FILE = $(Join-Path -Path $PSScriptRoot -ChildPath ".koishi_signal"),
+    [string]$CMDLOG_FILE = $(Join-Path -Path $PSScriptRoot -ChildPath ".koishi_signal_cmdlogs")
 )
+
+$env:PROJECT_ROOT_DIR = $PSScriptRoot
 
 # 主循环
 function Main() {
-
     Write-Host "已启动守护进程..."
+    Write-Host "启动指令: $command"
+    Write-Host "信号文件: $SIGNAL_FILE"
+    Write-Host "日志文件: $CMDLOG_FILE"
+
     ResetSignal
     ResetLog
 

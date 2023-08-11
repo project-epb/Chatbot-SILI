@@ -37,7 +37,7 @@ export default class PluginReboot extends BasePlugin {
     const ctx = this.ctx
 
     ctx
-      .command('reboot', '重启机器人', { authority: 4 })
+      .command('admin/reboot', '重启机器人', { authority: 4 })
       .option('sync', '-s 从 Git 同步并处理依赖')
       .option('dumpdb', '-d 备份数据库')
       .option('yes', '-y 跳过确认', { hidden: true })
