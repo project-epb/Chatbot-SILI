@@ -36,8 +36,8 @@ export default class PatchCallme {
           const escapedName = segment.escape(session!.user.name)
           return session!.user?.name ? (
             <random>
-              <template>SILI认得你，${escapedName}，你好~</template>
-              <template>啊，这不是${escapedName}吗~</template>
+              <template>SILI认得你，{escapedName}，你好~</template>
+              <template>啊，这不是{escapedName}吗~</template>
             </random>
           ) : (
             <random>

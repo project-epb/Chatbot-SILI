@@ -40,6 +40,7 @@ import MintFilterService from './plugins/sensitive-words-filter/MintFilterServic
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
 import PluginReboot from './plugins/reboot'
+import PluginDatabaseAdmin from './plugins/dbadmin'
 
 // Setup .env
 config()
@@ -292,6 +293,7 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)
   ctx.plugin(ProcessErrorHandler)
+  ctx.plugin(PluginDatabaseAdmin)
   ctx.plugin(PluginReboot)
   ctx.plugin(PluginSensitiveFilter)
   ctx.plugin(PluginSpawn, { shell: 'pwsh' })

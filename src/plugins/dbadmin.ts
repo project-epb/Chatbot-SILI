@@ -1,6 +1,7 @@
 import BasePlugin from './_boilerplate'
 import { Context } from 'koishi'
 import { resolve } from 'path'
+import JSON5 from 'json5'
 
 enum FilePath {
   dumpScript = './scripts/db_dump.ps1',
@@ -12,26 +13,53 @@ export default class PluginDatabaseAdmin extends BasePlugin {
   constructor(public ctx: Context) {
     super(ctx, {}, 'dbadmin')
 
-    const command = ctx.command('admin/dbadmin', '数据库管理', { authority: 3 })
+    ctx.command('admin/dbadmin', '数据库管理', { authority: 4 })
 
-    command.subcommand('dump', '备份数据库').action(async ({ session }) => {
-      const script = resolve(ctx.baseDir, FilePath.dumpScript)
-      const { code, output } = await ctx.root.shell.exec(`pwsh ${script}`)
-      return code === 0 ? '数据库备份完毕！' : '数据库备份失败。'
-    })
+    ctx
+      .command('dbadmin.dump', '备份数据库', { authority: 4 })
+      .action(async ({ session }) => {
+        const script = resolve(ctx.baseDir, FilePath.dumpScript)
+        console.info(script)
+        try {
+          const { output } = await ctx.root.shell.exec(
+            `${script} -silent 1`,
+            console.info
+          )
+          return output
+        } catch (e) {
+          return e?.output || '' + e
+        }
+      })
 
-    command
-      .subcommand(
-        'get',
-        '<table:string> <query:string> [fields:string] 查询数据库'
-      )
-      .example('dbadmin get table_name foo=bar&baz=qux foo,bar')
-      .action(async ({ session }, table, queryRaw, fieldsRaw) => {
+    ctx
+      .command('dbadmin.get <table:string> <extra:text>', '查询数据库', {
+        authority: 4,
+      })
+      .example(`dbadmin.get table_name {foo:'bar'} /// baz,qux`)
+      .action(async ({ session }, table, extraRaw) => {
+        const [queryRaw, fieldsRaw] = extraRaw?.split('///') || []
         if (!table || !queryRaw) return session.execute('dbadmin get -h')
-        const query = Object.fromEntries(
-          new URLSearchParams(queryRaw).entries()
+        const query = JSON5.parse(queryRaw)
+        let fields = fieldsRaw?.trim()
+          ? fieldsRaw
+              .trim()
+              .split(',')
+              .map((v) => v.trim())
+              .filter((v) => !!v)
+          : ['id']
+        if (fields.includes('*')) {
+          fields = undefined
+        }
+        this.logger.info(
+          'get',
+          table,
+          {
+            extraRaw,
+            queryRaw,
+            fieldsRaw,
+          },
+          { query, fields }
         )
-        const fields = fieldsRaw ? fieldsRaw.split(',') : undefined
         const res = await session.app.database.get(table as any, query, {
           fields,
           limit: 1,
@@ -40,22 +68,24 @@ export default class PluginDatabaseAdmin extends BasePlugin {
         return img ? img : '出现了一些问题'
       })
 
-    command
-      .subcommand(
-        'set',
-        '<table:string> <where:string> <update:string> 更新数据库'
-      )
-      .action(async ({ session }, table, whereRaw, updateRaw) => {
-        if (!table || !whereRaw) return session.execute('dbadmin set -h')
-        const where = Object.fromEntries(
-          new URLSearchParams(whereRaw).entries()
-        )
-        const update = Object.fromEntries(
-          new URLSearchParams(updateRaw).entries()
+    ctx
+      .command('dbadmin.set <table:string> <extra:text>', '更新数据库', {
+        authority: 4,
+      })
+      .action(async ({ session }, table, extraRaw) => {
+        if (!table || !extraRaw) return session.execute('dbadmin set -h')
+        const [whereRaw, updateRaw] = extraRaw?.split('///') || []
+        if (!whereRaw || !updateRaw) return session.execute('dbadmin set -h')
+        const where = JSON5.parse(whereRaw)
+        const update = JSON5.parse(updateRaw)
+        this.logger.info(
+          'set',
+          table,
+          { extraRaw, whereRaw, updateRaw },
+          { where, update }
         )
         const res = await session.app.database.set(table as any, where, update)
-        const img = await ctx.html.hljs(JSON.stringify(res, null, 2), 'json')
-        return img ? img : '出现了一些问题'
+        return '更新成功'
       })
   }
 }

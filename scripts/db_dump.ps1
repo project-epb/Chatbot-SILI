@@ -1,7 +1,8 @@
 # This PowerShell script is used to make a MongoDB dump for SILI.
 
 param(
-    [string]$db = "sili_v4"
+    [string]$db = "sili_v4",
+    [bool]$silent = $False
 )
 
 
@@ -14,7 +15,7 @@ mongodump --host 127.0.0.1 --port 27017 --db $db --out $dump_dir
 
 Write-Host "Database $db is backed up to: $dump_dir"
 
-if ($double_click_run) {
+if ($double_click_run -and $silent) {
     Write-Host "Press `"y`" to open the directory, anything else to exit..."
     $keyInfo = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     if ($keyInfo.KeyDown -and $keyInfo.VirtualKeyCode -eq 89) {

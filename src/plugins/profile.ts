@@ -22,7 +22,7 @@ export default class PluginProfile extends BasePlugin {
         const authorUniqId = `${session.platform}:${session.author.userId}`
         let platform: string, uid: string
         if (options.user) {
-          let [platform, uid] = options.user.split(':')
+          ;[platform, uid] = options.user.split(':')
           if (!uid) {
             uid = platform
             platform = session.platform
@@ -32,6 +32,7 @@ export default class PluginProfile extends BasePlugin {
           uid = session.author.userId
         }
         const isTargetEqualAuthor = `${platform}:${uid}` === authorUniqId
+        console.info(platform, uid, authorUniqId, isTargetEqualAuthor)
         user = await session.app.database.getUser(platform, uid, [
           'id',
           'authority',
@@ -55,9 +56,9 @@ export default class PluginProfile extends BasePlugin {
         msgBuilder
           .prependOriginal()
           .botSay(
-            `个人资料\n平台ID: ${curPlatformBinding.pid}\n平台昵称/群名片: ${
-              (user as any)?.nickname || ''
-            }`
+            `${isTargetEqualAuthor ? '个人' : '他人'}资料\n平台ID: ${
+              curPlatformBinding.pid
+            }\n平台昵称/群名片: ${(user as any)?.nickname || ''}`
           )
           .botSay(`UID: ${user.id}`)
           .botSay(`SILI称${isTargetEqualAuthor ? '你' : 'TA'}为: ${nickname}`)

@@ -47,7 +47,7 @@ export default class PluginSpawn extends BasePlugin {
 
     ctx
       .command('admin/spawn <cmd:text>', '执行终端命令', { authority: 4 })
-      .alias('admin/sh')
+      .alias('sh')
       .action(async ({ session }, cmd) => {
         if (!cmd) return session?.execute('spawn -h')
         const startTime = Date.now()
