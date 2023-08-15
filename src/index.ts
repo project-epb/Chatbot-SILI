@@ -108,7 +108,7 @@ app.plugin(function PluginCollectionAdapters(ctx) {
     id: process.env.VILLA_APPID,
     secret: process.env.VILLA_APPSECRET,
     pubKey: process.env.VILLA_PUBKEY,
-    path: '/api/villa-webhook',
+    path: '/api/callback/villa',
     /**
      * @TODO: `underscores_in_headers on;` should be set in nginx config
      */

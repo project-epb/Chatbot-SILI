@@ -7,7 +7,7 @@
  */
 import { Context, h, Time } from 'koishi'
 import {} from '@koishijs/plugin-database-mongo'
-import {} from '@koishijs/plugin-puppeteer'
+import {} from 'koishi-plugin-puppeteer'
 import type {
   MWInterwikiLinks,
   MWNamespaceAliases,
