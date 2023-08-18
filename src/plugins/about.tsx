@@ -24,7 +24,7 @@ export default class PluginAbout extends BasePlugin {
             <p>鉴于很少有人能喊对我的全名，我建议您简单称我为 SILI</p>
             <p>
               我目前隶属于万界规划局项目组，直属上司为
-              {masterPid ? <at id={masterPid} /> : '@机智的小鱼君'}。
+              {masterPid ? <at id={masterPid} name='机智的小鱼君' /> : '@机智的小鱼君'}。
             </p>
             <p>⚡ 更多信息</p>
             <p>

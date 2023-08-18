@@ -126,7 +126,12 @@ export default class PluginReboot extends BasePlugin {
         session.channelId,
         `SILI 重启完毕 (SIGNAL-${(+kSignal).toString(2).padStart(6, '0')})
 共耗时: ${((now - lastSession.time) / 1000).toFixed(2)}s
-请求者: ${h.at(session.userId)}
+请求者: ${h.at(session.userId, {
+          name:
+            session.author?.nickname ||
+            session.author?.username ||
+            session.author.userId,
+        })}
 ${cmdLogsImg || '(没有详细日志)'}`,
         session.guildId
       )
