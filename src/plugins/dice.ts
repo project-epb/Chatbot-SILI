@@ -30,7 +30,7 @@ export default class PluginDice extends BasePlugin {
       .command('dice <difficulty:posint> [dice]', '掷骰子', {
         minInterval: 1000,
       })
-      .alias('掷骰子', '检定', 'r', 'roll')
+      .alias('掷骰子', '投掷', '检定', 'r', 'roll')
       .action(async ({ session }, difficulty, dice) => {
         if (!difficulty) return '没有指定难度值！'
 
@@ -112,15 +112,15 @@ export default class PluginDice extends BasePlugin {
     let endText = ''
     switch (specialType) {
       case SpecialResults.CRITICAL:
-        endText = '大成功！'
+        endText = '(๑•̀ㅂ•́)و✧ 大成功！'
       case SpecialResults.FAIL:
-        endText = '大失败！'
+        endText = '(っ°Д°;)っ 大失败！'
       default:
         bonusText = bonus ? `(${bonus > 0 ? '+' : ''}${bonus})` : ''
-        endText = success ? '成功' : '失败'
+        endText = success ? '(❁´◡`❁) 成功' : '¯\\_ (ツ)_/¯ 失败'
     }
 
-    return `在难度 ${difficulty} 检定中掷出了 ${count} 个 ${points} 面骰\n结果为 ${total}${bonusText} - ${endText}`
+    return `${endText}\n在难度 ${difficulty} 检定中掷出了 ${count} 个 ${points} 面骰，结果为 ${total}${bonusText}`
   }
   checkSpecialResult(dice: DiceConfig, result: DiceResult) {
     const { count, points } = dice
