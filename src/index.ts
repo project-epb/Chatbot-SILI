@@ -41,6 +41,7 @@ import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
 import PluginReboot from './plugins/reboot'
 import PluginDatabaseAdmin from './plugins/dbadmin'
+import PluginDice from './plugins/dice'
 
 // Setup .env
 config()
@@ -250,6 +251,7 @@ app.plugin(function PluginCollectionDialogue(ctx) {
 // SILI Core
 app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginAbout)
+  ctx.plugin(PluginDice)
   ctx.plugin(PluginHljs)
   ctx.plugin(PluginMute)
   ctx.plugin(PluginOpenAi, {
