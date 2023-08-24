@@ -109,18 +109,21 @@ export default class PluginDice extends BasePlugin {
 
     const specialType = this.checkSpecialResult(dice, result)
     let bonusText = ''
-    let endText = ''
+    let statusText = ''
     switch (specialType) {
       case SpecialResults.CRITICAL:
-        endText = '(๑•̀ㅂ•́)و✧ 大成功！'
+        statusText = '(๑•̀ㅂ•́)و✧ 大成功！'
+        break
       case SpecialResults.FAIL:
-        endText = '(っ°Д°;)っ 大失败！'
+        statusText = '(っ°Д°;)っ 大失败！'
+        break
       default:
         bonusText = bonus ? `(${bonus > 0 ? '+' : ''}${bonus})` : ''
-        endText = success ? '(❁´◡`❁) 成功' : '¯\\_ (ツ)_/¯ 失败'
+        statusText = success ? '(❁´◡`❁) 成功' : '¯\\_ (ツ)_/¯ 失败'
+        break
     }
 
-    return `${endText}\n在难度 ${difficulty} 检定中掷出了 ${count} 个 ${points} 面骰，结果为 ${total}${bonusText}`
+    return `${statusText}\n在难度 ${difficulty} 检定中掷出了 ${count} 个 ${points} 面骰，结果为 ${total}${bonusText}`
   }
   checkSpecialResult(dice: DiceConfig, result: DiceResult) {
     const { count, points } = dice
