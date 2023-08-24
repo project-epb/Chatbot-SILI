@@ -104,7 +104,7 @@ export default class PluginDice extends BasePlugin {
     const { count, points, bonus } = dice
     const { pure, total } = result
 
-    const success = total <= difficulty
+    const success = total >= difficulty
 
     const specialType = this.checkSpecialResult(dice, result)
     let bonusText = ''
