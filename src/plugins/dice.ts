@@ -35,9 +35,10 @@ export default class PluginDice extends BasePlugin {
         if (!difficulty) return '没有指定难度值！'
 
         const { count, points, bonus } = this.parseDice(dice)
-        if (count > 100) return '喂喂，骰子太多啦！'
-        if (points > 100) return '啊？这掷的是玻璃球？'
-        if (points < 3) return '等等，这是三次元的骰子吗？'
+        if (count > 100) return '掷出了一卡车骰子……这，这不对吧！'
+        if (count < 1) return '掷出了一个空气骰子……等等，这是什么鬼啦！'
+        if (points > 100) return '掷出了……玻璃球？'
+        if (points < 3) return '掷出了……等等，这是哪个次元的骰子？'
         if (Math.abs(bonus) > 100) return '哎呀，加权太多啦！'
 
         const result = this.dice(count, points, bonus)
@@ -116,10 +117,10 @@ export default class PluginDice extends BasePlugin {
         endText = '大失败！'
       default:
         bonusText = bonus ? `(${bonus > 0 ? '+' : ''}${bonus})` : ''
-        endText = success ? '成功。' : '失败。'
+        endText = success ? '成功' : '失败'
     }
 
-    return `在难度 ${difficulty} 检定中掷出了 ${count} 个 ${points} 面骰，结果为 ${total}${bonusText}: ${endText}`
+    return `在难度 ${difficulty} 检定中掷出了 ${count} 个 ${points} 面骰\n结果为 ${total}${bonusText} - ${endText}`
   }
   checkSpecialResult(dice: DiceConfig, result: DiceResult) {
     const { count, points } = dice
