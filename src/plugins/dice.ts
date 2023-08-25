@@ -11,10 +11,10 @@ export interface DiceResult {
   pure: number
   total: number
 }
-export enum SpecialResults {
-  NORMAL,
-  CRITICAL,
-  FAIL,
+export enum CriticalResult {
+  NONE,
+  SUCCESS,
+  FAILURE,
 }
 
 export default class PluginDice extends BasePlugin {
@@ -31,7 +31,8 @@ export default class PluginDice extends BasePlugin {
         minInterval: 1000,
       })
       .alias('掷骰子', '投掷', '检定', 'r', 'roll')
-      .action(async ({ session }, difficulty, dice) => {
+      .option('no-critical', '-C 不检查大成功/大失败', { type: 'boolean' })
+      .action(async ({ session, options }, difficulty, dice) => {
         if (!difficulty) return '没有指定难度值！'
 
         const { count, points, bonus } = this.parseDice(dice)
@@ -46,7 +47,8 @@ export default class PluginDice extends BasePlugin {
         return `${h.at(session.userId)}${this.printResult(
           difficulty,
           { count, points, bonus },
-          result
+          result,
+          !options['no-critical']
         )}`
       })
   }
@@ -101,40 +103,49 @@ export default class PluginDice extends BasePlugin {
 
   // 在难度x检定中掷出了x个x面骰，结果为x(+x)：成功/失败/大成功/大失败
   // 当骰子数量为1时，如果掷出了1点或最大点数，会有特殊的提示，此时不显示加权值，提示为大成功/大失败
-  printResult(difficulty: number, dice: DiceConfig, result: DiceResult) {
+  printResult(
+    difficulty: number,
+    dice: DiceConfig,
+    result: DiceResult,
+    checkCritical = true
+  ) {
     const { count, points, bonus } = dice
     const { pure, total } = result
 
     const success = total >= difficulty
 
-    const specialType = this.checkSpecialResult(dice, result)
-    let bonusText = ''
-    let statusText = ''
-    switch (specialType) {
-      case SpecialResults.CRITICAL:
-        statusText = '(๑•̀ㅂ•́)و✧ 大成功！'
-        break
-      case SpecialResults.FAIL:
-        statusText = '(っ°Д°;)っ 大失败！'
-        break
-      default:
-        bonusText = bonus ? `(${bonus > 0 ? '+' : ''}${bonus})` : ''
-        statusText = success ? '(❁´◡`❁) 成功' : '¯\\_ (ツ)_/¯ 失败'
-        break
+    let statusText = success ? '(❁´◡`❁) 成功' : '¯\\_ (ツ)_/¯ 失败'
+    let bonusText = bonus ? `(${bonus > 0 ? '+' : ''}${bonus}) = ${total}` : ''
+
+    if (checkCritical) {
+      const specialType = this.checkCriticalResult(dice, result)
+      switch (specialType) {
+        case CriticalResult.SUCCESS:
+          statusText = '(๑•̀ㅂ•́)و✧ 大成功！'
+          bonusText = ''
+          break
+        case CriticalResult.FAILURE:
+          statusText = '(っ°Д°;)っ 大失败！'
+          bonusText = ''
+          break
+        default:
+          // do nothing
+          break
+      }
     }
 
-    return `${statusText}\n在难度 ${difficulty} 检定中掷出了 ${count} 个 ${points} 面骰，结果为 ${total}${bonusText}`
+    return `${statusText}\n在难度 ${difficulty} 检定中掷出了 ${count} 个 ${points} 面骰，结果为 ${pure}${bonusText}`
   }
-  checkSpecialResult(dice: DiceConfig, result: DiceResult) {
+  checkCriticalResult(dice: DiceConfig, result: DiceResult) {
     const { count, points } = dice
     const { pure } = result
     if (count === 1) {
       if (pure === 1) {
-        return SpecialResults.FAIL
+        return CriticalResult.FAILURE
       } else if (pure === points) {
-        return SpecialResults.CRITICAL
+        return CriticalResult.SUCCESS
       }
     }
-    return SpecialResults.NORMAL
+    return CriticalResult.NONE
   }
 }
