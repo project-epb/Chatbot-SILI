@@ -7,13 +7,13 @@ settings:
 dependencies:
   '@koishijs/plugin-adapter-dingtalk':
     specifier: ^1.0.1
-    version: 1.0.1(@satorijs/satori@2.6.1)(koishi@4.14.2)
+    version: 1.0.1(@satorijs/satori@2.6.2)(koishi@4.14.2)
   '@koishijs/plugin-adapter-discord':
     specifier: ^3.8.6
-    version: 3.8.6(@satorijs/satori@2.6.1)(koishi@4.14.2)
+    version: 3.8.6(@satorijs/satori@2.6.2)(koishi@4.14.2)
   '@koishijs/plugin-adapter-onebot':
     specifier: ^5.7.4
-    version: 5.7.4(@satorijs/satori@2.6.1)(koishi@4.14.2)
+    version: 5.7.4(@satorijs/satori@2.6.2)(koishi@4.14.2)
   '@koishijs/plugin-admin':
     specifier: ^1.4.0
     version: 1.4.0(koishi@4.14.2)
@@ -1118,34 +1118,34 @@ packages:
       ns-require: 1.1.4
     dev: false
 
-  /@koishijs/plugin-adapter-dingtalk@1.0.1(@satorijs/satori@2.6.1)(koishi@4.14.2):
+  /@koishijs/plugin-adapter-dingtalk@1.0.1(@satorijs/satori@2.6.2)(koishi@4.14.2):
     resolution: {integrity: sha512-iT/Gzu50KfL9wlhAl6UcAbwqu4H97XaLGwPiyALsl/xJ5WH0HJJCS2mLLFn6GHBtvpZVl1cLuSksiGxUNN7SVA==}
     peerDependencies:
       koishi: ^4.13.7
     dependencies:
-      '@satorijs/adapter-dingtalk': 1.0.1(@satorijs/satori@2.6.1)
+      '@satorijs/adapter-dingtalk': 1.0.1(@satorijs/satori@2.6.2)
       koishi: 4.14.2
     transitivePeerDependencies:
       - '@satorijs/satori'
     dev: false
 
-  /@koishijs/plugin-adapter-discord@3.8.6(@satorijs/satori@2.6.1)(koishi@4.14.2):
+  /@koishijs/plugin-adapter-discord@3.8.6(@satorijs/satori@2.6.2)(koishi@4.14.2):
     resolution: {integrity: sha512-lpWe0phh7oKrqri+VCukZROLnrpW0GaOAQxTgDOpU0OMMFj3skK3xMI+bKLhRr67UY94Z2avy/NKUdS0C8VlPA==}
     peerDependencies:
       koishi: ^4.14.1
     dependencies:
-      '@satorijs/adapter-discord': 3.8.6(@satorijs/satori@2.6.1)
+      '@satorijs/adapter-discord': 3.8.6(@satorijs/satori@2.6.2)
       koishi: 4.14.2
     transitivePeerDependencies:
       - '@satorijs/satori'
     dev: false
 
-  /@koishijs/plugin-adapter-onebot@5.7.4(@satorijs/satori@2.6.1)(koishi@4.14.2):
+  /@koishijs/plugin-adapter-onebot@5.7.4(@satorijs/satori@2.6.2)(koishi@4.14.2):
     resolution: {integrity: sha512-aPBWZPI56IXX02nUG9PbUf2W6fUCIaIikJwMW4PsVk6LTEU+eoa/Uv4GOA8KeyYBQyviMMY5nDxAs7UPZlUiDQ==}
     peerDependencies:
       koishi: ^4.14.0
     dependencies:
-      '@satorijs/adapter-onebot': 5.7.4(@satorijs/satori@2.6.1)
+      '@satorijs/adapter-onebot': 5.7.4(@satorijs/satori@2.6.2)
       koishi: 4.14.2
     transitivePeerDependencies:
       - '@satorijs/satori'
@@ -1572,46 +1572,30 @@ packages:
       - supports-color
     dev: false
 
-  /@satorijs/adapter-dingtalk@1.0.1(@satorijs/satori@2.6.1):
+  /@satorijs/adapter-dingtalk@1.0.1(@satorijs/satori@2.6.2):
     resolution: {integrity: sha512-733ID43VWLkqgrlXHfT92liod5oasCZW8kYZQu5BhCdCMHHti81IAUjCYGKrTgBOx+4gbcBfl+Gq3Nqxmja7dg==}
     peerDependencies:
       '@satorijs/satori': ^2.6.1
     dependencies:
-      '@satorijs/satori': 2.6.1
+      '@satorijs/satori': 2.6.2
     dev: false
 
-  /@satorijs/adapter-discord@3.8.6(@satorijs/satori@2.6.1):
+  /@satorijs/adapter-discord@3.8.6(@satorijs/satori@2.6.2):
     resolution: {integrity: sha512-k7EE8DuZfs1HLtJEAR9p0iOavlE8YcuBDZ32lfV0olIycnlV0dHR7+twZs24WoHRVFFdKXWjZaUq34osZJw/3w==}
     peerDependencies:
       '@satorijs/satori': ^2.6.1
     dependencies:
-      '@satorijs/satori': 2.6.1
+      '@satorijs/satori': 2.6.2
       form-data: 4.0.0
     dev: false
 
-  /@satorijs/adapter-onebot@5.7.4(@satorijs/satori@2.6.1):
+  /@satorijs/adapter-onebot@5.7.4(@satorijs/satori@2.6.2):
     resolution: {integrity: sha512-zvxGnv3RLxDeTIWv78sZ1yiTcKOvtO9oq6e65m0ALg7QgACv0LErusoQv271bAgvMFcnC5zgPhyb7ocwvkPHWA==}
     peerDependencies:
       '@satorijs/satori': ^2.6.1
     dependencies:
-      '@satorijs/satori': 2.6.1
+      '@satorijs/satori': 2.6.2
       qface: 1.4.1
-    dev: false
-
-  /@satorijs/core@2.6.1:
-    resolution: {integrity: sha512-v/7In/5rmvVKL2VLsb5/NLySlfDWGQpQgfz6POrn6pHPevaN0/UT4SIIC1CuhP2DwZkrMs9iWA0zt5gze4Kn8w==}
-    dependencies:
-      '@satorijs/element': 2.4.2
-      cordis: 2.8.7
-      cordis-axios: 3.1.4(cordis@2.8.7)
-      cosmokit: 1.4.4
-      reggol: 1.4.4
-      schemastery: 3.11.1
-      ws: 8.13.0
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - utf-8-validate
     dev: false
 
   /@satorijs/core@2.6.2:
@@ -1634,30 +1618,6 @@ packages:
     resolution: {integrity: sha512-IApzusrRuKNVMldyeiv0DIEXf885LFCgfATBdK5lTs4M92MBzhskwkPvfggGj9tza4F32CKv86z6P+h3i/x2qw==}
     dependencies:
       cosmokit: 1.4.4
-
-  /@satorijs/satori@2.6.1:
-    resolution: {integrity: sha512-zx4Z7WJ3l+n2fZgckD4jGSuTC4dg2CeyeKSpkkm2fJhOgTF7nf4AhufmBuRLVb3EWq2FQoDuUwOsReyVeGcEHg==}
-    dependencies:
-      '@koa/router': 10.1.1
-      '@satorijs/core': 2.6.1
-      '@types/koa': 2.13.8
-      '@types/koa__router': 12.0.0
-      '@types/ws': 8.5.5
-      file-type: 16.5.4
-      http-proxy-agent: 5.0.0
-      https-proxy-agent: 5.0.1
-      koa: 2.14.2
-      koa-bodyparser: 4.4.1
-      parseurl: 1.3.3
-      path-to-regexp: 6.2.1
-      socks-proxy-agent: 5.0.1
-      ws: 8.13.0
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
-    dev: false
 
   /@satorijs/satori@2.6.2:
     resolution: {integrity: sha512-+RiKgMOmbd3q4nYcFFFLBj/hZPD2R8AE7c9I7s1UJgiEOXwPpjeS+oGYmSHf+mEpGT3+FOZhHyKGL5F9s4KpgQ==}
@@ -2714,20 +2674,6 @@ packages:
 
   /copy-to@2.0.1:
     resolution: {integrity: sha512-3DdaFaU/Zf1AnpLiFDeNCD4TOWe3Zl2RZaTzUvWiIk5ERzcCodOE20Vqq4fzCbNoHURFHT4/us/Lfq+S2zyY4w==}
-    dev: false
-
-  /cordis-axios@3.1.4(cordis@2.8.7):
-    resolution: {integrity: sha512-Y0b3m0sbjVpxUrN3wTZaWRNCQh7QX+LYIpw7c8MBzwS2+bjuYVy56dYMekpPJ2A8nIWQwbfjGUuciOv7+SsFyw==}
-    engines: {node: '>=12.0.0'}
-    peerDependencies:
-      cordis: ^2.8.6
-    dependencies:
-      axios: 1.4.0
-      cordis: 2.8.7
-      cosmokit: 1.4.4
-      mime-db: 1.52.0
-    transitivePeerDependencies:
-      - debug
     dev: false
 
   /cordis-axios@3.2.0(cordis@2.8.7):

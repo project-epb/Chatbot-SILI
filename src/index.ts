@@ -9,6 +9,7 @@ const PROD = process.env.NODE_ENV === 'production'
 import { config } from 'dotenv'
 import { resolve } from 'path'
 import { App, type Session, Random, Time } from 'koishi'
+import { findChrome } from 'find-chrome-bin'
 
 // Services
 import { HTMLService } from './utils/RenderHTML'
@@ -227,7 +228,14 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   })
   ctx.plugin('schedule')
 
-  ctx.plugin('puppeteer', {})
+  findChrome({})
+    .then((chrome) => {
+      logger.info('已找到Chromium，启用puppeteer')
+      ctx.plugin('puppeteer', { executablePath: chrome.executablePath })
+    })
+    .catch((e) => {
+      logger.error('无法找到Chromium，将无法使用puppeteer功能')
+    })
 })
 
 app.plugin(function PluginCollectionDialogue(ctx) {
