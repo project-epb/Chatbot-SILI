@@ -19,22 +19,22 @@
     "dotenv": "^16.3.1",
     "dotenv-vault": "^1.25.0",
     "tsx": "^3.12.7",
-    "typescript": "^5.1.6",
+    "typescript": "^5.2.2",
     "yml-register": "^1.1.0"
   },
   "dependencies": {
     "@koishijs/plugin-adapter-dingtalk": "^1.0.1",
-    "@koishijs/plugin-adapter-discord": "^3.8.5",
+    "@koishijs/plugin-adapter-discord": "^3.8.6",
     "@koishijs/plugin-adapter-onebot": "^5.7.4",
     "@koishijs/plugin-admin": "^1.4.0",
     "@koishijs/plugin-analytics": "^1.0.4",
-    "@koishijs/plugin-auth": "^4.1.0",
+    "@koishijs/plugin-auth": "^4.1.1",
     "@koishijs/plugin-bind": "^1.4.2",
     "@koishijs/plugin-broadcast": "^1.1.4",
     "@koishijs/plugin-callme": "^1.3.3",
     "@koishijs/plugin-commands": "^3.2.2",
-    "@koishijs/plugin-console": "^5.13.1",
-    "@koishijs/plugin-database-mongo": "^4.6.0",
+    "@koishijs/plugin-console": "^5.13.2",
+    "@koishijs/plugin-database-mongo": "^4.7.0",
     "@koishijs/plugin-dataview": "^2.3.1",
     "@koishijs/plugin-echo": "^2.2.4",
     "@koishijs/plugin-explorer": "^1.4.5",
@@ -47,7 +47,7 @@
     "axios": "^1.4.0",
     "find-chrome-bin": "^1.0.5",
     "json5": "^2.2.3",
-    "koishi": "^4.14.1",
+    "koishi": "^4.14.2",
     "koishi-plugin-adapter-villa": "^0.6.3",
     "koishi-plugin-assets-s3": "^1.2.3",
     "koishi-plugin-baidu": "^1.1.1",
@@ -67,7 +67,7 @@
     "koishi-plugin-schedule": "^4.4.2",
     "koishi-plugin-switch": "^1.2.0",
     "mint-filter": "^4.0.3",
-    "openai": "^3.3.0",
-    "wiki-saikou": "^3.0.0"
+    "openai": "^4.2.0",
+    "wiki-saikou": "^3.2.0"
   }
 }
