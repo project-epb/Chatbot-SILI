@@ -42,6 +42,7 @@ import ProcessErrorHandler from './modules/ProcessErrorHandler'
 import PluginReboot from './plugins/reboot'
 import PluginDatabaseAdmin from './plugins/dbadmin'
 import PluginDice from './plugins/dice'
+import PluginWebShot from './plugins/webshot'
 
 // Setup .env
 config()
@@ -274,6 +275,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginSticker)
   ctx.plugin(PluginVerifyFandomUser)
   ctx.plugin(PluginVersion)
+  ctx.plugin(PluginWebShot)
   ctx.plugin(PluginYoudao)
 
   // MediaWiki
