@@ -256,9 +256,9 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginHljs)
   ctx.plugin(PluginMute)
   ctx.plugin(PluginOpenAi, {
-    openaiConfiguration: {
-      basePath: env.OPENAI_ENDPOINT,
-      apiKey: env.OPENAI_APIKEY,
+    openaiOptions: {
+      baseURL: env.OPENAI_BASE_RUL,
+      apiKey: env.OPENAI_API_KEY,
     },
     maxTokens: 500,
     recordsPerChannel: 50,

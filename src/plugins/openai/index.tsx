@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { Context, Session, Time, h } from 'koishi'
+import { Context, Schema, Session, Time, h } from 'koishi'
 import { OpenAI, ClientOptions } from 'openai'
 import BasePlugin from '../_boilerplate'
 import { readFileSync, writeFileSync } from 'fs'
@@ -31,9 +31,8 @@ interface OpenAIConversationLog {
   time: number
 }
 
-interface Configs {
+export interface Configs {
   openaiOptions: ClientOptions
-  openaiBasePath: string
   model: string
   maxTokens: number
   recordsPerChannel: number
@@ -63,7 +62,6 @@ export default class PluginOpenAi extends BasePlugin {
 
     this.openaiOptions = options.openaiOptions || {}
     this.openai = new OpenAI({
-      baseURL: options.openaiBasePath,
       ...this.openaiOptions,
     })
     this.#initDatabase()
