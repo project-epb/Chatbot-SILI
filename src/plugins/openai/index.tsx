@@ -5,7 +5,7 @@
  */
 
 import { Context, Session, Time, h } from 'koishi'
-import { OpenAIApi, Configuration, ConfigurationParameters } from 'openai'
+import { OpenAI, ClientOptions } from 'openai'
 import BasePlugin from '../_boilerplate'
 import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
@@ -23,6 +23,7 @@ declare module 'koishi' {
 }
 
 interface OpenAIConversationLog {
+  id: number
   conversation_id: string
   conversation_owner: string
   role: 'system' | 'user' | 'assistant'
@@ -31,7 +32,7 @@ interface OpenAIConversationLog {
 }
 
 interface Configs {
-  openaiConfiguration: ConfigurationParameters
+  openaiOptions: ClientOptions
   openaiBasePath: string
   model: string
   maxTokens: number
@@ -40,8 +41,8 @@ interface Configs {
 
 export default class PluginOpenAi extends BasePlugin {
   static using = ['html']
-  openai: OpenAIApi
-  openaiConfiguration: Configuration
+  openai: OpenAI
+  openaiOptions: ClientOptions
   SILI_PROMPT = PluginOpenAi.readPromptFile('SILI.txt')
   CHAT_SUMMARY_PROMPT = PluginOpenAi.readPromptFile('chat-summary.txt')
   RANDOM_ERROR_MSG = (
@@ -60,11 +61,11 @@ export default class PluginOpenAi extends BasePlugin {
   ) {
     super(ctx, options, 'openai')
 
-    this.openaiConfiguration = new Configuration(options.openaiConfiguration)
-    this.openai = new OpenAIApi(
-      this.openaiConfiguration,
-      options.openaiBasePath
-    )
+    this.openaiOptions = options.openaiOptions || {}
+    this.openai = new OpenAI({
+      baseURL: options.openaiBasePath,
+      ...this.openaiOptions,
+    })
     this.#initDatabase()
     this.#handleRecordsLog().then(() => {
       this.#initListeners()
@@ -79,12 +80,12 @@ export default class PluginOpenAi extends BasePlugin {
     this.ctx.model.extend(
       'openai_chat',
       {
-        id: 'number',
+        id: 'integer',
         conversation_id: 'string',
         conversation_owner: 'string',
         role: 'string',
         content: 'string',
-        time: 'number',
+        time: 'integer',
       },
       {
         primary: 'id',
@@ -138,12 +139,12 @@ export default class PluginOpenAi extends BasePlugin {
     this.ctx
       .command('openai.models', 'List models', { authority: 3 })
       .action(async () => {
-        const { data } = await this.openai.listModels()
+        const { data } = await this.openai.models.list()
         this.logger.info('openai.models', data)
         return (
           <>
             <p>Currently available models:</p>
-            <p>{data.data.map((i) => i.id).join('\n')}</p>
+            <p>{data.map((i) => i.id).join('\n')}</p>
           </>
         )
       })
@@ -189,8 +190,8 @@ export default class PluginOpenAi extends BasePlugin {
           historiesLenth: histories.length,
         })
 
-        return this.openai
-          .createChatCompletion(
+        return this.openai.chat.completions
+          .create(
             {
               model: options.model || 'gpt-3.5-turbo',
               messages: [
@@ -223,7 +224,7 @@ export default class PluginOpenAi extends BasePlugin {
             },
             { timeout: 30 * 1000 }
           )
-          .then(async ({ data }) => {
+          .then(async (data) => {
             this.logger.info('[chat] output', data)
             const text = data.choices?.[0]?.message?.content?.trim()
             if (!text) {
@@ -318,8 +319,8 @@ export default class PluginOpenAi extends BasePlugin {
 
     const recordsText = this.formatRecords(records)
 
-    return this.openai
-      .createChatCompletion(
+    return this.openai.chat.completions
+      .create(
         {
           model: 'gpt-3.5-turbo',
           messages: [
@@ -333,7 +334,7 @@ export default class PluginOpenAi extends BasePlugin {
         },
         { timeout: 90 * 1000 }
       )
-      .then(({ data }) => {
+      .then((data) => {
         this.logger.info('chat-summary', data)
         const text = data.choices?.[0]?.message?.content?.trim()
         if (!text) {
