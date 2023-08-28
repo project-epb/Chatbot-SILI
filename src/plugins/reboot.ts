@@ -3,6 +3,7 @@ import { Context, Session, h } from 'koishi'
 import { resolve } from 'path'
 import BasePlugin from './_boilerplate'
 import { safelyStringify } from '../utils/safelyStringify'
+import { getNicknameFromSession } from '../utils/getNicknameFromSession'
 
 enum LogFile {
   signal = '.koishi_signal',
@@ -127,10 +128,7 @@ export default class PluginReboot extends BasePlugin {
         `SILI 重启完毕 (SIGNAL-${(+kSignal).toString(2).padStart(6, '0')})
 共耗时: ${((now - lastSession.time) / 1000).toFixed(2)}s
 请求者: ${h.at(session.userId, {
-          name:
-            session.author?.nickname ||
-            session.author?.username ||
-            session.author.userId,
+          name: getNicknameFromSession(session),
         })}
 ${cmdLogsImg || '(没有详细日志)'}`,
         session.guildId

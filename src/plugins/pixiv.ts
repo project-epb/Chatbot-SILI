@@ -6,7 +6,7 @@
  */
 
 import { Context, segment, Time } from 'koishi'
-import axios from 'axios'
+import fexios from 'fexios'
 import { BulkMessageBuilder } from '../utils/BulkMessageBuilder'
 
 // const API_BASE = process.env.API_PIXIV_BASE
@@ -26,7 +26,7 @@ export default class PluginPixiv {
       ...configs,
     }
     const { baseURL } = this.configs
-    const ajax = axios.create({
+    const ajax = fexios.create({
       baseURL,
       headers: {
         referer: 'https://www.pixiv.net',
@@ -108,7 +108,7 @@ export default class PluginPixiv {
 
         let data
         try {
-          data = (await axios.get(`${baseURL}/ajax/user/${id}?full=1`)).data
+          data = (await fexios.get(`${baseURL}/ajax/user/${id}?full=1`)).data
         } catch (error) {
           this.logger.warn(error)
           return [

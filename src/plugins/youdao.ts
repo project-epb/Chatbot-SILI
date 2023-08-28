@@ -5,7 +5,7 @@
  * @authority 1
  */
 
-import axios from 'axios'
+import fexios from 'fexios'
 import { Context } from 'koishi'
 
 const LANGUAGES = {
@@ -204,9 +204,9 @@ export default class PluginYoudao {
   async makeQuery(q: string, from: string, to: string) {
     if (!from) from = 'auto'
     if (!to) to = 'auto'
-    const { data } = await axios.post(
+    const { data } = await fexios.post(
       process.env.API_YOUDAO,
-      new URLSearchParams({ q, from, to }).toString()
+      new URLSearchParams({ q, from, to })
     )
     return data
   }

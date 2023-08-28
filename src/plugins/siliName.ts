@@ -11,7 +11,7 @@ import { resolveBrackets } from '../utils/resolveBrackets'
 
 export default class PluginSiliName {
   constructor(public ctx: Context) {
-    ctx = ctx.channel()
+    ctx = ctx.channel().platform('onebot')
 
     ctx
       .command('admin/siliname <name:text>', '让SILI修改自己的群名片', {

@@ -6,8 +6,8 @@
  */
 
 import { Context, segment, Session } from 'koishi'
-import axios from 'axios'
 import crypto from 'crypto'
+import fexios from 'fexios'
 
 export const name = 'verify-fandom-user'
 
@@ -117,7 +117,7 @@ export default class PluginVerifyFandomUser {
     userName = userName.slice(0, 1).toUpperCase() + userName.slice(1)
 
     const { data } = await this.ajax.get('', {
-      params: {
+      query: {
         action: 'query',
         titles: `User:${userName}/qq-hash`,
         prop: 'info|revisions',
@@ -177,9 +177,9 @@ export default class PluginVerifyFandomUser {
   }
 
   get ajax() {
-    return axios.create({
+    return fexios.create({
       baseURL: 'https://community.fandom.com/zh/api.php',
-      params: {
+      query: {
         format: 'json',
         formatversion: '2',
       },
