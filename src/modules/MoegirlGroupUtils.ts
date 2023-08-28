@@ -6,7 +6,7 @@
  * @authority -
  */
 
-import { Context, segment, Time } from 'koishi'
+import { Context, h, segment, Time } from 'koishi'
 import {} from '@koishijs/plugin-adapter-onebot'
 import {} from '@koishijs/plugin-database-mongo'
 
@@ -30,28 +30,16 @@ export default class MoegirlGroupUtils {
       .map((i) => i.trim())
       .filter((i) => !!i) || []
   COMMAND_WHITELIST = [
-    // functions
-    // 'wiki',
-    // utils
-    'chat-summary',
-    'ping',
+    'chat',
     'dialogue',
-    'teach',
-    'schedule',
-    'queue',
+    'dice',
     'help',
-    'switch',
-    // administration
-    'sudo',
-    'echo',
-    'auth',
-    'user',
-    'channel',
-    'dbadmin',
-    'siliname',
-    'mute',
-    'recall',
+    'ping',
+    'pixiv',
     'profile',
+    'teach',
+    'wiki',
+    'youdao',
   ]
   // const EXCEPTION_USERS = []
   // Cache RegExp
@@ -70,35 +58,45 @@ export default class MoegirlGroupUtils {
     )
 
     // 指令白名单
-    ctx.on('command/before-execute', ({ command }) => {
-      if (!this.COMMAND_THITELIST_REG.test(command!.name)) {
+    ctx.on('command/before-execute', async ({ command, session }) => {
+      const matched = this.COMMAND_THITELIST_REG.test(command!.name)
+      if (matched) return
+
+      const isAdmin = session.author.roles.some((i) => i === 'admin')
+      if (isAdmin) return
+
+      const { authority } = await session.getUser(session.userId, ['authority'])
+      if (authority < 2) {
         this.logger.info(command!.name, '指令不在白名单，已阻断。')
         return ''
       }
     })
 
     // 自动禁言
-    ctx.on('message', async (sess) => {
+    ctx.on('message', async (session) => {
       if (!this.KEYWORDS_BLACKLIST_REG)
         return this.logger.warn('missing KEYWORDS_BLACKLIST')
 
-      const textSegs = segment.select(sess.elements!, 'text')
-      const match = this.KEYWORDS_BLACKLIST_REG.exec(textSegs.join(' ') || '')
-      if (!match || sess.author?.roles?.find((i) => i === 'admin')) {
+      const textSegs = segment.select(session.elements!, 'text')
+      const hitBlackList = this.KEYWORDS_BLACKLIST_REG.exec(
+        textSegs.join(' ') || ''
+      )
+      const isAdmin = session.author.roles.some((i) => i === 'admin')
+      if (!hitBlackList || isAdmin) {
         return
       }
 
-      let { mgpGroupSpamLogs } = await sess.app.database.getUser(
-        sess.platform,
-        sess.userId as string,
+      let { mgpGroupSpamLogs } = await session.app.database.getUser(
+        session.platform,
+        session.userId as string,
         ['mgpGroupSpamLogs']
       )
       // sess.app.database.getChannel(sess.platform,sess.channelId)
       ;(mgpGroupSpamLogs = mgpGroupSpamLogs || []).push({
         time: new Date().toISOString(),
-        match,
-        content: sess.content as string,
-        channelId: sess.channelId as string,
+        match: hitBlackList,
+        content: session.content as string,
+        channelId: session.channelId as string,
       })
 
       const count = mgpGroupSpamLogs.length
@@ -107,11 +105,10 @@ export default class MoegirlGroupUtils {
         : Infinity
 
       const log = [
-        `B群触发关键词黑名单:`,
-        `channel: ${sess.channelId} (${sess.channelName || '未知群名'})`,
-        `user: ${sess.userId} (${sess.author?.nickname || '未知昵称'})`,
-        `keywords: ${match[1]}`,
-        `${sess.content}`,
+        `channel: ${session.channelId} (${session.channelName || '未知群名'})`,
+        `user: ${session.userId} (${session.author?.nickname || '未知昵称'})`,
+        `keywords: ${hitBlackList[1]}`,
+        `${session.content}`,
         `该用户第【${count}】次触发关键词，本次将【${
           duration === Infinity
             ? '踢出群聊'
@@ -123,29 +120,32 @@ export default class MoegirlGroupUtils {
       this.logger.info(log)
 
       // 禁言或踢出
-      sess.bot.deleteMessage(sess.channelId as string, sess.messageId as string)
+      session.bot.deleteMessage(
+        session.channelId as string,
+        session.messageId as string
+      )
       if (duration === Infinity) {
-        sess.onebot?.setGroupKick(
-          sess.channelId as string,
-          sess.userId as string,
+        session.onebot?.setGroupKick(
+          session.channelId as string,
+          session.userId as string,
           false
         )
       } else {
-        sess.onebot?.setGroupBan(
-          sess.channelId as string,
-          sess.userId as string,
+        session.onebot?.setGroupBan(
+          session.channelId as string,
+          session.userId as string,
           duration
         )
       }
 
       // 转发
-      sess.bot.sendMessage(
+      session.bot.sendMessage(
         process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string,
-        `[MGP_UTILS] ${log}`
+        `[MGP_UTILS] B群触发关键词黑名单${await session.app.html.text(log)}`
       )
 
       // 行车记录仪
-      sess.app.database.setUser(sess.platform, sess.userId as string, {
+      session.app.database.setUser(session.platform, session.userId as string, {
         mgpGroupSpamLogs,
       })
     })
