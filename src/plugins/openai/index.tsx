@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { Context, Schema, Session, Time, h } from 'koishi'
+import { Context, Session, Time } from 'koishi'
 import { OpenAI, ClientOptions } from 'openai'
 import BasePlugin from '../_boilerplate'
 import { readFileSync, writeFileSync } from 'fs'
@@ -12,6 +12,7 @@ import { resolve } from 'path'
 import { readFile } from 'fs/promises'
 import crypto from 'crypto'
 import { safelyStringify } from '../../utils/safelyStringify'
+import { CompletionUsage } from 'openai/resources'
 
 declare module 'koishi' {
   export interface Tables {
@@ -25,9 +26,10 @@ declare module 'koishi' {
 interface OpenAIConversationLog {
   id: number
   conversation_id: string
-  conversation_owner: string
+  conversation_owner: number
   role: 'system' | 'user' | 'assistant'
   content: string
+  usage?: CompletionUsage
   time: number
 }
 
@@ -80,9 +82,10 @@ export default class PluginOpenAi extends BasePlugin {
       {
         id: 'integer',
         conversation_id: 'string',
-        conversation_owner: 'string',
+        conversation_owner: 'integer',
         role: 'string',
         content: 'string',
+        usage: 'json',
         time: 'integer',
       },
       {
@@ -166,12 +169,12 @@ export default class PluginOpenAi extends BasePlugin {
         authority: 3,
       })
       .option('debug', '-d', { hidden: true, authority: 3 })
-      .userFields(['name', 'openai_last_conversation_id'])
+      .userFields(['id', 'name', 'openai_last_conversation_id'])
       .action(async ({ session, options }, content) => {
         this.logger.info('[chat] input', options, content)
 
         const startTime = Date.now()
-        const conversation_owner = `${session.platform}:${session.userId}`
+        const conversation_owner = session.user.id
         const userName =
           session.user?.name ||
           session.author?.nickname ||
@@ -239,7 +242,12 @@ export default class PluginOpenAi extends BasePlugin {
             // save conversations to database
             ;[
               { role: 'user', content, time: startTime },
-              { role: 'assistant', content: text, time: Date.now() },
+              {
+                role: 'assistant',
+                content: text,
+                time: Date.now(),
+                usage: data.usage,
+              },
             ].forEach((item) =>
               // @ts-ignore
               this.ctx.database.create('openai_chat', {
