@@ -28,7 +28,8 @@ export default class MoegirlGroupUtils {
   KEYWORDS_BLACKLIST =
     process.env.MOEGIRL_KEYWORDS_BLACKLIST?.split('\n')
       .map((i) => i.trim())
-      .filter((i) => !!i) || []
+      .filter((i) => !!i)
+      .map((i) => new RegExp(i)) || []
   COMMAND_WHITELIST = [
     'chat',
     'dialogue',
@@ -41,12 +42,6 @@ export default class MoegirlGroupUtils {
     'wiki',
     'youdao',
   ]
-  // const EXCEPTION_USERS = []
-  // Cache RegExp
-  KEYWORDS_BLACKLIST_REG = this.KEYWORDS_BLACKLIST.length
-    ? new RegExp(`(${this.KEYWORDS_BLACKLIST.join('|')})`, 'i')
-    : null
-  COMMAND_THITELIST_REG = new RegExp(`^(${this.COMMAND_WHITELIST.join('|')})`)
 
   constructor(public ctx: Context) {
     ctx.model.extend('user', {
@@ -59,8 +54,10 @@ export default class MoegirlGroupUtils {
 
     // 指令白名单
     ctx.on('command/before-execute', async ({ command, session }) => {
-      const matched = this.COMMAND_THITELIST_REG.test(command!.name)
-      if (matched) return
+      const hitWhiteList = this.COMMAND_WHITELIST.some((i) =>
+        command?.name?.startsWith(i)
+      )
+      if (hitWhiteList) return
 
       const isAdmin = session.author.roles.some((i) => i === 'admin')
       if (isAdmin) return
@@ -74,13 +71,18 @@ export default class MoegirlGroupUtils {
 
     // 自动禁言
     ctx.on('message', async (session) => {
-      if (!this.KEYWORDS_BLACKLIST_REG)
+      if (!this.KEYWORDS_BLACKLIST.length)
         return this.logger.warn('missing KEYWORDS_BLACKLIST')
 
       const textSegs = segment.select(session.elements!, 'text')
-      const hitBlackList = this.KEYWORDS_BLACKLIST_REG.exec(
-        textSegs.join(' ') || ''
-      )
+      let matchedText = ''
+      const hitBlackList = this.KEYWORDS_BLACKLIST.some((reg) => {
+        const match = reg.exec(textSegs.join(' ') || '')
+        if (match) {
+          matchedText = match[0]
+          return true
+        }
+      })
       const isAdmin = session.author.roles.some((i) => i === 'admin')
       if (!hitBlackList || isAdmin) {
         return
@@ -94,7 +96,7 @@ export default class MoegirlGroupUtils {
       // sess.app.database.getChannel(sess.platform,sess.channelId)
       ;(mgpGroupSpamLogs = mgpGroupSpamLogs || []).push({
         time: new Date().toISOString(),
-        match: hitBlackList,
+        match: [matchedText],
         content: session.content as string,
         channelId: session.channelId as string,
       })
