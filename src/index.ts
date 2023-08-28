@@ -17,6 +17,8 @@ import { HTMLService } from './utils/RenderHTML'
 // Plugins
 import PatchCallme from './plugins/callme'
 import PluginAbout from './plugins/about'
+import PluginDatabaseAdmin from './plugins/dbadmin'
+import PluginDice from './plugins/dice'
 import PluginHljs from './plugins/hljs'
 import PluginMediawiki from './plugins/mediawiki'
 import PluginMute from './plugins/mute'
@@ -26,12 +28,14 @@ import PluginPixiv from './plugins/pixiv'
 import PluginPowerUser from './plugins/powerUser'
 import PluginProfile from './plugins/profile'
 import PluginQueue from './plugins/queue'
+import PluginReboot from './plugins/reboot'
 import PluginSensitiveFilter from './plugins/sensitive-words-filter'
 import PluginSiliName from './plugins/siliName'
 import PluginSpawn from './plugins/spawn'
 import PluginSticker from './plugins/sticker'
 import PluginVerifyFandomUser from './plugins/verifyFandomUser'
 import PluginVersion from './plugins/version'
+import PluginWebShot from './plugins/webshot'
 import PluginYoudao from './plugins/youdao'
 
 // Modules
@@ -40,10 +44,7 @@ import MessagesLogger from './modules/MessagesLogger'
 import MintFilterService from './plugins/sensitive-words-filter/MintFilterService'
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
-import PluginReboot from './plugins/reboot'
-import PluginDatabaseAdmin from './plugins/dbadmin'
-import PluginDice from './plugins/dice'
-import PluginWebShot from './plugins/webshot'
+import { ReplAdapter } from './adapter-repl'
 
 // Setup .env
 config()
@@ -117,6 +118,9 @@ app.plugin(function PluginCollectionAdapters(ctx) {
      */
     // verifyCallback: false,
   })
+
+  // Repl
+  ctx.plugin(ReplAdapter)
 })
 
 /** 安装插件 */
