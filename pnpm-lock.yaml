@@ -71,7 +71,7 @@ dependencies:
   ansi-escapes:
     specifier: ^6.2.0
     version: 6.2.0
-  axios:
+  fexios:
     specifier: ^1.5.0
     version: 1.5.0
   find-chrome-bin:
@@ -3064,8 +3064,8 @@ packages:
       pend: 1.2.0
     dev: false
 
-  /fexios@1.4.0:
-    resolution: {integrity: sha512-GAELNqdrfvuGj/iWlp4jYp6gcQbkfXtT+NoNDo4zJdPNOAXPb/bJx0MrI1lTDkKHPAHOVIvh2UT/gms72Ab3bQ==}
+  /fexios@1.5.0:
+    resolution: {integrity: sha512-bl4hlZCowwk6yCcbH2kV5kneRb8nfLkMngyjGoq1+6UXXBAd+RgJI0aObM1Kb0OW7knPfoJ6wW3ZN1tppi8tiQ==}
     engines: {node: ^16.15.0 || >=18.0.0}
     dependencies:
       tslib: 2.6.1
@@ -4767,7 +4767,7 @@ packages:
     resolution: {integrity: sha512-xHC2eRrXU3jLqld+o4oCKw9LjMPJhMCs8TAAva3d5wVz3HqjSVl1dWo47u0BLFUk6t29RDTDZfZfWp/89J1wAQ==}
     dependencies:
       '@vue/reactivity': 3.3.4
-      fexios: 1.4.0
+      fexios: 1.5.0
       tslib: 2.6.1
     dev: false
 

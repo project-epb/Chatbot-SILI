@@ -7,9 +7,9 @@
  */
 
 import { Context, segment, Session } from 'koishi'
-import axios from 'axios'
+import fexios from 'fexios'
 import { resolveBrackets } from '../utils/resolveBrackets'
-import {} from '@koishijs/plugin-teach'
+import {} from 'koishi-plugin-dialogue'
 
 export const name = '_internal-FandomDiscordConnect'
 
@@ -144,7 +144,7 @@ export default class FandomDiscordConnect {
       avatar_url: `http://q1.qlogo.cn/g?b=qq&nk=${id}&s=640`,
     }
 
-    axios
+    fexios
       .post(webhook, body, {
         headers: {
           'Content-Type': 'application/json',
