@@ -44,7 +44,6 @@ import MessagesLogger from './modules/MessagesLogger'
 import MintFilterService from './plugins/sensitive-words-filter/MintFilterService'
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
-import ReplAdapter from './adapter-repl'
 
 // Setup .env
 config()
@@ -120,7 +119,7 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   })
 
   // Repl
-  ctx.plugin(ReplAdapter)
+  ctx.plugin('adapter-repl')
 })
 
 /** 安装插件 */
@@ -235,10 +234,12 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   findChrome({})
     .then((chrome) => {
       logger.info('已找到Chromium，启用puppeteer')
-      ctx.plugin('puppeteer', { executablePath: chrome.executablePath })
+      ctx.plugin('puppeteer', {
+        executablePath: chrome.executablePath,
+      })
     })
     .catch((e) => {
-      logger.error('无法找到Chromium，将无法使用puppeteer功能')
+      logger.warn('无法找到Chromium，将无法使用puppeteer功能')
     })
 })
 
