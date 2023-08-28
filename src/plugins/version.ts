@@ -9,30 +9,28 @@ import { Context, h, version as KOISHI_VERSION } from 'koishi'
 import { execSync } from 'child_process'
 
 export default class PluginVersion {
-  static using = ['html']
+  static using = ['html', 'shell']
 
   constructor(public ctx: Context) {
     ctx
       .command('version', '查看SILI版本信息')
       .option('all', '-a', { authority: 2 })
       .action(async ({ options }) => {
-        const GIT_HASH = execSync('git rev-parse --short HEAD')
-          .toString()
-          .trim()
-        const SILI_CORE = (
+        const { output: gitHashInfo } = await ctx.shell.exec('git rev-parse --short HEAD')
+        const siliCoreInfo = (
           await import('../../package.json', { assert: { type: 'json' } })
         ).default
-        const ONEBOT = await ctx.bots
+        const onebotInfo = await ctx.bots
           .find((i) => i.platform === 'onebot')
           ?.internal.getVersionInfo()
 
         if (!options!.all) {
-          return `[SILI Core] v${SILI_CORE.version} (${GIT_HASH})
-[Onebot] protocol ${ONEBOT.protocol_version} / go-cqhttp ${ONEBOT.version}
+          return `[SILI Core] v${siliCoreInfo.version} (${gitHashInfo?.trim()})
+[Onebot] protocol ${onebotInfo.protocol_version} / go-cqhttp ${onebotInfo.version}
 [Koishi.js] v${KOISHI_VERSION}`
         }
 
-        const plugins = Object.keys(SILI_CORE.dependencies)
+        const plugins = Object.keys(siliCoreInfo.dependencies)
           .filter(
             (i) =>
               i.startsWith('@koishijs/plugin-') ||
@@ -41,14 +39,14 @@ export default class PluginVersion {
           .map(
             (i) =>
               `${i.replace(/^(@koishijs\/|koishi-)/, '')}: ${
-                SILI_CORE.dependencies[i]
+                siliCoreInfo.dependencies[i]
               }`
           )
 
         const img = await ctx.html.hljs(
           [
-            `[SILI Core] v${SILI_CORE.version} (${GIT_HASH})`,
-            `[Onebot] protocol ${ONEBOT.protocol_version} / go-cqhttp ${ONEBOT.version}`,
+            `[SILI Core] v${siliCoreInfo.version} (${gitHashInfo})`,
+            `[Onebot] protocol ${onebotInfo.protocol_version} / go-cqhttp ${onebotInfo.version}`,
             `[Koishi.js] v${KOISHI_VERSION}`,
             `  - ${plugins.join('\n  - ')}`,
           ].join('\n'),
