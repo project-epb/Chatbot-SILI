@@ -15,6 +15,8 @@ export default class ReplAdapter extends Adapter.Server<ReplBot> {
   async start(bot: ReplBot) {
     this.write(this.linePrefixed)
 
+    // TODO: 我们似乎并不期望退出 REPL 时关闭进程，因为它可能是被 plugin-console 卸载的
+    //       但这样的话会导致必须按两次 Ctrl+C 才能退出
     // this.rl.on('close', () => {
     //   this.write(ansi.cursorLeft + ansi.cursorNextLine + '\n\nBye~\n\n')
     //   process.exit(0)
@@ -47,7 +49,7 @@ export default class ReplAdapter extends Adapter.Server<ReplBot> {
     // 用户提交输入
     this.rl.on('line', (line) => {
       this.write(ansi.cursorLeft + ansi.cursorPrevLine + ansi.eraseDown)
-      console.info(`[REPL] YOU:`, line)
+      console.info(`[REPL] YOU`, '>', line)
       const session = bot.session({
         type: 'message',
         subtype: 'private',

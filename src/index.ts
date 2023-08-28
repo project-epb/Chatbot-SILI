@@ -44,7 +44,7 @@ import MessagesLogger from './modules/MessagesLogger'
 import MintFilterService from './plugins/sensitive-words-filter/MintFilterService'
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
-import { ReplAdapter } from './adapter-repl'
+import ReplAdapter from './adapter-repl'
 
 // Setup .env
 config()
