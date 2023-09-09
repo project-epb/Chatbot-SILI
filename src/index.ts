@@ -36,6 +36,7 @@ import PluginSticker from './plugins/sticker'
 import PluginVerifyFandomUser from './plugins/verifyFandomUser'
 import PluginVersion from './plugins/version'
 import PluginWebShot from './plugins/webshot'
+import PluginWhoAsked from './plugins/whoAsked'
 import PluginYoudao from './plugins/youdao'
 
 // Modules
@@ -289,6 +290,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginVerifyFandomUser)
   ctx.plugin(PluginVersion)
   ctx.plugin(PluginWebShot)
+  ctx.plugin(PluginWhoAsked)
   ctx.plugin(PluginYoudao)
 
   // MediaWiki
