@@ -47,7 +47,8 @@ export default class PluginWhoAsked extends BasePlugin {
         )
       })
 
-    ctx.middleware((session) => {
+    ctx.middleware(async (session, next) => {
+      await next()
       const keywords = ['谁艾特我', '谁@我', '谁at我']
       if (keywords.some((keyword) => session.content.endsWith(keyword))) {
         session.execute({ name: 'whoasked' })
