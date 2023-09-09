@@ -58,6 +58,7 @@ export default class PluginWhoAsked extends BasePlugin {
     this.ctx.model.extend(
       'mention_logs',
       {
+        id: 'integer',
         author: 'string',
         target: 'string',
         content: 'string',
