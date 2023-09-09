@@ -1,4 +1,4 @@
-import { Context, Session, h } from 'koishi'
+import { Context, Session, Time, h } from 'koishi'
 import BasePlugin from './_boilerplate'
 
 declare module 'koishi' {
@@ -37,12 +37,12 @@ export default class PluginWhoAsked extends BasePlugin {
         return (
           <>
             <quote id={log.messageId} />
+            请看这里，<at id={session.userId}></at>
+            ！你在本频道最近一次被提及是在
+            {Time.format(Date.now() - log.timestamp)}前~
             <p>
-              <at id={session.userId}></at>，在本频道，最近一次是
-              <at id={log.author}></at>曾于
-              {new Date(log.timestamp).toLocaleString()}提及过你，ta说：
+              有问题的话可以问问<at id={log.author}></at>哦~
             </p>
-            <p>{log.content}</p>
           </>
         )
       })

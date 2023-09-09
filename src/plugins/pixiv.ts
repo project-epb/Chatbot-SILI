@@ -35,10 +35,12 @@ export default class PluginPixiv {
 
     ctx
       .command('pixiv [id:posint]', 'pixiv.net 相关功能')
-      .action(({ session }, id) => {
+      .action(({ session, name }, id) => {
         if (!session) return
-        if (id) return session.execute(`pixiv.illust ${id}`)
-        return session.execute('pixiv -h')
+        if (id) {
+          return session.execute({ name: 'pixiv.illust', args: [id] })
+        }
+        return session.execute({ name, options: { help: true } })
       })
 
     ctx
@@ -48,9 +50,11 @@ export default class PluginPixiv {
       .alias('pixiv插画', 'p站插画', 'pixiv.i', 'pixiv.artwork')
       .option('page', '-p <p:posint> 从多张插画中进行选择', { fallback: 1 })
       .option('original', '-o 显示原画 (可能会慢很多)', { fallback: false })
-      .action(async ({ session, options }, id) => {
+      .action(async ({ session, options, name }, id) => {
         if (!session) return
-        if (!id) return session.execute('pixiv.illust -h')
+        if (!id) {
+          return session.execute({ name, options: { help: true } })
+        }
 
         this.logger.info({ id, options })
 
@@ -102,9 +106,11 @@ export default class PluginPixiv {
     ctx
       .command('pixiv.user <id:posint>')
       .alias('pixiv用户', 'p站用户', 'pixiv.u')
-      .action(async ({ session }, id) => {
+      .action(async ({ session, name: cmdName }, id) => {
         if (!session) return
-        if (!id) return session.execute('pixiv.user -h')
+        if (!id) {
+          return session.execute({ name: cmdName, options: { help: true } })
+        }
 
         let data
         try {
@@ -140,7 +146,7 @@ export default class PluginPixiv {
         /(?:(?:https?:)?\/\/)?(?:pixiv\.net|www\.pixiv\.net|pixiv\.js\.org)\/(?:en\/)?(?:artworks|i)\/(\d+)/i
       const pixivId = reg.exec(session.content as string)
       if (pixivId && pixivId[1]) {
-        session.execute(`pixiv.illust ${pixivId[1]}`)
+        session.execute({ name: 'pixiv.illust', args: [pixivId[1]] })
       }
     })
   }

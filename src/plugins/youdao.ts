@@ -152,9 +152,11 @@ export default class PluginYoudao {
             .join(', ')}`
         }
       })
-      .action(async ({ session, options }, text) => {
+      .action(async ({ session, options, name }, text) => {
         if (!session) return
-        if (!text) return session.execute('youdao -h')
+        if (!text) {
+          return session.execute({ name, options: { help: true } })
+        }
         this.logger.info('发起翻译', { options, text })
 
         const from = this.getLangCode(options?.from)

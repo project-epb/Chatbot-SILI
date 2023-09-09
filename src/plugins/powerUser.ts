@@ -23,9 +23,9 @@ export default class PluginPowerUser extends BasePlugin {
           return '您没有足够的抛瓦！'
         }
       })
-      .action(async ({ session }, cmd) => {
+      .action(async ({ session, name }, cmd) => {
         if (!session) return
-        if (!cmd) return session.execute('power -h')
+        if (!cmd) return session.execute({ name, options: { help: true } })
 
         const userLevel = session.user!.authority
         const superLevel = Date.now()
