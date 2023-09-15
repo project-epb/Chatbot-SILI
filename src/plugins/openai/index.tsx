@@ -46,6 +46,7 @@ export default class PluginOpenAi extends BasePlugin {
   openaiOptions: ClientOptions
   SILI_PROMPT = PluginOpenAi.readPromptFile('SILI.txt')
   CHAT_SUMMARY_PROMPT = PluginOpenAi.readPromptFile('chat-summary.txt')
+  CENSOR_PROMPT = PluginOpenAi.readPromptFile('censor.txt')
   RANDOM_ERROR_MSG = (
     <random>
       <template>SILI不知道喔。</template>
@@ -169,7 +170,7 @@ export default class PluginOpenAi extends BasePlugin {
         authority: 3,
       })
       .option('debug', '-d', { hidden: true, authority: 3 })
-      .userFields(['id', 'name', 'openai_last_conversation_id'])
+      .userFields(['id', 'name', 'openai_last_conversation_id', 'authority'])
       .action(async ({ session, options }, content) => {
         this.logger.info('[chat] input', options, content)
 
@@ -239,6 +240,17 @@ export default class PluginOpenAi extends BasePlugin {
               )
             }
 
+            if (session.user.authority < 2) {
+              const good = await this.reviewConversation(
+                options.prompt || this.SILI_PROMPT,
+                content,
+                text
+              )
+              if (!good) {
+                return '呜……SILI不喜欢这个话题，我们可以聊点别的吗？'
+              }
+            }
+
             // save conversations to database
             ;[
               { role: 'user', content, time: startTime },
@@ -281,8 +293,61 @@ export default class PluginOpenAi extends BasePlugin {
       .command('openai/chat.reset', '开始新的对话')
       .userFields(['openai_last_conversation_id'])
       .action(async ({ session }) => {
-        session.user.openai_last_conversation_id = ''
-        return '让我们开始新话题吧！'
+        if (!session.user.openai_last_conversation_id) {
+          return (
+            <random>
+              <>嗯……我们好像还没聊过什么呀……</>
+              <>咦？你还没有和SILI分享过你的故事呢！</>
+              <>欸？SILI好像还没和你讨论过什么哦。</>
+            </random>
+          )
+        } else {
+          session.user.openai_last_conversation_id = ''
+          return (
+            <random>
+              <>让我们开始新话题吧！</>
+              <>嗯……那我们聊点别的吧！</>
+              <>好吧，那我就不提之前的事了。</>
+              <>你有更好的点子和SILI分享吗？</>
+              <>咦？是还有其他问题吗？</>
+            </random>
+          )
+        }
+      })
+  }
+
+  async reviewConversation(
+    base_prompt: string,
+    user: string,
+    assistant: string
+  ) {
+    return this.openai.chat.completions
+      .create(
+        {
+          model: 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: this.CENSOR_PROMPT,
+            },
+            {
+              role: 'user',
+              content: JSON.stringify({ base_prompt, user, assistant }),
+            },
+          ],
+        },
+        {
+          timeout: 30 * 1000,
+        }
+      )
+      .then((data) => {
+        const text = data.choices?.[0]?.message?.content?.trim()
+        console.info('[review]', text, data)
+        return text === 'Y'
+      })
+      .catch((e) => {
+        console.error('[review] ERROR', e)
+        return true
       })
   }
 
