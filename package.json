@@ -10,7 +10,7 @@
     "env:pull": "dotenv-vault pull"
   },
   "engines": {
-    "node": ">=18.16.0"
+    "node": ">=20.8.1"
   },
   "devDependencies": {
     "@satorijs/element": "^2.5.1",
