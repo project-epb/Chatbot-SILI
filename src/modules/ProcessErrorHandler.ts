@@ -22,9 +22,9 @@ export default class ProcessErrorHandler {
     const today = new Date().toISOString().split('T')[0]
     const eventId = randomUUID()
     this.logger.error(`\n${today} ${eventId} > `, event)
-    this.ctx.bots
-      .find((i) => i.platform === 'onebot')
-      ?.sendPrivateMessage(
+    const bot = this.ctx.bots.find((i) => i.platform === 'onebot')
+    bot.isActive &&
+      bot?.sendPrivateMessage(
         process.env.ACCOUNT_QQ_XIAOYUJUN as string,
         `[PROCESS_ERROR]\n${event.name}: ${
           event?.message || 'UNKNOWN'

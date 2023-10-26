@@ -1,0 +1,7 @@
+https://sili.wjghj.cn {
+	reverse_proxy localhost:3100
+	@redirect {
+		not path /api* /dash* /assets*
+	}
+	redir @redirect /dash
+}

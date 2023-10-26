@@ -81,11 +81,11 @@ app.plugin('database-mongo', {
 /** 安装适配器 */
 app.plugin(function PluginCollectionAdapters(ctx) {
   // QQ
-  ctx.plugin('adapter-onebot', {
-    protocol: env.ONEBOT_PROTOCOL,
-    selfId: env.ONEBOT_SELFID,
-    endpoint: env.ONEBOT_ENDPOINT,
-  })
+  //  ctx.plugin('adapter-onebot', {
+  //    protocol: env.ONEBOT_PROTOCOL,
+  //    selfId: env.ONEBOT_SELFID,
+  //    endpoint: env.ONEBOT_ENDPOINT,
+  //  })
 
   // Discord
   // ctx.plugin('adapter-discord', {
