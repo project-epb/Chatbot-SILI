@@ -46,6 +46,11 @@ import MintFilterService from './plugins/sensitive-words-filter/MintFilterServic
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
 
+import PluginMongo from '@koishijs/plugin-database-mongo'
+import AdapterRed from 'koishi-plugin-adapter-red'
+import AdapterDingtalk from '@koishijs/plugin-adapter-dingtalk'
+import AdapterVilla from 'koishi-plugin-adapter-villa'
+
 // Setup .env
 config()
 config({
@@ -70,7 +75,7 @@ const app = new App({
 const logger = app.logger('INIT')
 
 /** 安装数据库 */
-app.plugin('database-mongo', {
+app.plugin(PluginMongo, {
   host: env.DB_MONGO_HOST,
   port: Number(env.DB_MONGO_PORT),
   // username: env.DB_MONGO_USER,
@@ -86,6 +91,13 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   //    selfId: env.ONEBOT_SELFID,
   //    endpoint: env.ONEBOT_ENDPOINT,
   //  })
+  ctx.plugin(AdapterRed, {
+    endpoint: env.CHRONOCAT_ENDPOINT,
+    token: env.CHRONOCAT_TOKEN,
+    selfId: env.ONEBOT_SELFID?.trim(),
+    path: '/assets/red',
+    selfUrl: env.KOISHI_SELF_URL,
+  })
 
   // Discord
   // ctx.plugin('adapter-discord', {
@@ -94,38 +106,41 @@ app.plugin(function PluginCollectionAdapters(ctx) {
 
   // DingTalk
   const dingTokens = process.env.DINGTALK_TOKENS?.split('|')
-  if (dingTokens && dingTokens.length) {
-    dingTokens.forEach((token) => {
-      const [agentId, appkey, secret] = token?.split('/')
-      if (!agentId || !appkey || !secret) return
-      ctx.plugin('adapter-dingtalk', {
-        protocol: 'ws',
-        agentId: +agentId,
-        appkey,
-        secret,
-      })
-    })
-  }
+  // if (dingTokens && dingTokens.length) {
+  //   dingTokens.forEach((token) => {
+  //     const [agentId, appkey, secret] = token?.split('/')
+  //     if (!agentId || !appkey || !secret) return
+  //     ctx.plugin(AdapterDingtalk, {
+  //       protocol: 'ws',
+  //       agentId: +agentId,
+  //       appkey,
+  //       secret,
+  //     })
+  //   })
+  // }
 
   // Villa
-  ctx.plugin('adapter-villa', {
+  ctx.plugin(AdapterVilla, {
     id: process.env.VILLA_APPID,
     secret: process.env.VILLA_APPSECRET,
     pubKey: process.env.VILLA_PUBKEY,
     path: '/api/callback/villa',
+    emoticon: undefined,
+    transfer: undefined,
     /**
      * @TODO: `underscores_in_headers on;` should be set in nginx config
      */
-    // verifyCallback: false,
+    verifyCallback: true,
   })
 
   // Repl
-  ctx.plugin('adapter-repl')
+  // ctx.plugin('adapter-repl')
 })
 
 /** 安装插件 */
 // @pollify v3 自带的指令
 app.plugin(function PluginCollectionLegacy(ctx) {
+  return void 0
   // [core]
   ctx.plugin(function PluginCollectionLegacyCore(ctx) {
     ctx.plugin('help')
@@ -201,6 +216,7 @@ app.plugin(function PluginCollectionLegacy(ctx) {
 
 // 网页控制台
 app.plugin(function PluginCollectionConsole(ctx) {
+  return void 0
   ctx.plugin('console', {
     title: 'SILI 监控中心',
     uiPath: '/dash',
@@ -218,6 +234,7 @@ app.plugin(function PluginCollectionConsole(ctx) {
 
 // 第三方
 app.plugin(async function PluginCollectionThirdParty(ctx) {
+  return void 0
   ctx.plugin('blive')
   // ctx.plugin('bvid')
   ctx.plugin('github', {
@@ -245,6 +262,7 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
 })
 
 app.plugin(function PluginCollectionDialogue(ctx) {
+  return void 0
   ctx.plugin('dialogue-author')
   ctx.plugin('dialogue-context')
   // ctx.plugin('dialogue-flow')
