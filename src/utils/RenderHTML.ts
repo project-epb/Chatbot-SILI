@@ -1,6 +1,12 @@
 import { Context, Service, h } from 'koishi'
 import {} from 'koishi-plugin-puppeteer'
 
+declare module 'koishi' {
+  export interface Context {
+    html: HTMLService
+  }
+}
+
 export class HTMLService extends Service {
   static using = ['puppeteer']
 
