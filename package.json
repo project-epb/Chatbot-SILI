@@ -47,7 +47,6 @@
     "@koishijs/plugin-status": "^7.2.2",
     "ansi-escapes": "^6.2.0",
     "fexios": "^1.5.0",
-    "find-chrome-bin": "^1.0.5",
     "intercept-stdout": "^0.1.2",
     "json5": "^2.2.3",
     "koishi": "^4.15.2",

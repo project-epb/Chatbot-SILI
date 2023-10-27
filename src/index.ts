@@ -9,7 +9,6 @@ const PROD = process.env.NODE_ENV === 'production'
 import { config } from 'dotenv'
 import { resolve } from 'path'
 import { App, type Session, Random, Time, Dict } from 'koishi'
-import { findChrome } from 'find-chrome-bin'
 
 // Services
 import { HTMLService } from './utils/RenderHTML'
@@ -95,8 +94,8 @@ const { env } = process
 
 /** 初始化 Koishi 实例 */
 const app = new App({
-  port: env.KOISHI_PROT ? +env.KOISHI_PROT : undefined,
-  selfUrl: env.KOISHI_SELF_URL,
+  // port: env.KOISHI_PROT ? +env.KOISHI_PROT : undefined,
+  // selfUrl: env.KOISHI_SELF_URL,
   nickname: env.KOISHI_NICKNAME?.split('|'),
   prefix: (ctx) => {
     const items = env.KOISHI_PREFIX?.split('|') || []
@@ -133,9 +132,9 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   })
 
   // Discord
-  ctx.plugin(AdapterDiscord, {
-    token: env.TOKEN_DISCORD_BOT,
-  })
+  // ctx.plugin(AdapterDiscord, {
+  //   token: env.TOKEN_DISCORD_BOT,
+  // })
 
   // DingTalk
   const dingTokens = process.env.DINGTALK_TOKENS?.split('|')
@@ -275,20 +274,10 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   ctx.plugin(PluginImageSearch, {
     saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
   })
+  ctx.plugin(PluginPuppeteer, {
+    // headless: 'new',
+  })
   ctx.plugin(PluginSchedule)
-
-  findChrome({})
-    .then((chrome) => {
-      if (!chrome.executablePath) throw new Error('executablePath is empty')
-      logger.info('已找到Chromium，启用puppeteer:', chrome)
-      ctx.plugin(PluginPuppeteer, {
-        executablePath: chrome.executablePath,
-        // headless: 'new',
-      })
-    })
-    .catch((e) => {
-      logger.warn('无法找到Chromium，将无法使用puppeteer功能', e)
-    })
 })
 
 app.plugin(function PluginCollectionDialogue(ctx) {
