@@ -283,7 +283,7 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
       logger.info('已找到Chromium，启用puppeteer:', chrome)
       ctx.plugin(PluginPuppeteer, {
         executablePath: chrome.executablePath,
-        headless: 'new',
+        // headless: 'new',
       })
     })
     .catch((e) => {
