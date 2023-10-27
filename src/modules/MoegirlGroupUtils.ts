@@ -6,7 +6,7 @@
  * @authority -
  */
 
-import { Context, h, segment, Time } from 'koishi'
+import { Context, segment, Time } from 'koishi'
 import {} from '@koishijs/plugin-adapter-onebot'
 import {} from '@koishijs/plugin-database-mongo'
 
@@ -83,7 +83,7 @@ export default class MoegirlGroupUtils {
           return true
         }
       })
-      const isAdmin = session.author.roles.some((i) => i === 'admin')
+      const isAdmin = session.author.roles?.some((i) => i === 'admin')
       if (!hitBlackList || isAdmin) {
         return
       }
@@ -107,8 +107,10 @@ export default class MoegirlGroupUtils {
         : Infinity
 
       const log = [
-        `channel: ${session.channelId} (${session.channelName || '未知群名'})`,
-        `user: ${session.userId} (${session.author?.nickname || '未知昵称'})`,
+        `channel: ${session.channelId} (${
+          session?.event?.channel?.name || '未知群名'
+        })`,
+        `user: ${session.userId} (${session.username || '未知昵称'})`,
         `keywords: ${hitBlackList[1]}`,
         `${session.content}`,
         `该用户第【${count}】次触发关键词，本次将【${
@@ -165,8 +167,10 @@ export default class MoegirlGroupUtils {
           process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string,
           [
             `[MGP_UTILS] 请注意B群入群申请:`,
-            `channel: ${sess.channelId} (${sess.channelName || '未知群名'})`,
-            `user: ${sess.userId} (${sess.author?.nickname || '未知昵称'})`,
+            `channel: ${sess.channelId} (${
+              sess?.event?.channel?.name || '未知群名'
+            })`,
+            `user: ${sess.userId} (${sess.username || '未知昵称'})`,
             `该用户曾【${logs.length}】次触发关键词黑名单。`,
           ].join('\n')
         )

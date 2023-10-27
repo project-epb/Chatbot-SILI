@@ -279,6 +279,7 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
 
   findChrome({})
     .then((chrome) => {
+      if (!chrome.executablePath) throw new Error('executablePath is empty')
       logger.info('已找到Chromium，启用puppeteer:', chrome)
       ctx.plugin(PluginPuppeteer, {
         executablePath: chrome.executablePath,

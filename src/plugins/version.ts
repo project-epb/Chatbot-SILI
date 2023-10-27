@@ -6,7 +6,6 @@
  */
 
 import { Context, h, version as KOISHI_VERSION } from 'koishi'
-import { execSync } from 'child_process'
 
 export default class PluginVersion {
   static using = ['html', 'shell']
@@ -16,7 +15,9 @@ export default class PluginVersion {
       .command('version', '查看SILI版本信息')
       .option('all', '-a', { authority: 2 })
       .action(async ({ options }) => {
-        const { output: gitHashInfo } = await ctx.shell.exec('git rev-parse --short HEAD')
+        const { output: gitHashInfo } = await ctx.shell.exec(
+          'git rev-parse --short HEAD'
+        )
         const siliCoreInfo = (
           await import('../../package.json', { assert: { type: 'json' } })
         ).default
@@ -26,7 +27,9 @@ export default class PluginVersion {
 
         if (!options!.all) {
           return `[SILI Core] v${siliCoreInfo.version} (${gitHashInfo?.trim()})
-[Onebot] protocol ${onebotInfo.protocol_version} / go-cqhttp ${onebotInfo.version}
+[Onebot] protocol ${onebotInfo?.protocol_version} / go-cqhttp ${
+            onebotInfo?.version
+          }
 [Koishi.js] v${KOISHI_VERSION}`
         }
 
@@ -46,7 +49,7 @@ export default class PluginVersion {
         const img = await ctx.html.hljs(
           [
             `[SILI Core] v${siliCoreInfo.version} (${gitHashInfo})`,
-            `[Onebot] protocol ${onebotInfo.protocol_version} / go-cqhttp ${onebotInfo.version}`,
+            `[Onebot] protocol ${onebotInfo?.protocol_version} / go-cqhttp ${onebotInfo?.version}`,
             `[Koishi.js] v${KOISHI_VERSION}`,
             `  - ${plugins.join('\n  - ')}`,
           ].join('\n'),

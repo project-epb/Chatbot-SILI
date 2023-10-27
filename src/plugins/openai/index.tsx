@@ -177,6 +177,7 @@ export default class PluginOpenAi extends BasePlugin {
         const startTime = Date.now()
         const conversation_owner = session.user.id
         const userName =
+          session.username ||
           session.user?.name ||
           session.author?.nickname ||
           session?.author?.username ||
