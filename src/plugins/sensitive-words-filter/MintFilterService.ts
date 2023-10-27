@@ -28,7 +28,8 @@ export default class MintFilterService {
       .split('\n')
       .map((i) => i.trim())
       .filter((i) => !!i && !i.startsWith('//') && !i.startsWith('#'))
-    this.ctx.root.provide('mint', new Mint(words))
+    this.ctx.root.provide('mint')
+    this.ctx.root.mint = new Mint(words)
     logger.info(
       `filter loaded ${words.length} words in ${Date.now() - start}ms`
     )
