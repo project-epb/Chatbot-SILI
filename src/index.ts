@@ -8,7 +8,7 @@
 const PROD = process.env.NODE_ENV === 'production'
 import { config } from 'dotenv'
 import { resolve } from 'path'
-import { App, type Session, Random, Time } from 'koishi'
+import { App, type Session, Random, Time, Dict } from 'koishi'
 import { findChrome } from 'find-chrome-bin'
 
 // Services
@@ -46,10 +46,43 @@ import MintFilterService from './plugins/sensitive-words-filter/MintFilterServic
 import MgpGroupUtils from './modules/MoegirlGroupUtils'
 import ProcessErrorHandler from './modules/ProcessErrorHandler'
 
+// 这些导入的顺序之后慢慢调整吧，太尼玛多了
 import PluginMongo from '@koishijs/plugin-database-mongo'
 import AdapterRed from 'koishi-plugin-adapter-red'
+import AdapterDiscord from '@koishijs/plugin-adapter-discord'
 import AdapterDingtalk from '@koishijs/plugin-adapter-dingtalk'
 import AdapterVilla from 'koishi-plugin-adapter-villa'
+import PluginHelp from '@koishijs/plugin-help'
+import PluginCommands from '@koishijs/plugin-commands'
+import PluginSwitch from 'koishi-plugin-switch'
+import PluginAssetsS3 from 'koishi-plugin-assets-s3'
+import PluginAdmin from '@koishijs/plugin-admin'
+import PluginBind from '@koishijs/plugin-bind'
+import PluginBroadcast from '@koishijs/plugin-broadcast'
+import PluginCallme from '@koishijs/plugin-callme'
+import PluginEcho from '@koishijs/plugin-echo'
+import PluginRateLimit from 'koishi-plugin-rate-limit'
+import PluginRecall from 'koishi-plugin-recall'
+import PluginRepeater from 'koishi-plugin-repeater'
+import PluginBaidu from 'koishi-plugin-baidu'
+import PluginGithub from 'koishi-plugin-github'
+import PluginImageSearch from 'koishi-plugin-image-search'
+import PluginSchedule from 'koishi-plugin-schedule'
+import PluginDialogueAuthor from 'koishi-plugin-dialogue-author'
+import PluginDialogueContext from 'koishi-plugin-dialogue-context'
+import PluginDialogueFlow from 'koishi-plugin-dialogue-flow'
+import PluginDialogueRateLimit from 'koishi-plugin-dialogue-rate-limit'
+import PluginDialogue from 'koishi-plugin-dialogue'
+import PluginConsole from '@koishijs/plugin-console'
+import PluginAnalytics from '@koishijs/plugin-analytics'
+import PluginAuth from '@koishijs/plugin-auth'
+import PluginDataview from '@koishijs/plugin-dataview'
+import PluginExplorer from '@koishijs/plugin-explorer'
+import PluginInsight from '@koishijs/plugin-insight'
+import PluginLogger from '@koishijs/plugin-logger'
+import PluginStatus from '@koishijs/plugin-status'
+import PluginSandbox from '@koishijs/plugin-sandbox'
+import PluginPuppeteer from 'koishi-plugin-puppeteer'
 
 // Setup .env
 config()
@@ -100,9 +133,9 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   })
 
   // Discord
-  // ctx.plugin('adapter-discord', {
-  //   token: env.TOKEN_DISCORD_BOT,
-  // })
+  ctx.plugin(AdapterDiscord, {
+    token: env.TOKEN_DISCORD_BOT,
+  })
 
   // DingTalk
   const dingTokens = process.env.DINGTALK_TOKENS?.split('|')
@@ -140,14 +173,13 @@ app.plugin(function PluginCollectionAdapters(ctx) {
 /** 安装插件 */
 // @pollify v3 自带的指令
 app.plugin(function PluginCollectionLegacy(ctx) {
-  return void 0
   // [core]
   ctx.plugin(function PluginCollectionLegacyCore(ctx) {
-    ctx.plugin('help')
+    ctx.plugin(PluginHelp)
     ctx.command('help').alias('帮助')
-    ctx.plugin('commands')
-    ctx.plugin('switch')
-    ctx.plugin('assets-s3', {
+    ctx.plugin(PluginCommands)
+    ctx.plugin(PluginSwitch)
+    ctx.plugin(PluginAssetsS3, {
       credentials: {
         accessKeyId: env.TOKEN_S3_ACCESS_KEY_ID,
         secretAccessKey: env.TOKEN_S3_ACCESS_KEY_SECRET,
@@ -163,21 +195,21 @@ app.plugin(function PluginCollectionLegacy(ctx) {
   })
   // [common]
   ctx.plugin(function PluginCollectionLegacyCommon(ctx) {
-    ctx.plugin('admin') // channel user auth
-    ctx.plugin('bind')
-    ctx.plugin('broadcast')
-    ctx.plugin('callme')
-    ctx.plugin('echo')
+    ctx.plugin(PluginAdmin) // channel user auth
+    ctx.plugin(PluginBind)
+    ctx.plugin(PluginBroadcast)
+    ctx.plugin(PluginCallme)
+    ctx.plugin(PluginEcho)
     ctx.command('echo', { authority: 3 })
-    ctx.plugin('rate-limit')
-    ctx.plugin('recall')
+    ctx.plugin(PluginRateLimit)
+    ctx.plugin(PluginRecall)
     const randomHit = (probability: number) => Math.random() < probability
-    ctx.plugin('repeater', {
+    ctx.plugin(PluginRepeater, {
       onRepeat(state: RepeatState, session: Session) {
         if (!state.repeated && state.times > 3) {
           const hit = randomHit(0.125 * state.times)
           logger.info('[尝试参与复读]', hit)
-          return hit ? session.send(state.content) : false
+          return hit ? state.content : ''
         }
 
         const noRepeatText = [
@@ -193,7 +225,7 @@ app.plugin(function PluginCollectionLegacy(ctx) {
         ) {
           const hit = randomHit(0.1 * (state.times - 5))
           logger.info('[尝试打断复读]', hit)
-          return hit ? session.send(Random.pick(noRepeatText)) : false
+          return hit ? Random.pick(noRepeatText) : ''
         }
       },
       // onInterrupt(state: RepeatState, session: Session) {
@@ -210,64 +242,56 @@ app.plugin(function PluginCollectionLegacy(ctx) {
   })
   // [tools]
   ctx.plugin(function PluginCollectionLegacyTools(ctx) {
-    ctx.plugin('baidu')
+    ctx.plugin(PluginBaidu)
   })
 })
 
 // 网页控制台
 app.plugin(function PluginCollectionConsole(ctx) {
-  return void 0
-  ctx.plugin('console', {
+  ctx.plugin(PluginConsole, {
     title: 'SILI 监控中心',
     uiPath: '/dash',
     apiPath: '/api/status',
   })
-  ctx.plugin('analytics')
-  ctx.plugin('auth', { admin: { enabled: false } })
-  ctx.plugin('dataview')
-  ctx.plugin('explorer')
-  ctx.plugin('insight')
-  ctx.plugin('logger')
-  ctx.plugin('status')
-  ctx.plugin('sandbox')
+  ctx.plugin(PluginAnalytics)
+  ctx.plugin(PluginAuth, { admin: { enabled: false } })
+  ctx.plugin(PluginDataview)
+  ctx.plugin(PluginExplorer)
+  ctx.plugin(PluginInsight)
+  ctx.plugin(PluginLogger)
+  ctx.plugin(PluginStatus)
+  ctx.plugin(PluginSandbox)
 })
 
 // 第三方
 app.plugin(async function PluginCollectionThirdParty(ctx) {
-  return void 0
-  ctx.plugin('blive')
-  // ctx.plugin('bvid')
-  ctx.plugin('github', {
+  ctx.plugin(PluginGithub, {
     path: '/api/github',
     appId: env.TOKEN_GITHUB_APPID,
     appSecret: env.TOKEN_GITHUB_APPSECRET,
     replyTimeout: 12 * Time.hour,
     replyFooter: '',
   })
-  ctx.plugin('image-search', {
+  ctx.plugin(PluginImageSearch, {
     saucenaoApiKey: env.TOKEN_SAUCENAO_APIKEY,
   })
-  ctx.plugin('schedule')
+  ctx.plugin(PluginSchedule)
 
   findChrome({})
     .then((chrome) => {
-      logger.info('已找到Chromium，启用puppeteer')
-      ctx.plugin('puppeteer', {
+      logger.info('已找到Chromium，启用puppeteer:', chrome)
+      ctx.plugin(PluginPuppeteer, {
         executablePath: chrome.executablePath,
+        headless: 'new',
       })
     })
     .catch((e) => {
-      logger.warn('无法找到Chromium，将无法使用puppeteer功能')
+      logger.warn('无法找到Chromium，将无法使用puppeteer功能', e)
     })
 })
 
 app.plugin(function PluginCollectionDialogue(ctx) {
-  return void 0
-  ctx.plugin('dialogue-author')
-  ctx.plugin('dialogue-context')
-  // ctx.plugin('dialogue-flow')
-  ctx.plugin('dialogue-rate-limit')
-  ctx.plugin('dialogue', {
+  ctx.plugin(PluginDialogue, {
     prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
     throttle: {
       responses: 10,
@@ -279,6 +303,10 @@ app.plugin(function PluginCollectionDialogue(ctx) {
       debounce: 3 * Time.minute,
     },
   })
+  ctx.plugin(PluginDialogueAuthor)
+  ctx.plugin(PluginDialogueContext)
+  // ctx.plugin(PluginDialogueFlow)
+  ctx.plugin(PluginDialogueRateLimit)
 })
 
 // SILI Core
@@ -346,5 +374,5 @@ interface RepeatState {
   content: string
   repeated: boolean
   times: number
-  users: Record<number, number>
+  users: Dict<number>
 }

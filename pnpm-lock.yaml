@@ -101,12 +101,6 @@ dependencies:
   koishi-plugin-baidu:
     specifier: ^1.1.1
     version: 1.1.1(koishi@4.15.2)
-  koishi-plugin-blive:
-    specifier: ^1.5.1
-    version: 1.5.1(koishi@4.15.2)
-  koishi-plugin-bvid:
-    specifier: ^1.1.0
-    version: 1.1.0(koishi@4.15.2)
   koishi-plugin-dialogue:
     specifier: ^4.1.1
     version: 4.1.1(koishi@4.15.2)
@@ -3717,22 +3711,6 @@ packages:
       koishi: ^4.8.3
     dependencies:
       cheerio: 1.0.0-rc.12
-      koishi: 4.15.2
-    dev: false
-
-  /koishi-plugin-blive@1.5.1(koishi@4.15.2):
-    resolution: {integrity: sha512-nReegJ7EZECtGO4HIxQtZDD6sNBisMV+LHhfT88ThEsXXVLkQqYgdKPUkhKEbxzVdS/IvUPnTbrJu9BtodsEIg==}
-    peerDependencies:
-      koishi: ^4.9.0
-    dependencies:
-      koishi: 4.15.2
-    dev: false
-
-  /koishi-plugin-bvid@1.1.0(koishi@4.15.2):
-    resolution: {integrity: sha512-g+cxiTB+LuGdvhg+DSNPCMVa0NRznldd15Cqly9KYKuJqQe8oI9Uj+EFpEh1SHcONvxtXz7o2JYOkfXuEYHJ8g==}
-    peerDependencies:
-      koishi: ^4.8.0
-    dependencies:
       koishi: 4.15.2
     dev: false
 

@@ -56,8 +56,6 @@
     "koishi-plugin-adapter-villa": "^0.7.0",
     "koishi-plugin-assets-s3": "^1.2.3",
     "koishi-plugin-baidu": "^1.1.1",
-    "koishi-plugin-blive": "^1.5.1",
-    "koishi-plugin-bvid": "^1.1.0",
     "koishi-plugin-dialogue": "^4.1.1",
     "koishi-plugin-dialogue-author": "^1.2.0",
     "koishi-plugin-dialogue-context": "^1.0.4",
