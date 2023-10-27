@@ -2,7 +2,7 @@ import { Context, Session, segment } from 'koishi'
 import BasePlugin from '../_boilerplate'
 
 export default class PluginSensitiveFilter extends BasePlugin {
-  static using = ['mint']
+  static inject = ['mint']
 
   constructor(public ctx: Context) {
     super(ctx, {}, 'sensitive-filter')

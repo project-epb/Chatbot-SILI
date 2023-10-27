@@ -18,7 +18,7 @@ declare module 'koishi' {
 }
 
 export default class PatchCallme {
-  static using = ['mint']
+  static inject = ['mint']
 
   constructor(public ctx: Context) {
     ctx

@@ -8,7 +8,7 @@
 import { Context, h, version as KOISHI_VERSION } from 'koishi'
 
 export default class PluginVersion {
-  static using = ['html', 'shell']
+  static inject = ['html', 'shell']
 
   constructor(public ctx: Context) {
     ctx

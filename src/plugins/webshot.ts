@@ -2,7 +2,7 @@ import { Context, Time, h } from 'koishi'
 import BasePlugin from './_boilerplate'
 
 export default class PluginWebShot extends BasePlugin {
-  static using = ['puppeteer']
+  static inject = ['puppeteer']
 
   constructor(public ctx: Context) {
     super(ctx, null, 'webshot')

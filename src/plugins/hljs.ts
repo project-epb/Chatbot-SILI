@@ -2,7 +2,7 @@ import { Context, segment } from 'koishi'
 import BasePlugin from './_boilerplate'
 
 export default class PluginHljs extends BasePlugin {
-  static using = ['html']
+  static inject = ['html']
 
   constructor(ctx: Context) {
     super(ctx, {}, 'hljs')

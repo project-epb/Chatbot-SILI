@@ -8,7 +8,7 @@ enum FilePath {
 }
 
 export default class PluginDatabaseAdmin extends BasePlugin {
-  static using = ['shell', 'html']
+  static inject = ['shell', 'html']
 
   constructor(public ctx: Context) {
     super(ctx, {}, 'dbadmin')

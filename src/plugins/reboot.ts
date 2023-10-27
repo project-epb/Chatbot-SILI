@@ -25,7 +25,7 @@ type SessionLog = {
 }
 
 export default class PluginReboot extends BasePlugin {
-  static using = ['html']
+  static inject = ['html']
 
   constructor(public ctx: Context) {
     super(ctx, {}, 'reboot')
