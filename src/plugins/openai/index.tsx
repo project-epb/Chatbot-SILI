@@ -314,12 +314,13 @@ export default class PluginOpenAi extends BasePlugin {
       })
 
     this.ctx
-      .command('openai.tts <input:text>', '说话', {
+      .command('openai.tts <input:text>', 'Generates audio from the input text', {
         maxUsage: 3,
         bypassAuthority: 3,
       })
-      .option('voice', '-v <voice:string>')
-      .option('speed', '-s <speed:number>')
+      .option('model', '-m <model:string> tts-1 or tts-1-hd')
+      .option('voice', '-v <voice:string> alloy, echo, fable, onyx, nova, and shimmer')
+      .option('speed', '-s <speed:number> 0.25 - 4.0')
       .action(async ({ options }, input) => {
         if (!input) {
           return 'SILI不知道你想说什么呢。'
@@ -376,7 +377,7 @@ export default class PluginOpenAi extends BasePlugin {
   ) {
     const data = await this.openai.audio.speech.create({
       model: 'tts-1',
-      voice: 'alloy',
+      voice: 'nova',
       input,
       response_format: 'mp3',
       speed: 1,
@@ -485,10 +486,10 @@ export default class PluginOpenAi extends BasePlugin {
   }
   formatRecords(records: Session.Payload[]) {
     return JSON.stringify(
-      records.map(({ author, content }) => {
+      records.map((session) => {
         return {
-          user: author.nickname || author.username || author.userId,
-          msg: content,
+          user: getUserNickFromSession(session),
+          msg: session.content,
         }
       })
     )
