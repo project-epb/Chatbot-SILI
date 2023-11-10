@@ -1,4 +1,4 @@
-export function safelyStringify(value: any, space = 0) {
+export function safelyStringify(value: any, space?: number) {
   const visited = new WeakSet()
 
   const replacer = (key: string, val: any) => {
@@ -34,4 +34,11 @@ export function safelyStringify(value: any, space = 0) {
   }
 
   return JSON.stringify(value, replacer, space)
+}
+
+JSON.safelyStringify = safelyStringify
+declare global {
+  interface JSON {
+    safelyStringify: typeof safelyStringify
+  }
 }

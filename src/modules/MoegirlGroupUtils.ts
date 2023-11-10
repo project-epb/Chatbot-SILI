@@ -59,7 +59,7 @@ export default class MoegirlGroupUtils {
       )
       if (hitWhiteList) return
 
-      const isAdmin = session.author.roles.some((i) => i === 'admin')
+      const isAdmin = session.author?.roles?.some((i) => i === 'admin')
       if (isAdmin) return
 
       const { authority } = await session.getUser(session.userId, ['authority'])

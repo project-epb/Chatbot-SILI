@@ -24,6 +24,8 @@ export default class PluginVersion {
         const onebotInfo = await ctx.bots
           .find((i) => i.platform === 'onebot')
           ?.internal.getVersionInfo()
+        const registeredPlugins = ctx.registry.entries()
+        console.info(registeredPlugins)
 
         if (!options!.all) {
           return `[SILI Core] v${siliCoreInfo.version} (${gitHashInfo?.trim()})

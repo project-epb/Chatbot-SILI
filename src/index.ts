@@ -312,6 +312,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
     },
     maxTokens: 500,
     recordsPerChannel: 50,
+    model: 'gpt-4-1106-preview',
   })
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv, {

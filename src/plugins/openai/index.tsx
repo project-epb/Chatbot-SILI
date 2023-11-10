@@ -13,6 +13,7 @@ import { readFile } from 'fs/promises'
 import crypto from 'crypto'
 import { safelyStringify } from '../../utils/safelyStringify'
 import { CompletionUsage } from 'openai/resources'
+import { getUserNickFromSession } from '../../utils/formatSession'
 
 declare module 'koishi' {
   export interface Tables {
@@ -176,12 +177,7 @@ export default class PluginOpenAi extends BasePlugin {
 
         const startTime = Date.now()
         const conversation_owner = session.user.id
-        const userName =
-          session.username ||
-          session.user?.name ||
-          session.author?.nickname ||
-          session?.author?.username ||
-          'user'
+        const userName = getUserNickFromSession(session)
 
         const conversation_id: string =
           (session.user.openai_last_conversation_id ||= crypto.randomUUID())
@@ -196,7 +192,7 @@ export default class PluginOpenAi extends BasePlugin {
         return this.openai.chat.completions
           .create(
             {
-              model: options.model || 'gpt-3.5-turbo',
+              model: options.model || this.options.model || 'gpt-3.5-turbo',
               messages: [
                 // magic
                 // {
@@ -241,16 +237,16 @@ export default class PluginOpenAi extends BasePlugin {
               )
             }
 
-            if (session.user.authority < 2) {
-              const good = await this.reviewConversation(
-                options.prompt || this.SILI_PROMPT,
-                content,
-                text
-              )
-              if (!good) {
-                return '呜……SILI不喜欢这个话题，我们可以聊点别的吗？'
-              }
-            }
+            // if (session.user.authority < 2) {
+            //   const good = await this.reviewConversation(
+            //     options.prompt || this.SILI_PROMPT,
+            //     content,
+            //     text
+            //   )
+            //   if (!good) {
+            //     return '呜……SILI不喜欢这个话题，我们可以聊点别的吗？'
+            //   }
+            // }
 
             // save conversations to database
             ;[
@@ -325,7 +321,7 @@ export default class PluginOpenAi extends BasePlugin {
     return this.openai.chat.completions
       .create(
         {
-          model: 'gpt-3.5-turbo',
+          model: this.options.model || 'gpt-3.5-turbo',
           messages: [
             {
               role: 'system',
@@ -394,7 +390,7 @@ export default class PluginOpenAi extends BasePlugin {
     return this.openai.chat.completions
       .create(
         {
-          model: 'gpt-3.5-turbo',
+          model: this.options.model || 'gpt-3.5-turbo',
           messages: [
             {
               role: 'system',

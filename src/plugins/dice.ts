@@ -1,6 +1,6 @@
 import { Context, h } from 'koishi'
 import BasePlugin from './_boilerplate'
-import { getNicknameFromSession } from '../utils/getNicknameFromSession'
+import { getUserNickFromSession } from '../utils/formatSession'
 
 export interface DiceConfig {
   count: number
@@ -46,7 +46,7 @@ export default class PluginDice extends BasePlugin {
         const result = this.dice(count, points, bonus)
 
         return `${h.at(session.userId, {
-          name: getNicknameFromSession(session),
+          name: getUserNickFromSession(session),
         })}${this.printResult(
           difficulty,
           { count, points, bonus },
