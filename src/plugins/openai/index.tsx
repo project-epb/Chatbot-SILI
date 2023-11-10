@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { Context, Session, Time } from 'koishi'
+import { Context, Session, Time, arrayBufferToBase64 } from 'koishi'
 import { OpenAI, ClientOptions } from 'openai'
 import BasePlugin from '../_boilerplate'
 import { readFileSync, writeFileSync } from 'fs'
@@ -286,6 +286,7 @@ export default class PluginOpenAi extends BasePlugin {
             )
           })
       })
+
     this.ctx
       .command('openai/chat.reset', '开始新的对话')
       .userFields(['openai_last_conversation_id'])
@@ -310,6 +311,27 @@ export default class PluginOpenAi extends BasePlugin {
             </random>
           )
         }
+      })
+
+    this.ctx
+      .command('openai.tts <input:text>', '说话', {
+        maxUsage: 3,
+        bypassAuthority: 3,
+      })
+      .option('voice', '-v <voice:string>')
+      .option('speed', '-s <speed:number>')
+      .action(async ({ options }, input) => {
+        if (!input) {
+          return 'SILI不知道你想说什么呢。'
+        }
+
+        options = Object.fromEntries(
+          Object.entries(options).filter(([, val]) => !!val)
+        )
+
+        const buffer = await this.createTTS(input, options as any)
+        const base64 = arrayBufferToBase64(buffer)
+        return <audio url={`data:audio/mp3;base64,${base64}`}></audio>
       })
   }
 
@@ -346,6 +368,21 @@ export default class PluginOpenAi extends BasePlugin {
         console.error('[review] ERROR', e)
         return true
       })
+  }
+
+  async createTTS(
+    input: string,
+    options?: Partial<OpenAI.Audio.Speech.SpeechCreateParams>
+  ) {
+    const data = await this.openai.audio.speech.create({
+      model: 'tts-1',
+      voice: 'alloy',
+      input,
+      response_format: 'mp3',
+      speed: 1,
+      ...options,
+    })
+    return data.arrayBuffer()
   }
 
   static readPromptFile(file: string) {

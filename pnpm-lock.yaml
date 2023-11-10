@@ -144,8 +144,8 @@ dependencies:
     specifier: ^4.0.3
     version: 4.0.3
   openai:
-    specifier: ^4.14.0
-    version: 4.14.0
+    specifier: ^4.17.2
+    version: 4.17.2
   wiki-saikou:
     specifier: ^3.2.1
     version: 3.2.1
@@ -4173,8 +4173,8 @@ packages:
       is-wsl: 2.2.0
     dev: false
 
-  /openai@4.14.0:
-    resolution: {integrity: sha512-pWQYkFWdeudR1yLyS/rFfIv/MTXqFEtlN4EKVm0F6KKKGjhuthznPOCC4hxfAFmjlgbpJJXhQQ/oBeB9bxFmUw==}
+  /openai@4.17.2:
+    resolution: {integrity: sha512-7wh6Vyz3Fuay4aGLQF7T9bMUfj7pJHjg36bZJeWzkrZwTrB4HnKcODFPDkponE9obP+DmIbuL3Q68s9uUB6K3Q==}
     hasBin: true
     dependencies:
       '@types/node': 18.18.7
