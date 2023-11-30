@@ -69,6 +69,7 @@
     "koishi-plugin-repeater": "^1.0.1",
     "koishi-plugin-schedule": "^5.0.0",
     "koishi-plugin-switch": "^1.2.0",
+    "local-pkg": "^0.5.0",
     "mint-filter": "^4.0.3",
     "openai": "^4.17.2",
     "wiki-saikou": "^3.2.1"

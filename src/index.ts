@@ -12,6 +12,7 @@ import { App, type Session, Random, Time, Dict } from 'koishi'
 
 // Services
 import { HTMLService } from './utils/RenderHTML'
+import { AdvancedPluginLoader } from './services/AdvancedPluginLoader'
 
 // Plugins
 import PatchCallme from './plugins/callme'
@@ -105,6 +106,19 @@ const app = new App({
 })
 
 const logger = app.logger('INIT')
+
+app.plugin(AdvancedPluginLoader)
+app.using(['advancedPluginLoader'], (ctx) => {
+  /** 安装数据库 */
+  ctx.apl.npmPlugin('mongo', {
+    host: env.DB_MONGO_HOST,
+    port: Number(env.DB_MONGO_PORT),
+    // username: env.DB_MONGO_USER,
+    // password: env.DB_MONGO_PASSWORD,
+    database: env.DB_MONGO_DATABASE,
+  })
+  // TODO: 重构导入方式
+})
 
 /** 安装数据库 */
 app.plugin(PluginMongo, {
