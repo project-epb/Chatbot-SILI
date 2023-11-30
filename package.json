@@ -60,6 +60,7 @@
     "koishi-plugin-dialogue-context": "^1.0.4",
     "koishi-plugin-dialogue-flow": "^1.0.4",
     "koishi-plugin-dialogue-rate-limit": "^1.0.3",
+    "koishi-plugin-ffxiv": "^2.0.8",
     "koishi-plugin-github": "^5.4.1",
     "koishi-plugin-image-search": "^4.2.3",
     "koishi-plugin-mediawiki": "^2.1.0",

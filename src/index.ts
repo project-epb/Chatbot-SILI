@@ -82,6 +82,7 @@ import * as PluginLogger from '@koishijs/plugin-logger'
 import * as PluginStatus from '@koishijs/plugin-status'
 import * as PluginSandbox from '@koishijs/plugin-sandbox'
 import PluginPuppeteer from 'koishi-plugin-puppeteer'
+import PluginFFXIV from 'koishi-plugin-ffxiv'
 
 // Setup .env
 config()
@@ -297,6 +298,7 @@ app.plugin(function PluginCollectionDialogue(ctx) {
   ctx.plugin(PluginDialogueContext)
   // ctx.plugin(PluginDialogueFlow)
   ctx.plugin(PluginDialogueRateLimit)
+  ctx.plugin(PluginFFXIV)
 })
 
 // SILI Core
