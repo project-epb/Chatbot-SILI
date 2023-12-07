@@ -115,7 +115,7 @@ export default class PluginDice extends BasePlugin {
   parseDices(str: string): DiceConfig[] {
     if (!str) return [{ symbol: DiceSymbol.PLUS, count: 1, points: 20 }]
     const diceStrs = str.split(/[+-]/)
-    const diceSymbolStrs = ['+', ...str.match(/[+-]/g)]
+    const diceSymbolStrs = ['+', ...(str.match(/[+-]/g) || [])]
 
     // 骰子
     const normalDiceReg = /^(\d+)?[dD](\d+)$/
@@ -194,18 +194,49 @@ export default class PluginDice extends BasePlugin {
           ? this.MSG.plus
           : this.MSG.minus
         : ''
-      return `${withSymbol ? join : ''}${count}个${points}面骰`
+      return `${withSymbol ? join : ''}${count}个${
+        points > 2 ? `${points}面骰` : '硬币'
+      }`
     }
   }
 
-  // 在难度x检定中掷出了x个x面骰，结果为x(+x)：成功/失败/大成功/大失败
-  // 当骰子数量为1时，如果掷出了1点或最大点数，会有特殊的提示，此时不显示加权值，提示为大成功/大失败
+  /**
+   * 在难度x检定中掷出了x个x面骰，结果为x(+x)：成功/失败/大成功/大失败
+   * 当骰子数量为1时，如果掷出了1点或最大点数，会有特殊的提示，此时不显示加权值，提示为大成功/大失败
+   */
   toResultString(results: DiceResult[], difficulty = 0, checkCritical = true) {
     const length = results.length
     const total = results.reduce((a, b) => a + b.final, 0)
     const lines: string[] = []
 
-    lines.push(`掷出了 ${length} 个骰子：`)
+    // 当面数大于等于5的随机骰子数量为1时，才会检查大成功/大失败
+    const canBeCritical =
+      checkCritical &&
+      difficulty &&
+      results.filter((item) => item.dice.count > 0 && item.dice.points >= 5)
+        .length === 1
+    const firstRandomDice = canBeCritical
+      ? results.find((i) => i.dice.count > 0)
+      : null
+    const criticalResult = firstRandomDice
+      ? this.checkCriticalResult(firstRandomDice.dice, firstRandomDice)
+      : CriticalResult.NONE
+
+    if (difficulty) {
+      if (criticalResult !== CriticalResult.NONE) {
+        lines.push(
+          criticalResult === CriticalResult.SUCCESS
+            ? this.MSG.criticalSuccess
+            : this.MSG.criticalFailure
+        )
+      } else {
+        lines.push(total >= difficulty ? this.MSG.success : this.MSG.failure)
+      }
+      lines.push(`在难度 ${difficulty} 检定中行了 ${length} 次投掷：`)
+    } else {
+      lines.push(`共进行了 ${length} 次投掷：`)
+    }
+
     results.forEach((item, index) => {
       const { dice, final, direct } = item
       const diceStr = this.toDiceString(dice)
@@ -216,7 +247,11 @@ export default class PluginDice extends BasePlugin {
         )} = ${diceStr}(${direct}) = ${final}`
       )
     })
-    lines.push(`结果 = ${total}`)
+
+    if (difficulty) {
+    } else {
+      lines.push(`结果 = ${total}`)
+    }
 
     return lines.join('\n')
   }
