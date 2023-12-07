@@ -1,25 +1,43 @@
 import { Context, h } from 'koishi'
 import BasePlugin from './_boilerplate'
-import { getUserNickFromSession } from '../utils/formatSession'
+import {
+  getUserIdFromSession,
+  getUserNickFromSession,
+} from '../utils/formatSession'
 
 export interface DiceConfig {
   count: number
   points: number
-  bonus: number
+  symbol: DiceSymbol
 }
 export interface DiceResult {
+  dice: DiceConfig
   history: number[]
-  pure: number
-  total: number
+  direct: number
+  final: number
 }
 export enum CriticalResult {
   NONE,
   SUCCESS,
   FAILURE,
 }
+export enum DiceSymbol {
+  PLUS,
+  MINUS,
+}
 
 export default class PluginDice extends BasePlugin {
-  DICE_REG = /^(\d+)?[dD](\d+)([+-]\d+)?$/
+  MSG = {
+    success: '(❁´◡`❁) 成功',
+    failure: '¯\\_ (ツ)_/¯ 失败',
+    criticalSuccess: '(๑•̀ㅂ•́)و✧ 大成功！',
+    criticalFailure: '(っ°Д°;)っ 大失败！',
+    plus: '加上',
+    minus: '减去',
+    simplePlus: '加权',
+    simpleMinus: '降权',
+    normalDice: '$count 个 $points 面骰',
+  }
 
   constructor(public ctx: Context, public options: any) {
     super(ctx, options, 'dice')
@@ -28,59 +46,62 @@ export default class PluginDice extends BasePlugin {
 
   private initCommands() {
     this.ctx
-      .command('dice <difficulty:posint> [dice]', '掷骰子', {
+      .command('dice [dice]', '掷骰子', {
         minInterval: 1000,
       })
       .alias('掷骰子', '投掷', '检定', 'r', 'roll')
+      .usage(
+        'dice [骰子表达式] [-d 难度值] [-C]\n例如“两个20面骰，简单加权5”：dice 2d20+5'
+      )
       .option('no-critical', '-C 不检查大成功/大失败', { type: 'boolean' })
-      .action(async ({ session, options }, difficulty, dice) => {
-        if (!difficulty) return '没有指定难度值！'
-
-        const { count, points, bonus } = this.parseDice(dice)
-        if (count > 100) return '掷出了一卡车骰子……这，这不对吧！'
-        if (count < 1) return '掷出了一个空气骰子……等等，这是什么鬼啦！'
-        if (points > 100) return '掷出了……玻璃球？'
-        if (points < 3) return '掷出了……等等，这是哪个次元的骰子？'
-        if (Math.abs(bonus) > 100) return '哎呀，加权太多啦！'
-
-        const result = this.dice(count, points, bonus)
-
-        return `${h.at(session.userId, {
-          name: getUserNickFromSession(session),
-        })}${this.printResult(
-          difficulty,
-          { count, points, bonus },
-          result,
+      .option('difficulty', '-d <difficulty:posint> 难度值', { type: 'posint' })
+      .action(async ({ session, options }, diceStr) => {
+        const dices = this.parseDices(diceStr)
+        const results = dices.map((item) => this.dice(item))
+        const resultStr = this.toResultString(
+          results,
+          options.difficulty,
           !options['no-critical']
-        )}`
+        )
+
+        return `${h.at(getUserIdFromSession(session), {
+          name: getUserNickFromSession(session),
+        })}${resultStr}`
       })
   }
 
   /**
    * 掷出骰子，并获取最终结果
-   * @param count 骰子的数量
-   * @param points 骰子的点数
-   * @param bonus 额外加权点数
-   * @returns 骰子的结果
    */
-  dice(count = 1, points = 20, bonus = 0): DiceResult {
+  dice(payload: DiceConfig): DiceResult {
+    const { count, points, symbol } = payload
+
+    // 简单加权，没有投掷
+    if (count < 1) {
+      return {
+        dice: payload,
+        history: [points],
+        direct: points,
+        final: points,
+      }
+    }
+
     let history: number[] = []
     for (let i = 0; i < count; i++) {
       const roll = Math.floor(Math.random() * points) + 1
       history.push(roll)
     }
-    const pure = history.reduce((a, b) => a + b, 0)
-    const total = pure + bonus
+    const direct = history.reduce((a, b) => a + b, 0)
+    const final = symbol === DiceSymbol.PLUS ? direct : -direct
 
     return {
+      dice: payload,
       history,
-      pure,
-      total,
+      direct,
+      final,
     }
   }
-  theoreticalMaximum(count: number, points: number, bonus: number) {
-    return count * points + bonus
-  }
+
   /**
    * 从字符串中解析骰子的数量、点数和额外加权点数等信息
    * @example 可能出现的字符串格式
@@ -91,61 +112,128 @@ export default class PluginDice extends BasePlugin {
    * @param str
    * @returns
    */
-  parseDice(str: string): DiceConfig {
-    if (!str) return { count: 1, points: 20, bonus: 0 }
-    const reg = /^(\d+)?[dD](\d+)([+-]\d+)?$/
-    const match = str.match(reg)
-    if (!match) return { count: 1, points: 20, bonus: 0 }
-    const [, count, points, bonus] = match
-    return {
-      count: count ? parseInt(count) : 1,
-      points: parseInt(points),
-      bonus: bonus ? parseInt(bonus) : 0,
+  parseDices(str: string): DiceConfig[] {
+    if (!str) return [{ symbol: DiceSymbol.PLUS, count: 1, points: 20 }]
+    const diceStrs = str.split(/[+-]/)
+    const diceSymbolStrs = ['+', ...str.match(/[+-]/g)]
+
+    // 骰子
+    const normalDiceReg = /^(\d+)?[dD](\d+)$/
+    // 纯数字简单加权
+    const simpleDiceReg = /^\d+$/
+
+    const dices: DiceConfig[] = []
+
+    diceStrs.forEach((item, index) => {
+      const symbol =
+        diceSymbolStrs[index] === '+' ? DiceSymbol.PLUS : DiceSymbol.MINUS
+
+      if (simpleDiceReg.test(item)) {
+        const points = parseInt(item)
+        if (points > 100) {
+          throw new Error(`(${item}) 哎呀，加权太多啦！`)
+        }
+        dices.push({
+          symbol,
+          count: 0,
+          points: parseInt(item),
+        })
+        return
+      }
+
+      if (!normalDiceReg.test(item)) {
+        throw new Error(`(${item}) 这个骰子好像有点奇怪……？`)
+      }
+      let [count, points] = item.split(/[dD]/)
+      if (!count) count = '1'
+
+      if (parseInt(count) < 1) {
+        throw new Error(`(${item}) 掷出了……空气？这不对吧，骰子数量太少啦！`)
+      }
+      if (parseInt(count) > 100) {
+        throw new Error(
+          `(${item}) 掷出了……一卡车骰子？这不对吧，骰子数量太多啦！`
+        )
+      }
+      if (parseInt(points) > 100) {
+        throw new Error(`(${item}) 掷出了……玻璃球？这不对吧，骰子点数太多啦！`)
+      }
+      if (parseInt(points) < 2) {
+        throw new Error(`(${item}) 掷出了……？这是哪个次元的骰子？`)
+      }
+
+      dices.push({
+        symbol,
+        count: parseInt(count),
+        points: parseInt(points),
+      })
+    })
+
+    return dices
+  }
+
+  toDiceString(dice: DiceConfig) {
+    const { count, points, symbol } = dice
+    const symbolStr = symbol === DiceSymbol.PLUS ? '' : '-'
+    if (count < 1) {
+      return `${symbolStr}${points}`
+    }
+    return `${symbolStr}${count}d${points}`
+  }
+
+  toDiceDescription(dice: DiceConfig, withSymbol = true) {
+    const { count, points, symbol } = dice
+
+    if (count < 1) {
+      const join =
+        symbol === DiceSymbol.PLUS ? this.MSG.simplePlus : this.MSG.simpleMinus
+      return `${withSymbol ? join : ''}${points}点`
+    } else {
+      const join = withSymbol
+        ? symbol === DiceSymbol.PLUS
+          ? this.MSG.plus
+          : this.MSG.minus
+        : ''
+      return `${withSymbol ? join : ''}${count}个${points}面骰`
     }
   }
 
   // 在难度x检定中掷出了x个x面骰，结果为x(+x)：成功/失败/大成功/大失败
   // 当骰子数量为1时，如果掷出了1点或最大点数，会有特殊的提示，此时不显示加权值，提示为大成功/大失败
-  printResult(
-    difficulty: number,
-    dice: DiceConfig,
-    result: DiceResult,
-    checkCritical = true
-  ) {
-    const { count, points, bonus } = dice
-    const { pure, total } = result
+  toResultString(results: DiceResult[], difficulty = 0, checkCritical = true) {
+    const length = results.length
+    const total = results.reduce((a, b) => a + b.final, 0)
+    const lines: string[] = []
 
-    const success = total >= difficulty
+    lines.push(`掷出了 ${length} 个骰子：`)
+    results.forEach((item, index) => {
+      const { dice, final, direct } = item
+      const diceStr = this.toDiceString(dice)
+      lines.push(
+        `${this.toDiceDescription(
+          dice,
+          index > 0
+        )} = ${diceStr}(${direct}) = ${final}`
+      )
+    })
+    lines.push(`结果 = ${total}`)
 
-    let statusText = success ? '(❁´◡`❁) 成功' : '¯\\_ (ツ)_/¯ 失败'
-    let bonusText = bonus ? `(${bonus > 0 ? '+' : ''}${bonus}) = ${total}` : ''
-
-    if (checkCritical) {
-      const specialType = this.checkCriticalResult(dice, result)
-      switch (specialType) {
-        case CriticalResult.SUCCESS:
-          statusText = '(๑•̀ㅂ•́)و✧ 大成功！'
-          bonusText = ''
-          break
-        case CriticalResult.FAILURE:
-          statusText = '(っ°Д°;)っ 大失败！'
-          bonusText = ''
-          break
-        default:
-          // do nothing
-          break
-      }
-    }
-
-    return `${statusText}\n在难度 ${difficulty} 检定中掷出了 ${count} 个 ${points} 面骰，结果为 ${pure}${bonusText}`
+    return lines.join('\n')
   }
+
   checkCriticalResult(dice: DiceConfig, result: DiceResult) {
     const { count, points } = dice
-    const { pure } = result
+    const { direct, final } = result
+
+    // 不要检查降权
+    if (final < 0) {
+      return CriticalResult.NONE
+    }
+
     if (count === 1) {
-      if (pure === 1) {
+      if (direct === 1) {
         return CriticalResult.FAILURE
-      } else if (pure === points) {
+      } else if (direct === points) {
         return CriticalResult.SUCCESS
       }
     }
