@@ -253,6 +253,7 @@ export default class PluginDice extends BasePlugin {
     })
 
     if (difficulty) {
+      lines.push(`结果 = ${total} - ${difficulty} = ${total - difficulty}`)
     } else {
       lines.push(`结果 = ${total}`)
     }
