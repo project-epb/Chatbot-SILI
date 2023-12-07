@@ -56,17 +56,21 @@ export default class PluginDice extends BasePlugin {
       .option('no-critical', '-C 不检查大成功/大失败', { type: 'boolean' })
       .option('difficulty', '-d <difficulty:posint> 难度值', { type: 'posint' })
       .action(async ({ session, options }, diceStr) => {
-        const dices = this.parseDices(diceStr)
-        const results = dices.map((item) => this.dice(item))
-        const resultStr = this.toResultString(
-          results,
-          options.difficulty,
-          !options['no-critical']
-        )
+        try {
+          const dices = this.parseDices(diceStr)
+          const results = dices.map((item) => this.dice(item))
+          const resultStr = this.toResultString(
+            results,
+            options.difficulty,
+            !options['no-critical']
+          )
 
-        return `${h.at(getUserIdFromSession(session), {
-          name: getUserNickFromSession(session),
-        })}${resultStr}`
+          return `${h.at(getUserIdFromSession(session), {
+            name: getUserNickFromSession(session),
+          })}${resultStr}`
+        } catch (err) {
+          return err.message || '' + err
+        }
       })
   }
 
