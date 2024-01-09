@@ -1,5 +1,6 @@
+import { Context, Time, h } from 'koishi'
+
 import { BaseSticker } from './_base'
-import { Context, h, Time } from 'koishi'
 
 export default class 梅因说 extends BaseSticker {
   constructor(ctx: Context) {

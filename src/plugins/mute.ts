@@ -4,8 +4,8 @@
  * @desc 设置群组成员禁言/全员禁言
  * @authority 3
  */
-
 import { Context } from 'koishi'
+
 import BasePlugin from '~/_boilerplate'
 
 export default class PluginMute extends BasePlugin {

@@ -1,7 +1,9 @@
 import { Context, Logger } from 'koishi'
-import Mint from 'mint-filter'
+
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+
+import Mint from 'mint-filter'
 
 const logger = new Logger('MintFilter')
 

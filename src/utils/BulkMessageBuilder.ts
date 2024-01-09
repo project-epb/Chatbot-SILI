@@ -1,4 +1,4 @@
-import { segment, Universal, Session } from 'koishi'
+import { Session, Universal, segment } from 'koishi'
 
 export class BulkMessageBuilder {
   #figure = segment('message', { forward: '' })

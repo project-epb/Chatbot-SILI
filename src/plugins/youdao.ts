@@ -4,10 +4,11 @@
  * @desc 有道翻译
  * @authority 1
  */
+import { Context } from 'koishi'
+
+import BasePlugin from '~/_boilerplate'
 
 import fexios from 'fexios'
-import { Context } from 'koishi'
-import BasePlugin from '~/_boilerplate'
 
 export default class PluginYoudao extends BasePlugin {
   constructor(public ctx: Context) {

@@ -4,11 +4,13 @@
  * @desc Fandom编辑者QQ群入群检测
  * @authority 1
  */
+import { Context, Session, segment } from 'koishi'
 
-import { Context, segment, Session } from 'koishi'
 import crypto from 'node:crypto'
-import fexios from 'fexios'
+
 import BasePlugin from '~/_boilerplate'
+
+import fexios from 'fexios'
 
 declare module 'koishi' {
   export interface Channel {

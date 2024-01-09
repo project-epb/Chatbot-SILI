@@ -2,7 +2,6 @@
  * 鬼知道为什么不同的适配器返回的结果都不一样
  * 增加一些鲁棒性
  */
-
 import { Fragment, Session } from 'koishi'
 
 export function getUserIdFromSession(session: Session): string {
@@ -11,7 +10,12 @@ export function getUserIdFromSession(session: Session): string {
 }
 export function getUserNickFromSession(session: Session): string {
   // @ts-ignore
-  return session.username || session.member?.nick || session.user?.name || getUserIdFromSession(session)
+  return (
+    session.username ||
+    session.member?.nick ||
+    session.user?.name ||
+    getUserIdFromSession(session)
+  )
 }
 
 export function getChannelIdFromSession(session: Session): string {
@@ -20,7 +24,11 @@ export function getChannelIdFromSession(session: Session): string {
 }
 export function getChannelNameFromSession(session: Session): string {
   // @ts-ignore
-  return session.channel?.name || session.guild?.name || getChannelIdFromSession(session)
+  return (
+    session.channel?.name ||
+    session.guild?.name ||
+    getChannelIdFromSession(session)
+  )
 }
 
 export function getGuildIdFromSession(session: Session): string {
@@ -32,7 +40,11 @@ export function getGuildNameFromSession(session: Session): string {
   return session.guild?.name || getChannelNameFromSession(session)
 }
 
-export async function sendMessageBySession(session: Session, message: Fragment, options?: any) {
+export async function sendMessageBySession(
+  session: Session,
+  message: Fragment,
+  options?: any
+) {
   return session.bot.sendMessage(
     getChannelIdFromSession(session),
     message,

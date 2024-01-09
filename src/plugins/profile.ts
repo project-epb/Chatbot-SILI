@@ -4,10 +4,11 @@
  * @desc 基本资料
  * @authority 1
  */
-
 import { Context, Session, User, h } from 'koishi'
-import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
+
 import BasePlugin from '~/_boilerplate'
+
+import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
 
 export default class PluginProfile extends BasePlugin {
   constructor(public ctx: Context) {

@@ -1,6 +1,8 @@
 import { Context, Service, Time } from 'koishi'
-import BasePlugin from '~/_boilerplate'
+
 import { ExecOptions, exec } from 'node:child_process'
+
+import BasePlugin from '~/_boilerplate'
 
 declare module 'koishi' {
   export interface Context {

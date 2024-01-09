@@ -4,11 +4,12 @@
  * @desc 生成表情包
  * @authority 1
  */
+import { Context } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
-import { Context } from 'koishi'
-import 梅因说 from './main-said'
+
 import 加油 from './jiayou'
+import 梅因说 from './main-said'
 
 export default class PluginSticker extends BasePlugin {
   constructor(ctx: Context) {

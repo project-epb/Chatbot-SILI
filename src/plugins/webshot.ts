@@ -1,4 +1,5 @@
 import { Context, Time, h } from 'koishi'
+
 import BasePlugin from '~/_boilerplate'
 
 export default class PluginWebShot extends BasePlugin {

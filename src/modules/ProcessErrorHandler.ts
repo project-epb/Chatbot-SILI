@@ -5,10 +5,11 @@
  * @desc 这是一个插件
  * @authority -
  */
-
 import { Context } from 'koishi'
-import { randomUUID } from 'crypto'
+
 import BasePlugin from '~/_boilerplate'
+
+import { randomUUID } from 'crypto'
 
 export default class ProcessErrorHandler extends BasePlugin {
   static EVENT_LIST = ['unhandledRejection', 'uncaughtException']

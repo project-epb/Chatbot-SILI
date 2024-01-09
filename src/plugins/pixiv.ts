@@ -4,9 +4,10 @@
  * @desc pixiv插画查看工具
  * @authority 1
  */
+import { Context, Time, segment } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
-import { Context, segment, Time } from 'koishi'
+
 import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
 import fexios from 'fexios'
 

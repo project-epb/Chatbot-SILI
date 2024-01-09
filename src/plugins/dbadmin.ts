@@ -1,7 +1,9 @@
-import BasePlugin from '~/_boilerplate'
 import { Context } from 'koishi'
-import { resolve } from 'path'
+
+import BasePlugin from '~/_boilerplate'
+
 import JSON5 from 'json5'
+import { resolve } from 'path'
 
 enum FilePath {
   dbDumpScript = './scripts/db_dump.ps1',

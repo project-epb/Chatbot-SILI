@@ -4,8 +4,8 @@
  * @desc 指令队列
  * @authority 3
  */
-
 import { Context, sleep } from 'koishi'
+
 import BasePlugin from '~/_boilerplate'
 
 export default class PluginQueue extends BasePlugin {

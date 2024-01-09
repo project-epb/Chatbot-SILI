@@ -2,8 +2,8 @@
  * @name MgpGroupUtils
  * @desc 内部插件，萌娘百科B站粉丝群工具箱
  */
+import { Context, Time, segment } from 'koishi'
 
-import { Context, segment, Time } from 'koishi'
 import BasePlugin from '~/_boilerplate'
 
 interface SpamLog {
@@ -52,8 +52,8 @@ export default class MoegirlGroupUtils extends BasePlugin {
 
     // 指令白名单
     ctx.on('command/before-execute', async ({ command, session }) => {
-      const hitWhiteList = this.COMMAND_WHITELIST.some((i) =>
-        command?.name?.startsWith(i)
+      const hitWhiteList = this.COMMAND_WHITELIST.some(
+        (i) => command?.name?.startsWith(i)
       )
       if (hitWhiteList) return
 

@@ -1,6 +1,8 @@
+import { Context, Time, h } from 'koishi'
+
+import '@koishijs/plugin-rate-limit'
+
 import { BaseSticker } from './_base'
-import { Context, h, Time } from 'koishi'
-import {} from '@koishijs/plugin-rate-limit'
 
 export default class 加油 extends BaseSticker {
   constructor(ctx: Context) {

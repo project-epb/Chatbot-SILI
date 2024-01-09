@@ -1,5 +1,7 @@
 import { Context, h } from 'koishi'
+
 import BasePlugin from '~/_boilerplate'
+
 import {
   getUserIdFromSession,
   getUserNickFromSession,
@@ -39,7 +41,10 @@ export default class PluginDice extends BasePlugin {
     normalDice: '$count 个 $points 面骰',
   }
 
-  constructor(public ctx: Context, public options: any) {
+  constructor(
+    public ctx: Context,
+    public options: any
+  ) {
     super(ctx, options, 'dice')
     this.initCommands()
   }

@@ -5,8 +5,8 @@
  * @authority 1
  */
 
-import BasePlugin from '~/_boilerplate'
 import { Context, version as KOISHI_VERSION } from 'koishi'
+import BasePlugin from '~/_boilerplate'
 
 export default class PluginVersion extends BasePlugin {
   static inject = ['html', 'shell']
@@ -32,9 +32,7 @@ export default class PluginVersion extends BasePlugin {
 
         if (!options!.all) {
           return `[SILI Core] v${siliCoreInfo.version} (${gitHashInfo?.trim()})
-[Onebot] protocol ${onebotInfo?.protocol_version} / go-cqhttp ${
-            onebotInfo?.version
-          }
+[Onebot] protocol ${onebotInfo?.protocol_version} / go-cqhttp ${onebotInfo?.version}
 [Koishi.js] v${KOISHI_VERSION}`
         }
 

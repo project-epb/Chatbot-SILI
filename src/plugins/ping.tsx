@@ -4,8 +4,8 @@
  * @desc 应答测试
  * @authority 1
  */
-
 import { Context, Time } from 'koishi'
+
 import BasePlugin from '~/_boilerplate'
 
 export default class PluginPing extends BasePlugin {

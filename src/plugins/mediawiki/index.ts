@@ -5,8 +5,13 @@
  * @author Koishijs(机智的小鱼君) <dragon-fish@qq.com>
  * @license Apache-2.0
  */
-import { Context, h, Time } from 'koishi'
+import { Context, Time, h } from 'koishi'
+
 import BasePlugin from '~/_boilerplate'
+
+import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
+
+import { INFOBOX_DEFINITION } from './infoboxDefinition'
 import type {
   MWInterwikiLinks,
   MWNamespaceAliases,
@@ -22,8 +27,6 @@ import {
   parseTitlesFromText,
   useApi,
 } from './utils'
-import { INFOBOX_DEFINITION } from './infoboxDefinition'
-import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
 
 declare module 'koishi' {
   export interface Channel {
@@ -54,7 +57,10 @@ export default class PluginMediawiki extends BasePlugin {
 
   readonly INFOBOX_DEFINITION = INFOBOX_DEFINITION
 
-  constructor(public ctx: Context, public config: Config = {}) {
+  constructor(
+    public ctx: Context,
+    public config: Config = {}
+  ) {
     super(ctx, {}, 'mediawiki')
 
     this.config = { ...defaultConfig, ...config }

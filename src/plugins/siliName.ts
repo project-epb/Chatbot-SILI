@@ -4,9 +4,10 @@
  * @desc 让SILI修改自己的群名片
  * @authority 3
  */
+import { Context } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
-import { Context } from 'koishi'
+
 import { resolveBrackets } from '$utils/resolveBrackets'
 
 export default class PluginSiliName extends BasePlugin {
