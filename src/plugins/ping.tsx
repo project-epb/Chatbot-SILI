@@ -6,7 +6,7 @@
  */
 
 import { Context, Time } from 'koishi'
-import BasePlugin from './_boilerplate'
+import BasePlugin from '~/_boilerplate'
 
 export default class PluginPing extends BasePlugin {
   constructor(public ctx: Context) {

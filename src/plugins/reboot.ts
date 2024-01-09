@@ -1,13 +1,13 @@
-import { readFile, writeFile } from 'fs/promises'
 import { Context, Session, h } from 'koishi'
-import { resolve } from 'path'
-import BasePlugin from './_boilerplate'
-import { safelyStringify } from '../utils/safelyStringify'
+import BasePlugin from '~/_boilerplate'
+import { readFile, writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import { safelyStringify } from '$utils/safelyStringify'
 import {
   getUserIdFromSession,
   getUserNickFromSession,
   sendMessageBySession,
-} from '../utils/formatSession'
+} from '$utils/formatSession'
 
 enum LogFile {
   signal = '.koishi_signal',

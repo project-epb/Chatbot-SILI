@@ -1,5 +1,5 @@
 import { Context, Session, Time, h } from 'koishi'
-import BasePlugin from './_boilerplate'
+import BasePlugin from '~/_boilerplate'
 
 declare module 'koishi' {
   interface Tables {

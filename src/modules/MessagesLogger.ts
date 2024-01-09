@@ -1,23 +1,22 @@
 /**
- * @name _internal-MessagesLogger
- * @command -
- * @internal true
+ * @name MessagesLogger
  * @desc 内部插件，收发消息记录日志
- * @authority -
  */
 
-import { Context, segment } from 'koishi'
+import { Context } from 'koishi'
+import BasePlugin from '~/_boilerplate'
 
-export const name = '_internal-MessagesLogger'
-
-export default class MessagesLogger {
+export default class MessagesLogger extends BasePlugin {
   constructor(public ctx: Context) {
+    super(ctx, {}, 'messages-logger')
+
     ctx.on('message', (session) => {
+      const content = this.toSlimContent(session.content) || '[UNKNOWN]'
       this.logger.info(
         `[${session.platform}]`,
         `[${session.subsubtype}/${session.channelId}]`,
         `${session.username} (${session.userId})`,
-        '> ' + session.content
+        `> ${content}`
       )
     })
     ctx.on('send', (session) => {
@@ -27,21 +26,26 @@ export default class MessagesLogger {
       //     seg[index].attrs.src = '(base64)'
       //   }
       // })
-      const content = session.content.replace(
-        /(src|url)="(base64:\/\/|data:).+?"/gi,
-        'src="(base64)"'
-      )
+      const content = this.toSlimContent(session.content) || '[UNKNOWN]'
       ctx
         .logger('SEND')
         .info(
           `[${session.platform}]`,
           `[${session.type}/${session.channelId}]`,
           `${session.username} (${session.selfId})`,
-          '> ' + content
+          `> ${content}`
         )
     })
   }
-  get logger() {
-    return this.ctx.logger('MESSAGE')
+
+  /**
+   * drop base64 image data
+   */
+  toSlimContent(content: string) {
+    if (!content) return content
+    return content.replace(
+      /(src|url)="(base64:\/\/|data:).+?"/gi,
+      'src="(base64)"'
+    )
   }
 }

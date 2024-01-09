@@ -6,14 +6,14 @@
 
 import { Context, Session, Time, arrayBufferToBase64 } from 'koishi'
 import { OpenAI, ClientOptions } from 'openai'
-import BasePlugin from '../_boilerplate'
-import { readFileSync, writeFileSync } from 'fs'
-import { resolve } from 'path'
-import { readFile } from 'fs/promises'
-import crypto from 'crypto'
-import { safelyStringify } from '../../utils/safelyStringify'
 import { CompletionUsage } from 'openai/resources'
-import { getUserNickFromSession } from '../../utils/formatSession'
+import BasePlugin from '~/_boilerplate'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import crypto from 'node:crypto'
+import { safelyStringify } from '$utils/safelyStringify'
+import { getUserNickFromSession } from '$utils/formatSession'
 
 declare module 'koishi' {
   export interface Tables {

@@ -1,5 +1,5 @@
 import { Binding, Context, Session } from 'koishi'
-import BasePlugin from './_boilerplate'
+import BasePlugin from '~/_boilerplate'
 
 export default class PluginAbout extends BasePlugin {
   #masterUid = 1

@@ -1,5 +1,5 @@
 import { Context, Service, Time } from 'koishi'
-import BasePlugin from './_boilerplate'
+import BasePlugin from '~/_boilerplate'
 import { ExecOptions, exec } from 'node:child_process'
 
 declare module 'koishi' {

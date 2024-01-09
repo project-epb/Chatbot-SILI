@@ -1,5 +1,5 @@
-import { Context, segment } from 'koishi'
-import BasePlugin from './_boilerplate'
+import { Context } from 'koishi'
+import BasePlugin from '~/_boilerplate'
 
 export default class PluginHljs extends BasePlugin {
   static inject = ['html']

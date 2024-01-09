@@ -1,14 +1,10 @@
 /**
- * @name _internal-MgpGroupUtils
- * @command -
- * @internal true
+ * @name MgpGroupUtils
  * @desc 内部插件，萌娘百科B站粉丝群工具箱
- * @authority -
  */
 
 import { Context, segment, Time } from 'koishi'
-import {} from '@koishijs/plugin-adapter-onebot'
-import {} from '@koishijs/plugin-database-mongo'
+import BasePlugin from '~/_boilerplate'
 
 interface SpamLog {
   time: string
@@ -22,15 +18,15 @@ declare module 'koishi' {
   }
 }
 
-export default class MoegirlGroupUtils {
+export default class MoegirlGroupUtils extends BasePlugin {
   // Constants
-  MUTE_DURATION = [0, 10 * Time.minute, 2 * Time.hour, 1 * Time.day]
-  KEYWORDS_BLACKLIST =
+  readonly MUTE_DURATION = [0, 10 * Time.minute, 2 * Time.hour, 1 * Time.day]
+  readonly KEYWORDS_BLACKLIST =
     process.env.MOEGIRL_KEYWORDS_BLACKLIST?.split('\n')
       .map((i) => i.trim())
       .filter((i) => !!i)
       .map((i) => new RegExp(i)) || []
-  COMMAND_WHITELIST = [
+  readonly COMMAND_WHITELIST = [
     'chat',
     'dialogue',
     'dice',
@@ -44,6 +40,8 @@ export default class MoegirlGroupUtils {
   ]
 
   constructor(public ctx: Context) {
+    super(ctx, {}, 'mgp-utils')
+
     ctx.model.extend('user', {
       mgpGroupSpamLogs: 'list',
     })
@@ -129,13 +127,13 @@ export default class MoegirlGroupUtils {
         session.messageId as string
       )
       if (duration === Infinity) {
-        session.onebot?.setGroupKick(
+        session.bot.internal?.setGroupKick(
           session.channelId as string,
           session.userId as string,
           false
         )
       } else {
-        session.onebot?.setGroupBan(
+        session.bot.internal?.setGroupBan(
           session.channelId as string,
           session.userId as string,
           duration
@@ -176,9 +174,5 @@ export default class MoegirlGroupUtils {
         )
       }
     })
-  }
-
-  get logger() {
-    return this.ctx.logger('MGP_UTILS')
   }
 }

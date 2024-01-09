@@ -5,10 +5,8 @@
  * @authority 1
  */
 
-import BasePlugin from '../_boilerplate'
+import BasePlugin from '~/_boilerplate'
 import { Context } from 'koishi'
-import {} from '@koishijs/plugin-puppeteer'
-import {} from '@koishijs/plugin-rate-limit'
 import 梅因说 from './main-said'
 import 加油 from './jiayou'
 

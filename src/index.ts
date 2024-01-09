@@ -7,43 +7,42 @@
 
 const PROD = process.env.NODE_ENV === 'production'
 import { config as setupDotEnv } from 'dotenv'
-import { resolve } from 'path'
 import { App, type Session, Random, Time, Dict } from 'koishi'
+import { resolve } from 'node:path'
 
 // Services
-import { HTMLService } from './utils/RenderHTML'
+import { HTMLService } from '$utils/RenderHTML'
 
 // Plugins
-import PatchCallme from './plugins/callme'
-import PluginAbout from './plugins/about'
-import PluginDatabaseAdmin from './plugins/dbadmin'
-import PluginDice from './plugins/dice'
-import PluginHljs from './plugins/hljs'
-import PluginMediawiki from './plugins/mediawiki'
-import PluginMute from './plugins/mute'
-import PluginOpenAi from './plugins/openai'
-import PluginPing from './plugins/ping'
-import PluginPixiv from './plugins/pixiv'
-import PluginPowerUser from './plugins/powerUser'
-import PluginProfile from './plugins/profile'
-import PluginQueue from './plugins/queue'
-import PluginReboot from './plugins/reboot'
-import PluginSensitiveFilter from './plugins/sensitive-words-filter'
-import PluginSiliName from './plugins/siliName'
-import PluginSpawn from './plugins/spawn'
-import PluginSticker from './plugins/sticker'
-import PluginVerifyFandomUser from './plugins/verifyFandomUser'
-import PluginVersion from './plugins/version'
-import PluginWebShot from './plugins/webshot'
-import PluginWhoAsked from './plugins/whoAsked'
-import PluginYoudao from './plugins/youdao'
+import PatchCallme from '~/callme'
+import PluginAbout from '~/about'
+import PluginDatabaseAdmin from '~/dbadmin'
+import PluginDice from '~/dice'
+import PluginHljs from '~/hljs'
+import PluginMediawiki from '~/mediawiki'
+import PluginMute from '~/mute'
+import PluginOpenAi from '~/openai'
+import PluginPing from '~/ping'
+import PluginPixiv from '~/pixiv'
+import PluginPowerUser from '~/powerUser'
+import PluginProfile from '~/profile'
+import PluginQueue from '~/queue'
+import PluginReboot from '~/reboot'
+import PluginSensitiveFilter from '~/sensitive-words-filter'
+import PluginSiliName from '~/siliName'
+import PluginSpawn from '~/spawn'
+import PluginSticker from '~/sticker'
+import PluginVerifyFandomUser from '~/verifyFandomUser'
+import PluginVersion from '~/version'
+import PluginWebShot from '~/webshot'
+import PluginWhoAsked from '~/whoAsked'
+import PluginYoudao from '~/youdao'
 
 // Modules
-// import FandomDiscordConnect from './modules/FandomDiscordConnect'
-import MessagesLogger from './modules/MessagesLogger'
-import MintFilterService from './plugins/sensitive-words-filter/MintFilterService'
-import MgpGroupUtils from './modules/MoegirlGroupUtils'
-import ProcessErrorHandler from './modules/ProcessErrorHandler'
+import MessagesLogger from '@/modules/MessagesLogger'
+import MintFilterService from '~/sensitive-words-filter/MintFilterService'
+import MgpGroupUtils from '@/modules/MoegirlGroupUtils'
+import ProcessErrorHandler from '@/modules/ProcessErrorHandler'
 
 // 这些导入的顺序之后慢慢调整吧，太尼玛多了
 import PluginMongo from '@koishijs/plugin-database-mongo'
@@ -347,7 +346,6 @@ app.plugin(function PluginCollectionSILICore(ctx) {
 app.plugin(function PluginCollectionInternal(ctx) {
   ctx.command('admin', '维护指令集')
   ctx.command('tools', '实用工具集')
-  // ctx.plugin(FandomDiscordConnect)
   ctx.plugin(HTMLService)
   ctx.plugin(MessagesLogger)
   ctx.plugin(MintFilterService)

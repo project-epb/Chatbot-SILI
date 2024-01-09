@@ -1,9 +1,9 @@
 import { Context, h } from 'koishi'
-import BasePlugin from './_boilerplate'
+import BasePlugin from '~/_boilerplate'
 import {
   getUserIdFromSession,
   getUserNickFromSession,
-} from '../utils/formatSession'
+} from '$utils/formatSession'
 
 export interface DiceConfig {
   count: number

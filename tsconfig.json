@@ -17,8 +17,9 @@
     "jsx": "react-jsx",
     "jsxImportSource": "@satorijs/element",
     "paths": {
-      "koishi-plugin-*": ["plugins/*/src"],
-      "*": ["packages/*/src"]
+      "@/*": ["src/*"],
+      "~/*": ["src/plugins/*"],
+      "$utils/*": ["src/utils/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx"]

@@ -8,12 +8,15 @@
 
 import { Context } from 'koishi'
 import { randomUUID } from 'crypto'
+import BasePlugin from '~/_boilerplate'
 
-export default class ProcessErrorHandler {
-  static CATCHES = ['unhandledRejection', 'uncaughtException']
+export default class ProcessErrorHandler extends BasePlugin {
+  static EVENT_LIST = ['unhandledRejection', 'uncaughtException']
 
   constructor(public ctx: Context) {
-    ProcessErrorHandler.CATCHES.forEach((i) =>
+    super(ctx, {}, 'process-error-handler')
+
+    ProcessErrorHandler.EVENT_LIST.forEach((i) =>
       process.on(i, (event) => this.hadnler(event))
     )
   }
@@ -30,9 +33,5 @@ export default class ProcessErrorHandler {
           event?.message || 'UNKNOWN'
         }\nEvent ID: ${today} ${eventId}`
       )
-  }
-
-  get logger() {
-    return this.ctx.logger('PROCESS_ERROR')
   }
 }

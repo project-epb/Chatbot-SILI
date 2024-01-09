@@ -5,13 +5,15 @@
  * @authority 3
  */
 
+import BasePlugin from '~/_boilerplate'
 import { Context } from 'koishi'
-import {} from '@koishijs/plugin-adapter-onebot'
-import { resolveBrackets } from '../utils/resolveBrackets'
+import { resolveBrackets } from '$utils/resolveBrackets'
 
-export default class PluginSiliName {
+export default class PluginSiliName extends BasePlugin {
   constructor(public ctx: Context) {
-    ctx = ctx.channel().platform('onebot')
+    super(ctx, {}, 'siliName')
+
+    ctx = ctx.channel().platform('red', 'onebot', 'qq')
 
     ctx
       .command('admin/siliname <name:text>', '让SILI修改自己的群名片', {
@@ -33,9 +35,5 @@ export default class PluginSiliName {
           return `哎呀，SILI在修改群名片时遇到问题：${err}`
         }
       })
-  }
-
-  get logger() {
-    return this.ctx.logger('PLUGIN')
   }
 }

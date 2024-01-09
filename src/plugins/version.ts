@@ -5,12 +5,15 @@
  * @authority 1
  */
 
-import { Context, h, version as KOISHI_VERSION } from 'koishi'
+import BasePlugin from '~/_boilerplate'
+import { Context, version as KOISHI_VERSION } from 'koishi'
 
-export default class PluginVersion {
+export default class PluginVersion extends BasePlugin {
   static inject = ['html', 'shell']
 
   constructor(public ctx: Context) {
+    super(ctx, {}, 'version')
+
     ctx
       .command('version', '查看SILI版本信息')
       .option('all', '-a', { authority: 2 })
@@ -59,9 +62,5 @@ export default class PluginVersion {
         )
         return img || '检查版本时发生未知错误。'
       })
-  }
-
-  get logger() {
-    return this.ctx.logger('VERSION')
   }
 }

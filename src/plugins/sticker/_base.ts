@@ -1,5 +1,5 @@
 import { Context } from 'koishi'
-import BasePlugin from '../_boilerplate'
+import BasePlugin from '~/_boilerplate'
 
 export class BaseSticker extends BasePlugin {
   static inject = ['html']

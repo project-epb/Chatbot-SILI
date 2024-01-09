@@ -5,9 +5,10 @@
  * @authority 1
  */
 
+import BasePlugin from '~/_boilerplate'
 import { Context, segment, Time } from 'koishi'
+import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
 import fexios from 'fexios'
-import { BulkMessageBuilder } from '../utils/BulkMessageBuilder'
 
 // const API_BASE = process.env.API_PIXIV_BASE
 
@@ -16,16 +17,21 @@ const defaultConfigs = {
   pximgURL: '',
 }
 
-export default class PluginPixiv {
+export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
   constructor(
     public ctx: Context,
-    public configs?: Partial<typeof defaultConfigs>
+    initOptions?: Partial<typeof defaultConfigs>
   ) {
-    this.configs = {
-      ...defaultConfigs,
-      ...configs,
-    }
-    const { baseURL } = this.configs
+    super(
+      ctx,
+      {
+        ...defaultConfigs,
+        ...initOptions,
+      },
+      'pixiv'
+    )
+
+    const { baseURL } = this.options
     const ajax = fexios.create({
       baseURL,
       headers: {
@@ -149,9 +155,5 @@ export default class PluginPixiv {
         session.execute({ name: 'pixiv.illust', args: [pixivId[1]] })
       }
     })
-  }
-
-  get logger() {
-    return this.ctx.logger('PIXIV')
   }
 }

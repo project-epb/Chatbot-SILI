@@ -7,7 +7,7 @@
  * })
  * ```
  */
-export const INFOBOX_MAP: {
+export const INFOBOX_DEFINITION: {
   match: (url: URL) => boolean
   selector: string | string[]
   injectStyles?: string

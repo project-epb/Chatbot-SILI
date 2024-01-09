@@ -6,7 +6,7 @@
  */
 
 import { Context, segment, Time } from 'koishi'
-import {} from '@koishijs/plugin-rate-limit'
+import BasePlugin from '~/_boilerplate'
 
 declare module 'koishi' {
   export interface Channel {
@@ -17,10 +17,12 @@ declare module 'koishi' {
   }
 }
 
-export default class PatchCallme {
+export default class PatchCallme extends BasePlugin {
   static inject = ['mint']
 
   constructor(public ctx: Context) {
+    super(ctx, null, 'callme')
+
     ctx
       .command('callme', '', { minInterval: Time.hour, maxUsage: 5 })
       .channelFields(['disable'])
@@ -80,9 +82,5 @@ export default class PatchCallme {
           )
         }
       })
-  }
-
-  get logger() {
-    return this.ctx.logger('PING')
   }
 }

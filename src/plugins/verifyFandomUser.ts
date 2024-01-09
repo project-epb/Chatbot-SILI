@@ -6,10 +6,9 @@
  */
 
 import { Context, segment, Session } from 'koishi'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import fexios from 'fexios'
-
-export const name = 'verify-fandom-user'
+import BasePlugin from '~/_boilerplate'
 
 declare module 'koishi' {
   export interface Channel {
@@ -17,8 +16,10 @@ declare module 'koishi' {
   }
 }
 
-export default class PluginVerifyFandomUser {
+export default class PluginVerifyFandomUser extends BasePlugin {
   constructor(public ctx: Context) {
+    super(ctx, {}, 'verify-fandom-user')
+
     ctx = ctx.channel()
     ctx.model.extend('channel', {
       userBlacklist: 'list',
@@ -194,9 +195,5 @@ export default class PluginVerifyFandomUser {
     return Array.from(new Uint8Array(data))
       .map((x) => x.toString(16).padStart(2, '0'))
       .join('')
-  }
-
-  get logger() {
-    return this.ctx.logger('VERIFY_QQ')
   }
 }

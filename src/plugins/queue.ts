@@ -6,9 +6,12 @@
  */
 
 import { Context, sleep } from 'koishi'
+import BasePlugin from '~/_boilerplate'
 
-export default class PluginQueue {
+export default class PluginQueue extends BasePlugin {
   constructor(public ctx: Context) {
+    super(ctx, {}, 'queue')
+
     ctx
       .command('admin/queue <commands:text>', '指令队列', { authority: 3 })
       .option('interval', '-i <ms:posint>', { fallback: 1000 })
@@ -27,9 +30,5 @@ export default class PluginQueue {
         }
         ex(cmdList, 0)
       })
-  }
-
-  get logger() {
-    return this.ctx.logger('PLUGIN')
   }
 }

@@ -1,10 +1,10 @@
-import BasePlugin from './_boilerplate'
+import BasePlugin from '~/_boilerplate'
 import { Context } from 'koishi'
 import { resolve } from 'path'
 import JSON5 from 'json5'
 
 enum FilePath {
-  dumpScript = './scripts/db_dump.ps1',
+  dbDumpScript = './scripts/db_dump.ps1',
 }
 
 export default class PluginDatabaseAdmin extends BasePlugin {
@@ -18,7 +18,7 @@ export default class PluginDatabaseAdmin extends BasePlugin {
     ctx
       .command('dbadmin.dump', '备份数据库', { authority: 4 })
       .action(async ({ session }) => {
-        const script = resolve(ctx.baseDir, FilePath.dumpScript)
+        const script = resolve(ctx.baseDir, FilePath.dbDumpScript)
         console.info(script)
         try {
           const { output } = await ctx.root.shell.exec(

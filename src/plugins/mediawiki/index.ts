@@ -6,8 +6,7 @@
  * @license Apache-2.0
  */
 import { Context, h, Time } from 'koishi'
-import {} from '@koishijs/plugin-database-mongo'
-import {} from 'koishi-plugin-puppeteer'
+import BasePlugin from '~/_boilerplate'
 import type {
   MWInterwikiLinks,
   MWNamespaceAliases,
@@ -23,8 +22,8 @@ import {
   parseTitlesFromText,
   useApi,
 } from './utils'
-import { INFOBOX_MAP } from './infoboxMap'
-import { BulkMessageBuilder } from '../../utils/BulkMessageBuilder'
+import { INFOBOX_DEFINITION } from './infoboxDefinition'
+import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
 
 declare module 'koishi' {
   export interface Channel {
@@ -50,19 +49,19 @@ const defaultConfig = {
 export type Config = Partial<ConfigInit>
 
 export const name = 'mediawiki'
-export default class PluginMediawiki {
-  public INFOBOX_MAP = INFOBOX_MAP
+export default class PluginMediawiki extends BasePlugin {
+  static inject = ['database', 'puppeteer']
+
+  readonly INFOBOX_DEFINITION = INFOBOX_DEFINITION
 
   constructor(public ctx: Context, public config: Config = {}) {
+    super(ctx, {}, 'mediawiki')
+
     this.config = { ...defaultConfig, ...config }
     ctx.model.extend('channel', {
       mwApi: 'string',
     })
     this.init()
-  }
-
-  get logger() {
-    return this.ctx.logger('mediawiki')
   }
 
   init(): void {
@@ -428,7 +427,7 @@ ${getUrl(session.channel!.mwApi!, { curid: item.pageid })}`
   }
 
   async shotInfobox(url: string) {
-    const matched = this.INFOBOX_MAP.find((i) => i.match(new URL(url)))
+    const matched = this.INFOBOX_DEFINITION.find((i) => i.match(new URL(url)))
     if (!matched) return ''
     this.logger.info('SHOT_INFOBOX', url, matched.selector)
     const start = Date.now()

@@ -6,9 +6,12 @@
  */
 
 import { Context } from 'koishi'
+import BasePlugin from '~/_boilerplate'
 
-export default class PluginMute {
+export default class PluginMute extends BasePlugin {
   constructor(public ctx: Context) {
+    super(ctx, {}, 'mute')
+
     ctx = ctx.platform('onebot').channel()
     ctx
       .command('channel.mute', '<duration:number>', { authority: 3 })
@@ -30,9 +33,5 @@ export default class PluginMute {
           )
         }
       })
-  }
-
-  get logger() {
-    return this.ctx.logger('MUTE')
   }
 }
