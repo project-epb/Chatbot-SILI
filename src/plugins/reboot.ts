@@ -3,7 +3,11 @@ import { Context, Session, h } from 'koishi'
 import { resolve } from 'path'
 import BasePlugin from './_boilerplate'
 import { safelyStringify } from '../utils/safelyStringify'
-import { getChannelIdFromSession, getGuildIdFromSession, getUserNickFromSession, sendMessageBySession } from '../utils/formatSession'
+import {
+  getUserIdFromSession,
+  getUserNickFromSession,
+  sendMessageBySession,
+} from '../utils/formatSession'
 
 enum LogFile {
   signal = '.koishi_signal',
@@ -125,12 +129,15 @@ export default class PluginReboot extends BasePlugin {
 
       console.info(session)
 
-      sendMessageBySession(session, `SILI 重启完毕 (SIGNAL-${(+kSignal).toString(2).padStart(6, '0')})
+      sendMessageBySession(
+        session,
+        `SILI 重启完毕 (SIGNAL-${(+kSignal).toString(2).padStart(6, '0')})
 共耗时: ${((now - lastSession.time) / 1000).toFixed(2)}s
-请求者: ${h.at(session.userId, {
+请求者: ${h.at(getUserIdFromSession(session), {
           name: getUserNickFromSession(session),
         })}
-${cmdLogsImg || '(没有详细日志)'}`)
+${cmdLogsImg || '(没有详细日志)'}`
+      )
     }
   }
 }
