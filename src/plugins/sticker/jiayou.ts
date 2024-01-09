@@ -1,7 +1,5 @@
 import { Context, Time, h } from 'koishi'
 
-import '@koishijs/plugin-rate-limit'
-
 import { BaseSticker } from './_base'
 
 export default class 加油 extends BaseSticker {
