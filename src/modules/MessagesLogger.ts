@@ -23,13 +23,13 @@ export default class MessagesLogger {
     ctx.on('send', (session) => {
       // const seg = segment.parse(session.content)
       // seg.forEach((i, index) => {
-      //   if (i.type === 'image' && i?.attrs?.url?.startsWith('base64://')) {
-      //     seg[index].attrs.url = '(base64)'
+      //   if (i.type === 'img' && i?.attrs?.src?.startsWith('base64://')) {
+      //     seg[index].attrs.src = '(base64)'
       //   }
       // })
       const content = session.content.replace(
-        /url="(base64:\/\/|data:).+?"/gi,
-        'url="(base64)"'
+        /src="(base64:\/\/|data:).+?"/gi,
+        'src="(base64)"'
       )
       ctx
         .logger('SEND')

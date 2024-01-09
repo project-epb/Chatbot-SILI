@@ -6,7 +6,7 @@
  */
 
 const PROD = process.env.NODE_ENV === 'production'
-import { config } from 'dotenv'
+import { config as setupDotEnv } from 'dotenv'
 import { resolve } from 'path'
 import { App, type Session, Random, Time, Dict } from 'koishi'
 
@@ -64,7 +64,7 @@ import * as PluginRateLimit from 'koishi-plugin-rate-limit'
 import * as PluginRecall from 'koishi-plugin-recall'
 import * as PluginRepeater from 'koishi-plugin-repeater'
 import * as PluginBaidu from 'koishi-plugin-baidu'
-import * as PluginGithub from 'koishi-plugin-github'
+import PluginGithub from 'koishi-plugin-github'
 import * as PluginImageSearch from 'koishi-plugin-image-search'
 import * as PluginSchedule from 'koishi-plugin-schedule'
 import * as PluginDialogueAuthor from 'koishi-plugin-dialogue-author'
@@ -82,10 +82,11 @@ import * as PluginLogger from '@koishijs/plugin-logger'
 import * as PluginStatus from '@koishijs/plugin-status'
 import * as PluginSandbox from '@koishijs/plugin-sandbox'
 import PluginPuppeteer from 'koishi-plugin-puppeteer'
+import PluginServer from '@koishijs/plugin-server'
 
 // Setup .env
-config()
-config({
+setupDotEnv()
+setupDotEnv({
   path: resolve(__dirname, '..', PROD ? '.env.production' : '.env.development'),
   override: true,
 })
@@ -105,6 +106,8 @@ const app = new App({
 })
 
 const logger = app.logger('INIT')
+
+app.plugin(PluginServer)
 
 /** 安装数据库 */
 app.plugin(PluginMongo, {

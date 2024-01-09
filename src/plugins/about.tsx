@@ -16,7 +16,7 @@ export default class PluginAbout extends BasePlugin {
         const masterPid = await this.getMasterPlatformId(session as Session)
         return (
           <>
-            <image url="https://r2.epb.wiki/avatar/SILI.jpeg" />
+            <img src="https://r2.epb.wiki/avatar/SILI.jpeg" />
             <p>✨ 自我介绍</p>
             <p>
               您好，我的名字是 The data transmission network with Spatiotemporal

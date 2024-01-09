@@ -332,7 +332,7 @@ export default class PluginOpenAi extends BasePlugin {
 
         const buffer = await this.createTTS(input, options as any)
         const base64 = arrayBufferToBase64(buffer)
-        return <audio url={`data:audio/mp3;base64,${base64}`}></audio>
+        return <audio src={`data:audio/mp3;base64,${base64}`}></audio>
       })
   }
 
