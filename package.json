@@ -13,14 +13,13 @@
     "node": ">=20.8.1"
   },
   "devDependencies": {
-    "@satorijs/element": "^2.5.1",
-    "@types/intercept-stdout": "^0.1.1",
-    "@types/node": "^20.8.9",
+    "@satorijs/element": "^2.6.1",
+    "@types/node": "^20.10.7",
     "cross-env": "^7.0.3",
     "dotenv": "^16.3.1",
     "dotenv-vault": "^1.25.0",
-    "tsx": "^3.14.0",
-    "typescript": "^5.2.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
     "yml-register": "^1.1.0"
   },
   "dependencies": {
@@ -45,9 +44,7 @@
     "@koishijs/plugin-logger": "^2.4.2",
     "@koishijs/plugin-sandbox": "^3.2.2",
     "@koishijs/plugin-status": "^7.2.2",
-    "ansi-escapes": "^6.2.0",
     "fexios": "^1.5.0",
-    "intercept-stdout": "^0.1.2",
     "json5": "^2.2.3",
     "koishi": "^4.15.2",
     "koishi-plugin-adapter-red": "^2.0.4",
@@ -69,7 +66,7 @@
     "koishi-plugin-schedule": "^5.0.0",
     "koishi-plugin-switch": "^1.2.0",
     "mint-filter": "^4.0.3",
-    "openai": "^4.17.2",
-    "wiki-saikou": "^3.2.1"
+    "openai": "^4.24.2",
+    "wiki-saikou": "^3.3.1"
   }
 }
