@@ -131,6 +131,9 @@ dependencies:
   koishi-plugin-schedule:
     specifier: ^5.0.1
     version: 5.0.1(koishi@4.16.4)
+  koishi-plugin-silk:
+    specifier: ^0.0.2
+    version: 0.0.2(koishi@4.16.4)
   koishi-plugin-switch:
     specifier: ^1.2.0
     version: 1.2.0(koishi@4.16.4)
@@ -1668,6 +1671,11 @@ packages:
       - debug
       - supports-color
       - utf-8-validate
+    dev: false
+
+  /@shopify/semaphore@3.0.2:
+    resolution: {integrity: sha512-sVytDls4yplR+ojCag222V8Aiur9dIbPhpBNWswZVwbSAL15AFiWDEefqtLD9cecJxj2PCMl1Kbtf1JmMTUeDQ==}
+    engines: {node: ^14.17.0 || >=16.0.0}
     dev: false
 
   /@smithy/abort-controller@2.0.16:
@@ -3863,6 +3871,16 @@ packages:
       koishi: 4.16.4
     dev: false
 
+  /koishi-plugin-silk@0.0.2(koishi@4.16.4):
+    resolution: {integrity: sha512-6ps8wY4jubSTIKvVGo//btrvBi3wQt9ChdYSJqUtzmPGaOaMO0jgcbzAv3RkC05rZ2kWVAASRecJFoxE0FRJlw==}
+    peerDependencies:
+      koishi: ^4.16.0
+    dependencies:
+      '@shopify/semaphore': 3.0.2
+      koishi: 4.16.4
+      silk-wasm: 3.1.0
+    dev: false
+
   /koishi-plugin-switch@1.2.0(koishi@4.16.4):
     resolution: {integrity: sha512-riNf+ux08MJdweCd+HBeNIQQ7Puze2H7zTASW0fTw2yv6DNpGSSTsoG9RIUzmivw5d4AJrTlTR2h7LpXj3xgIQ==}
     peerDependencies:
@@ -4476,6 +4494,10 @@ packages:
   /signal-exit@3.0.7:
     resolution: {integrity: sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==}
     dev: true
+
+  /silk-wasm@3.1.0:
+    resolution: {integrity: sha512-VPXulp8fSNqq5U1NmDp+nvt3M8d2sroawiluA/9TWKDTmvlWB04nW/8oTyuZhOn2Ln5xhtLpdpWz8cD05GTo3A==}
+    dev: false
 
   /slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}

@@ -83,6 +83,7 @@ import * as PluginStatus from '@koishijs/plugin-status'
 import * as PluginSandbox from '@koishijs/plugin-sandbox'
 import PluginPuppeteer from 'koishi-plugin-puppeteer'
 import PluginServer from '@koishijs/plugin-server'
+import PluginSilk from 'koishi-plugin-silk'
 
 // Setup .env
 setupDotEnv()
@@ -281,6 +282,7 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
     // headless: 'new',
   })
   ctx.plugin(PluginSchedule)
+  ctx.plugin(PluginSilk)
 })
 
 app.plugin(function PluginCollectionDialogue(ctx) {

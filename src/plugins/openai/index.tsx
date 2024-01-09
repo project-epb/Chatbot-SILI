@@ -314,12 +314,19 @@ export default class PluginOpenAi extends BasePlugin {
       })
 
     this.ctx
-      .command('openai.tts <input:text>', 'Generates audio from the input text', {
-        maxUsage: 3,
-        bypassAuthority: 3,
-      })
+      .command(
+        'openai.tts <input:text>',
+        'Generates audio from the input text',
+        {
+          maxUsage: 3,
+          bypassAuthority: 3,
+        }
+      )
       .option('model', '-m <model:string> tts-1 or tts-1-hd')
-      .option('voice', '-v <voice:string> alloy, echo, fable, onyx, nova, and shimmer')
+      .option(
+        'voice',
+        '-v <voice:string> alloy, echo, fable, onyx, nova, and shimmer'
+      )
       .option('speed', '-s <speed:number> 0.25 - 4.0')
       .action(async ({ options }, input) => {
         if (!input) {

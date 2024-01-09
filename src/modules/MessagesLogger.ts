@@ -28,7 +28,7 @@ export default class MessagesLogger {
       //   }
       // })
       const content = session.content.replace(
-        /src="(base64:\/\/|data:).+?"/gi,
+        /(src|url)="(base64:\/\/|data:).+?"/gi,
         'src="(base64)"'
       )
       ctx

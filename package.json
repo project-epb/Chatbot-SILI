@@ -65,6 +65,7 @@
     "koishi-plugin-recall": "^1.4.0",
     "koishi-plugin-repeater": "^1.0.1",
     "koishi-plugin-schedule": "^5.0.1",
+    "koishi-plugin-silk": "^0.0.2",
     "koishi-plugin-switch": "^1.2.0",
     "mint-filter": "^4.0.3",
     "openai": "^4.24.2",
