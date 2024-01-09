@@ -95,8 +95,6 @@ const { env } = process
 
 /** 初始化 Koishi 实例 */
 const app = new App({
-  port: env.KOISHI_PROT ? +env.KOISHI_PROT : undefined,
-  selfUrl: env.KOISHI_SELF_URL,
   nickname: env.KOISHI_NICKNAME?.split('|'),
   prefix: (ctx) => {
     const items = env.KOISHI_PREFIX?.split('|') || []
@@ -104,10 +102,12 @@ const app = new App({
     return items
   },
 })
-
+// core services, init immediately
+app.plugin(PluginServer, {
+  port: env.KOISHI_PROT ? +env.KOISHI_PROT : undefined,
+  selfUrl: env.KOISHI_SELF_URL,
+})
 const logger = app.logger('INIT')
-
-app.plugin(PluginServer)
 
 /** 安装数据库 */
 app.plugin(PluginMongo, {
