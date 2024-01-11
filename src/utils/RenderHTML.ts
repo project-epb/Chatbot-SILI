@@ -30,6 +30,9 @@ export class HTMLService extends Service {
       quality: 85,
       ...options,
     }
+    if (options.type !== 'jpeg') {
+      delete options.quality
+    }
     const page = await this.ppt.page()
     let file: Buffer | undefined
     try {
