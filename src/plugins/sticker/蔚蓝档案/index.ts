@@ -15,6 +15,7 @@ export default class 蔚蓝档案 extends BaseSticker {
       .command('sticker.蔚蓝档案 <text:text>', '蔚蓝档案LOGO')
       .alias('sticker.blue-archive', 'sticker.ba')
       .shortcut('BA', { fuzzy: true })
+      .shortcut('蔚蓝档案')
       .action(async ({ session }, text) => {
         const [leftText, rightText] = this.splitText(text)
         const image = await this.shot(leftText, rightText)
@@ -51,17 +52,15 @@ export default class 蔚蓝档案 extends BaseSticker {
       url.searchParams.set('rightText', rightText)
       await page.goto(url.toString(), {
         waitUntil: 'load',
-        timeout: 3 * 1000,
+        timeout: 8 * 1000,
       })
       await page.waitForNetworkIdle({ timeout: 5 * 1000 })
       const logo = await page.$('#logo')
-      const buffer = await logo?.screenshot({
-        type: 'png',
-        omitBackground: true,
-      })
+      const buffer = await logo?.screenshot({ type: 'jpeg' })
       return h.image(buffer, 'image/jpeg')
     } catch (e) {
-      return ''
+      console.error('[BA]', e)
+      return `生成失败：${e.message || e}`
     } finally {
       await page.close()
     }

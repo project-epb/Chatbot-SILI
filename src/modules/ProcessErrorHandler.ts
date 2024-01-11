@@ -15,7 +15,7 @@ export default class ProcessErrorHandler extends BasePlugin {
   static EVENT_LIST = ['unhandledRejection', 'uncaughtException']
 
   constructor(public ctx: Context) {
-    super(ctx, {}, 'process-error-handler')
+    super(ctx, {}, 'process-error')
 
     ProcessErrorHandler.EVENT_LIST.forEach((i) =>
       process.on(i, (event) => this.hadnler(event))
