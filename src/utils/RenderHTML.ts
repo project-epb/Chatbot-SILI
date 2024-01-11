@@ -1,5 +1,7 @@
 import { Context, Service, h } from 'koishi'
 
+import { BinaryScreenshotOptions } from 'puppeteer-core'
+
 declare module 'koishi' {
   export interface Context {
     html: HTMLService
@@ -17,7 +19,17 @@ export class HTMLService extends Service {
     return this.ctx.puppeteer
   }
 
-  async rawHtml(html: string, selector: string = 'body', quality = 90) {
+  async rawHtml(
+    html: string,
+    selector: string = 'body',
+    options?: BinaryScreenshotOptions
+  ) {
+    options = {
+      encoding: 'binary',
+      type: 'jpeg',
+      quality: 85,
+      ...options,
+    }
     const page = await this.ppt.page()
     let file: Buffer | undefined
     try {
@@ -26,17 +38,18 @@ export class HTMLService extends Service {
         timeout: 15 * 1000,
       })
       const $el = await page.$(selector)
-      file = await $el?.screenshot({
-        type: 'jpeg',
-        quality,
-      })
+      file = await $el?.screenshot(options)
     } finally {
       await page?.close()
     }
     return file ? h.image(file, 'image/jpeg') : ''
   }
 
-  async html(body: string, selector: string = 'body') {
+  async html(
+    body: string,
+    selector: string = 'body',
+    options?: BinaryScreenshotOptions
+  ) {
     const html = `<!DOCTYPE html>
 <html lang="en">
 
@@ -66,7 +79,7 @@ export class HTMLService extends Service {
 ${body}
 </body>
 </html>`
-    return this.rawHtml(html, selector)
+    return this.rawHtml(html, selector, options)
   }
 
   async text(text: string) {

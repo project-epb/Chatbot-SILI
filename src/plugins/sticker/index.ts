@@ -8,6 +8,7 @@ import { Context } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
+import PornHub from './pornHub'
 import 加油 from './加油'
 import 梅因说 from './梅因说'
 import 蔚蓝档案 from './蔚蓝档案'
@@ -20,5 +21,6 @@ export default class PluginSticker extends BasePlugin {
     ctx.plugin(加油)
     ctx.plugin(梅因说)
     ctx.plugin(蔚蓝档案)
+    ctx.plugin(PornHub)
   }
 }
