@@ -1,3 +1,8 @@
+/**
+ * 生成蔚蓝档案LOGO风格的图片
+ * @description Original work by @nulla2011 https://github.com/nulla2011/bluearchive-logo
+ * @author dragon-fish (refactor)
+ */
 import { Context, h } from 'koishi'
 
 import { resolve } from 'node:path'

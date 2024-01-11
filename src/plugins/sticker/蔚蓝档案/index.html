@@ -20,13 +20,7 @@
           <div id="leftText"></div>
           <div id="rightText"></div>
         </div>
-        <img id="halo" src="./halo.png" alt="" />
-        <div id="crossGroup">
-          <svg width="480" height="200" version="1.1">
-            <polygon points="252,0 159,190 165,190 287,0" style="fill: #fff" />
-          </svg>
-          <img id="cross" src="./cross.png" alt="" />
-        </div>
+        <img id="halo" src="./halo_mixed.png" alt="" />
       </div>
 
       <div id="controller">
@@ -42,7 +36,7 @@
         padding: 0;
         width: 100%;
         height: 100%;
-        background-color: transparent;
+        background-color: #ffffff;
       }
       * {
         box-sizing: border-box;
@@ -51,8 +45,6 @@
         display: flex;
         justify-content: center;
         align-items: center;
-      }
-      main {
       }
       #logo {
         font-family:
@@ -71,7 +63,7 @@
         line-height: 1;
         position: relative;
         display: flex;
-        padding: 1.35em 0.5em;
+        padding: 1.2em 0.5em;
         box-shadow: 0 0 0 4px red;
       }
       #text {
@@ -86,35 +78,14 @@
       #rightText {
         color: #2b2b2b;
       }
-      #halo,
-      #crossGroup {
-        position: absolute;
-        top: calc(50% - 0.1em);
-        transform: translateY(-50%);
-        --size: 3.5em;
-        height: var(--size);
-        width: var(--size);
-        left: calc(var(--left-width) - 0.8em);
-      }
       #halo {
         position: absolute;
-        z-index: 0;
-      }
-      #crossGroup {
+        top: calc(50% - 0.35em);
+        left: calc(var(--left-width) - 0.2em);
+        transform: translateY(-50%);
+        width: auto;
+        height: 2.5em;
         z-index: 2;
-      }
-      #crossGroup img {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        z-index: 2;
-      }
-      #crossGroup svg {
-        position: absolute;
-        height: 3.5em;
-        width: 3.5em;
-        top: 0.5em;
-        left: -0.95em;
       }
 
       #controller {
