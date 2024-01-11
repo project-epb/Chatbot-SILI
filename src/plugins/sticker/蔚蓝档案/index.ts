@@ -7,7 +7,7 @@ import { BaseSticker } from '../_base'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
-export class 蔚蓝档案 extends BaseSticker {
+export default class 蔚蓝档案 extends BaseSticker {
   constructor(public ctx: Context) {
     super(ctx)
 
