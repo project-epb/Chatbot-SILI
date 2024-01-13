@@ -81,6 +81,8 @@ import * as PluginSwitch from 'koishi-plugin-switch'
 
 import { HTMLService } from '$utils/RenderHTML'
 
+import { AdapterMinecraft } from './plugins/adapter-minecraft'
+
 const PROD = process.env.NODE_ENV === 'production'
 
 // Setup .env
@@ -166,6 +168,16 @@ app.plugin(function PluginCollectionAdapters(ctx) {
      */
     verifyCallback: true,
   })
+
+  // Minecraft
+  if (env.MINECRAFT_TOKEN) {
+    ctx.plugin(AdapterMinecraft, {
+      host: env.MINECRAFT_HOST,
+      port: Number(env.MINECRAFT_PORT),
+      protocol: env.MINECRAFT_PROTOCOL as 'ws' | 'wss',
+      token: env.MINECRAFT_TOKEN,
+    })
+  }
 
   // Repl
   // ctx.plugin('adapter-repl')
