@@ -16,7 +16,7 @@ export class MinecraftConnect extends BasePlugin {
     const qqBot = ctx.bots.find((bot) =>
       ['onebot', 'red'].includes(bot.platform)
     )
-    const qqCtx = ctx.channel(QQ_GROUP, process.env.CHANNEL_QQ_SANDBOX)
+    const qqCtx = ctx.channel(QQ_GROUP)
     const mcBot = ctx.bots.find(
       (bot) => bot.platform === 'minecraft'
     ) as MinecraftBot<Context>
