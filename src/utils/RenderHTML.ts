@@ -1,6 +1,6 @@
 import { Context, Service, h } from 'koishi'
 
-import { BinaryScreenshotOptions } from 'puppeteer-core'
+import type { BinaryScreenshotOptions, WaitForOptions } from 'puppeteer-core'
 
 declare module 'koishi' {
   export interface Context {
@@ -22,16 +22,16 @@ export class HTMLService extends Service {
   async rawHtml(
     html: string,
     selector: string = 'body',
-    options?: BinaryScreenshotOptions
-  ) {
-    options = {
+    shotOptions?: BinaryScreenshotOptions
+  ): Promise<Buffer | undefined> {
+    shotOptions = {
       encoding: 'binary',
       type: 'jpeg',
       quality: 85,
-      ...options,
+      ...shotOptions,
     }
-    if (options.type !== 'jpeg') {
-      delete options.quality
+    if (shotOptions.type !== 'jpeg') {
+      delete shotOptions.quality
     }
     const page = await this.ppt.page()
     let file: Buffer | undefined
@@ -41,11 +41,11 @@ export class HTMLService extends Service {
         timeout: 15 * 1000,
       })
       const $el = await page.$(selector)
-      file = await $el?.screenshot(options)
+      file = await $el?.screenshot(shotOptions)
     } finally {
       await page?.close()
     }
-    return file ? h.image(file, 'image/jpeg') : ''
+    return file
   }
 
   async html(
@@ -234,5 +234,49 @@ code.hljs[class~='lang-wiki']:before {
 `
 
     return this.html(html, `pre[screenshot-target]`)
+  }
+
+  async shotByUrl(
+    fileUrl: string | URL,
+    selector: string = 'body',
+    waitOptioins?: WaitForOptions,
+    shotOptions?: BinaryScreenshotOptions
+  ) {
+    // handle options
+    waitOptioins = {
+      waitUntil: 'networkidle0',
+      timeout: 21 * 1000,
+      ...waitOptioins,
+    }
+    shotOptions = {
+      encoding: 'binary',
+      type: 'jpeg',
+      quality: 85,
+      ...shotOptions,
+    }
+    if (shotOptions.type !== 'jpeg') {
+      delete shotOptions.quality
+    }
+
+    const page = await this.ctx.puppeteer.page()
+    return page
+      .goto(fileUrl.toString(), waitOptioins)
+      .then(async () => {
+        const target = await page.$(selector)
+        if (!target) {
+          throw new Error(`Missing target element: ${selector}`)
+        }
+        return target?.screenshot(shotOptions)
+      })
+      .catch(async (e) => {
+        this.logger.warn('[SHOT] load error:', e)
+        const target = await page?.$(selector)
+        if (target) {
+          this.logger.warn('[SHOT] target found, take it anyway:', selector)
+          return target?.screenshot({ type: 'jpeg' })
+        }
+        throw e
+      })
+      .finally(() => page.close())
   }
 }

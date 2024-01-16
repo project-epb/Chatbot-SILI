@@ -9,7 +9,7 @@ export default class 加油 extends BaseSticker {
       .command('sticker.加油 <content:text>', 'Eric_Liu说：“加油！”', {
         minInterval: Time.minute,
       })
-      .alias('sticker.jiayou')
+      .alias('sticker.jiayou', '加油')
       .shortcut(/^表情包 这两周$/, {
         args: ['这两周。'],
         options: {
@@ -100,8 +100,15 @@ export default class 加油 extends BaseSticker {
 </span>
 `
 
-        const img = await ctx.html.html(html, '#sticker')
-        return img
+        return ctx.html
+          .html(html, '#sticker')
+          .then((buf) => {
+            return h.image(buf, 'image/jpeg')
+          })
+          .catch((e) => {
+            this.logger.error('[加油] shot error:', e)
+            return `加不了油：${e.message || e}`
+          })
       })
   }
 }

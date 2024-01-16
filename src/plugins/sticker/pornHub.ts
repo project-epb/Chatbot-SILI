@@ -1,4 +1,4 @@
-import { Context } from 'koishi'
+import { Context, h } from 'koishi'
 
 import { BaseSticker } from './_base'
 
@@ -8,38 +8,15 @@ export default class PornHub extends BaseSticker {
 
     ctx
       .command('sticker.pornhub <text:text>', 'PornHub')
-      .alias('sticker.ph')
-      .shortcut('PH', { fuzzy: true })
-      .shortcut('PornHub')
+      .alias('sticker.ph', 'ph', 'pornhub')
       .action(async ({ session }, text) => {
         if (!text) {
           text = 'Porn Hub'
         }
-        const [leftText, rightText] = this.splitText(text)
+        const [leftText, rightText] = this.cutTextInHalf(text)
         const image = await this.shot(leftText, rightText)
         return image
       })
-  }
-
-  splitText(text: string) {
-    // 如果有空格，就按空格切
-    if (text.includes(' ')) {
-      const [leftText, rightText] = text.split(' ')
-      return [leftText, rightText]
-    }
-
-    // 查询大写字母是否为两个，例如 BlueArchive 就切成 Blue Archive
-    const ucLetters = text.match(/[A-Z]/g)
-    if (ucLetters?.length === 2) {
-      const [leftText, rightText] = text.split(ucLetters[1])
-      return [leftText, ucLetters[1] + rightText]
-    }
-
-    // 如果都不是，就对半切，如果是单数，中间的归右边
-    const middleIndex = Math.floor(text.length / 2)
-    const leftText = text.slice(0, middleIndex)
-    const rightText = text.slice(middleIndex)
-    return [leftText, rightText]
   }
 
   dropXSS(text: string) {
@@ -73,11 +50,17 @@ export default class PornHub extends BaseSticker {
 </logo>
 `
 
-    const image = await this.ctx.html.html(html, 'logo', {
-      type: 'png',
-      omitBackground: true,
-    })
-
-    return image
+    return this.ctx.html
+      .html(html, 'logo', {
+        type: 'png',
+        omitBackground: true,
+      })
+      .then((buf) => {
+        return h.image(buf, 'image/png')
+      })
+      .catch((e) => {
+        this.logger.error('[PornHub] shot error:', e)
+        return `不许色色：${e.message || e}`
+      })
   }
 }

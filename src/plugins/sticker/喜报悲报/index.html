@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+      * {
+        box-sizing: border-box;
+      }
+
+      main {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #sticker {
+        width: 800px;
+        height: 600px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 0 0 14px #ff00ff;
+      }
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      #content {
+        position: absolute;
+        z-index: 1;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 60px;
+        width: 100%;
+        text-align: center;
+        padding: 1em;
+        text-shadow:
+          2px 2px 0 var(--text-shadow-color),
+          -2px -2px 0 var(--text-shadow-color),
+          2px -2px 0 var(--text-shadow-color),
+          -2px 2px 0 var(--text-shadow-color);
+      }
+      .good_news {
+        color: #fe0809;
+        --text-shadow-color: #ffff00;
+      }
+      .bad_news {
+        color: #252525;
+        --text-shadow-color: #dadada;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div id="sticker">
+        <img src="" alt="" />
+        <div id="content"></div>
+      </div>
+    </main>
+
+    <script>
+      const ASSETS = {
+        good_news: 'https://r2.epb.wiki/random/good_news.jpg',
+        bad_news: 'https://r2.epb.wiki/random/bad_news.jpg',
+      }
+      const url = new URL(location.href)
+      let type = url.searchParams.get('type')
+      const content = url.searchParams.get('content')
+
+      if (!Object.keys(ASSETS).includes(type)) {
+        type = Object.keys(ASSETS)[0]
+      }
+
+      const stickerEl = document.querySelector('#sticker')
+      const imgEl = document.querySelector('img')
+      const contentEl = document.querySelector('#content')
+
+      stickerEl.classList.add(type)
+      imgEl.src = ASSETS[type]
+      contentEl.textContent = content || ''
+    </script>
+  </body>
+</html>
