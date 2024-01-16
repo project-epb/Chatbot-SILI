@@ -8,11 +8,11 @@ import { Context, h } from 'koishi'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import { getDirName } from '@/utils/dir'
+import { useDirname } from '@/utils/dir'
 
 import { BaseSticker } from '../_base'
 
-const __dirname = getDirName(import.meta.url)
+const __dirname = useDirname(import.meta.url)
 
 export default class 蔚蓝档案 extends BaseSticker {
   constructor(public ctx: Context) {
@@ -21,7 +21,7 @@ export default class 蔚蓝档案 extends BaseSticker {
     ctx
       .command('sticker.蔚蓝档案 <text:text>', '蔚蓝档案LOGO')
       .alias('sticker.blue-archive', 'ba', '蔚蓝档案')
-      .action(async ({ session }, text) => {
+      .action(async (_, text) => {
         if (!text) {
           text = 'Blue Archive'
         }

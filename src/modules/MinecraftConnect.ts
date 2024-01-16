@@ -1,6 +1,6 @@
 import { Context } from 'koishi'
 
-import { MinecraftBot } from '@/plugins/adapter-minecraft'
+import { MinecraftBot } from '@/adapters/adapter-minecraft'
 
 import BasePlugin from '~/_boilerplate'
 

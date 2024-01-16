@@ -3,9 +3,12 @@ import { Context, Logger } from 'koishi'
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
+import { useDirname } from '@/utils/dir'
+
 import Mint from 'mint-filter'
 
 const logger = new Logger('MintFilter')
+const __dirname = useDirname(import.meta.url)
 
 declare module 'koishi' {
   interface Context {

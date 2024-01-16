@@ -8,7 +8,7 @@ declare module 'koishi' {
   }
 }
 
-export class HTMLService extends Service {
+export default class HTMLService extends Service {
   static inject = ['puppeteer']
 
   constructor(public ctx: Context) {

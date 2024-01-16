@@ -10,9 +10,12 @@ import { App, Dict, Random, type Session, Time } from 'koishi'
 
 import { resolve } from 'node:path'
 
+import { MinecraftBot } from '@/adapters/adapter-minecraft'
 import MessagesLogger from '@/modules/MessagesLogger'
+import { MinecraftConnect } from '@/modules/MinecraftConnect'
 import MgpGroupUtils from '@/modules/MoegirlGroupUtils'
 import ProcessErrorHandler from '@/modules/ProcessErrorHandler'
+import HTMLService from '@/services/HTMLService'
 
 import PluginAbout from '~/about'
 import PatchCallme from '~/callme'
@@ -29,7 +32,6 @@ import PluginProfile from '~/profile'
 import PluginQueue from '~/queue'
 import PluginReboot from '~/reboot'
 import PluginSensitiveFilter from '~/sensitive-words-filter'
-import MintFilterService from '~/sensitive-words-filter/MintFilterService'
 import PluginSiliName from '~/siliName'
 import PluginSpawn from '~/spawn'
 import PluginSticker from '~/sticker'
@@ -78,11 +80,6 @@ import * as PluginRepeater from 'koishi-plugin-repeater'
 import * as PluginSchedule from 'koishi-plugin-schedule'
 import PluginSilk from 'koishi-plugin-silk'
 import * as PluginSwitch from 'koishi-plugin-switch'
-
-import { HTMLService } from '$utils/RenderHTML'
-
-import { MinecraftConnect } from './modules/MinecraftConnect'
-import { MinecraftBot } from './plugins/adapter-minecraft'
 
 const PROD = process.env.NODE_ENV === 'production'
 
@@ -360,7 +357,6 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.command('tools', '实用工具集')
   ctx.plugin(HTMLService)
   ctx.plugin(MessagesLogger)
-  ctx.plugin(MintFilterService)
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)
   ctx.plugin(ProcessErrorHandler)

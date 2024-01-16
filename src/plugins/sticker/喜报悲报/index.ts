@@ -3,11 +3,11 @@ import { Context, h } from 'koishi'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import { getDirName } from '@/utils/dir'
+import { useDirname } from '@/utils/dir'
 
 import { BaseSticker } from '../_base'
 
-const __dirname = getDirName(import.meta.url)
+const __dirname = useDirname(import.meta.url)
 
 enum NewsType {
   good_news = 'good_news',
@@ -19,17 +19,17 @@ export default class 喜报悲报 extends BaseSticker {
     super(ctx)
 
     ctx
-      .command('sticker.good-news <text:text>', '喜报')
+      .command('sticker.喜报 <text:text>', '喜报')
       .alias('喜报', 'good-news')
-      .action(async ({ session }, text) => {
+      .action(async (_, text) => {
         const image = await this.shot(NewsType.good_news, text)
         return image
       })
 
     ctx
-      .command('sticker.bad-news <text:text>', '悲报')
+      .command('sticker.悲报 <text:text>', '悲报')
       .alias('悲报', 'bad-news')
-      .action(async ({ session }, text) => {
+      .action(async (_, text) => {
         const image = await this.shot(NewsType.bad_news, text)
         return image
       })

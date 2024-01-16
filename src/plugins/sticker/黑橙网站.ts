@@ -2,14 +2,14 @@ import { Context, h } from 'koishi'
 
 import { BaseSticker } from './_base'
 
-export default class PornHub extends BaseSticker {
+export default class 黑橙网站 extends BaseSticker {
   constructor(public ctx: Context) {
     super(ctx)
 
     ctx
       .command('sticker.pornhub <text:text>', 'PornHub')
       .alias('sticker.ph', 'ph', 'pornhub')
-      .action(async ({ session }, text) => {
+      .action(async (_, text) => {
         if (!text) {
           text = 'Porn Hub'
         }
