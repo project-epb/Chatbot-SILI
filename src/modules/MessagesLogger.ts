@@ -8,7 +8,7 @@ import BasePlugin from '~/_boilerplate'
 
 export default class MessagesLogger extends BasePlugin {
   constructor(public ctx: Context) {
-    super(ctx, {}, 'msg-log')
+    super(ctx, {}, 'message')
 
     ctx.on('message', (session) => {
       const content = this.toSlimContent(session.content) || '[UNKNOWN]'

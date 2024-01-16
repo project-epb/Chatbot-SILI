@@ -63,10 +63,8 @@ export class MinecraftBot<C extends Context> extends Bot<C, Config> {
 
   stringifyContent(content: Fragment) {
     const elements = h.parse(content.toString())
-    console.log('[[stringifyContent]] income:', content, elements)
     return elements
       .map((el) => {
-        console.log('[[stringifyContent]] map:', el)
         if (el.type === 'text') return el
         switch (el.type) {
           default:
