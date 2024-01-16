@@ -57,9 +57,9 @@ export default class 蔚蓝档案 extends BaseSticker {
       url.searchParams.set('rightText', rightText)
       await page.goto(url.toString(), {
         waitUntil: 'load',
-        timeout: 8 * 1000,
+        timeout: 15 * 1000,
       })
-      await page.waitForNetworkIdle({ timeout: 5 * 1000 })
+      await page.waitForNetworkIdle({ timeout: 10 * 1000 })
       const logo = await page.$('#logo')
       const buffer = await logo?.screenshot({ type: 'jpeg' })
       return h.image(buffer, 'image/jpeg')

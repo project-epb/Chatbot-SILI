@@ -81,7 +81,8 @@ import * as PluginSwitch from 'koishi-plugin-switch'
 
 import { HTMLService } from '$utils/RenderHTML'
 
-import { AdapterMinecraft } from './plugins/adapter-minecraft'
+import { MinecraftConnect } from './modules/MinecraftConnect'
+import { MinecraftBot } from './plugins/adapter-minecraft'
 
 const PROD = process.env.NODE_ENV === 'production'
 
@@ -171,7 +172,7 @@ app.plugin(function PluginCollectionAdapters(ctx) {
 
   // Minecraft
   if (env.MINECRAFT_TOKEN) {
-    ctx.plugin(AdapterMinecraft, {
+    ctx.plugin(MinecraftBot, {
       host: env.MINECRAFT_HOST,
       port: Number(env.MINECRAFT_PORT),
       protocol: env.MINECRAFT_PROTOCOL as 'ws' | 'wss',
@@ -367,6 +368,7 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(PluginReboot)
   ctx.plugin(PluginSensitiveFilter)
   ctx.plugin(PluginSpawn, { shell: 'pwsh' })
+  ctx.plugin(MinecraftConnect)
 })
 
 /** 启动应用程序 */
