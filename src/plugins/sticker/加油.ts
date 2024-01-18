@@ -22,8 +22,7 @@ export default class 加油 extends BaseSticker {
       .action(async ({ session, options }, content) => {
         if (!session || !options) return
 
-        content =
-          content?.replace(/</g, '&lt;').replace(/>/g, '&gt;') || '加油！'
+        content = content || '加油！'
         try {
           options.avatar = new URL(
             options.avatar || session.author?.avatar || ''
@@ -31,11 +30,12 @@ export default class 加油 extends BaseSticker {
         } catch (e) {
           options.avatar = session.author?.avatar
         }
-        options.username =
-          options.username?.replace(/</g, '&lt;').replace(/>/g, '&gt;') ||
-          session?.author?.nickname ||
-          session?.author?.username ||
-          session?.author?.userId
+        options.username = options.username || session.username
+
+        // XSS
+        content = this.ctx.html.preformattedText(content)
+        options.avatar = this.ctx.html.propValueToText(options.avatar)
+        options.username = this.ctx.html.preformattedText(options.username)
 
         const html = `
 <span id="sticker" style="

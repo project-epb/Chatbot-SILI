@@ -86,10 +86,7 @@ ${body}
   }
 
   async text(text: string) {
-    return this.html(
-      `<pre>${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`,
-      'pre'
-    )
+    return this.html(`<pre>${this.preformattedText(text)}</pre>`, 'pre')
   }
 
   async svg(svg: string) {
@@ -278,5 +275,23 @@ code.hljs[class~='lang-wiki']:before {
         throw e
       })
       .finally(() => page.close())
+  }
+
+  preformattedText(text: string) {
+    return text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+  }
+  dropXSS = this.preformattedText
+  propsToText(props: Record<string, string>) {
+    return Object.entries(props)
+      .map(([key, value]) => `${key}="${this.propValueToText(value)}"`)
+      .join(' ')
+  }
+  propValueToText(value: string) {
+    return value
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&apos;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .trim()
   }
 }

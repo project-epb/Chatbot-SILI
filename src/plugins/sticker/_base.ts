@@ -34,44 +34,4 @@ export class BaseSticker extends BasePlugin {
     const rightText = text.slice(middleIndex)
     return [leftText, rightText]
   }
-
-  async shotByURL(
-    fileUrl: string | URL,
-    targetSelector: string,
-    options?: Partial<{
-      type: 'jpeg' | 'png'
-      omitBackground: boolean
-      timeout: number
-    }>
-  ) {
-    options = {
-      ...options,
-      type: 'jpeg',
-      timeout: 15 * 1000,
-    }
-    const page = await this.ctx.puppeteer.page()
-    try {
-      await page.goto(fileUrl.toString(), {
-        waitUntil: 'load',
-        timeout: options.timeout,
-      })
-
-      const target = await page.$(targetSelector)
-      if (!target) {
-        throw new Error(`Missing target element: ${targetSelector}`)
-      }
-
-      return target?.screenshot({ type: 'jpeg' })
-    } catch (e) {
-      this.logger.warn('[SHOT] load error:', e)
-      const target = await page.$(targetSelector).catch(() => null)
-      if (target) {
-        this.logger.warn('[SHOT] target found, take it anyway:', targetSelector)
-        return target?.screenshot({ type: 'jpeg' })
-      }
-      throw e
-    } finally {
-      await page.close()
-    }
-  }
 }

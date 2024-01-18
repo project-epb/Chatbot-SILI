@@ -13,27 +13,30 @@ export default class 梅因说 extends BaseSticker {
       .action(async ({ session }, content) => {
         if (!session) return
 
+        content = this.ctx.html.preformattedText(content) || '······'
+
         const html = `
-<div
-  id="sticker"
-  style="position: relative; display: inline-block;"
->
-  <img
-    src="https://i.loli.net/2021/07/25/CnBp6z3y8WFAJ4d.jpg"
-    style="display: inline-block; width: 250px; height: 250px;"
-  />
+<div id="sticker" style="position: relative;width: 500px;height: 500px;">
+  <img src="https://i.loli.net/2021/07/25/CnBp6z3y8WFAJ4d.jpg" style="width: 100%;height: 100%;object-fit: cover;">
   <div style="
     position: absolute;
-    top: 0;
-    left: 0;
-    height: 100px;
-    width: 100%;
+    top: 20px;
+    left: 49%;
+    height: 120px;
+    width: 240px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   ">
   <div style="
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-  ">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+    max-width: 100%;
+    max-height: 100%;
+    text-align: center;
+    text-overflow: ellipsis;
+    overflow: hidden;
+">${content}</div>
   </div>
 </div>`
 

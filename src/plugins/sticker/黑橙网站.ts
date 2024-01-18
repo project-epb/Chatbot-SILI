@@ -19,13 +19,14 @@ export default class 黑橙网站 extends BaseSticker {
       })
   }
 
-  dropXSS(text: string) {
+  toPreformattedText(text: string) {
     return text.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   }
 
   async shot(leftText: string, rightText: string) {
-    leftText = this.dropXSS(leftText)
-    rightText = this.dropXSS(rightText)
+    leftText = this.ctx.html.preformattedText(leftText)
+    rightText = this.ctx.html.preformattedText(rightText)
+
     const html = `
 <logo style="
   display: inline-flex;
