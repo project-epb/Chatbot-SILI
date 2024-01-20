@@ -139,7 +139,7 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   // })
 
   // DingTalk
-  const dingTokens = process.env.DINGTALK_TOKENS?.split('|')
+  // const dingTokens = process.env.DINGTALK_TOKENS?.split('|')
   // if (dingTokens && dingTokens.length) {
   //   dingTokens.forEach((token) => {
   //     const [agentId, appkey, secret] = token?.split('/')
