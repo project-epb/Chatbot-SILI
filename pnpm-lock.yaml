@@ -7,16 +7,16 @@ settings:
 dependencies:
   '@koishijs/plugin-adapter-dingtalk':
     specifier: ^2.2.0
-    version: 2.2.0(@satorijs/satori@3.4.1)(koishi@4.16.6)
+    version: 2.2.0(@satorijs/satori@3.4.2)(koishi@4.16.6)
   '@koishijs/plugin-adapter-discord':
     specifier: ^4.2.0
-    version: 4.2.0(@satorijs/satori@3.4.1)(koishi@4.16.6)
+    version: 4.2.0(@satorijs/satori@3.4.2)(koishi@4.16.6)
   '@koishijs/plugin-adapter-onebot':
     specifier: ^6.0.2
-    version: 6.0.2(@satorijs/satori@3.4.1)(koishi@4.16.6)
+    version: 6.0.2(@satorijs/satori@3.4.2)(koishi@4.16.6)
   '@koishijs/plugin-adapter-satori':
     specifier: ^1.0.3
-    version: 1.0.3(@satorijs/satori@3.4.1)(koishi@4.16.6)
+    version: 1.0.3(@satorijs/satori@3.4.2)(koishi@4.16.6)
   '@koishijs/plugin-admin':
     specifier: ^1.4.0
     version: 1.4.0(koishi@4.16.6)
@@ -85,7 +85,7 @@ dependencies:
     version: 2.9.2(koishi@4.16.6)
   koishi-plugin-adapter-villa:
     specifier: ^0.7.0
-    version: 0.7.0(@satorijs/satori@3.4.1)(koishi@4.16.6)
+    version: 0.7.0(@satorijs/satori@3.4.2)(koishi@4.16.6)
   koishi-plugin-assets-s3:
     specifier: ^1.2.5
     version: 1.2.5(koishi@4.16.6)
@@ -149,8 +149,8 @@ dependencies:
 
 devDependencies:
   '@satorijs/element':
-    specifier: ^3.1.2
-    version: 3.1.2
+    specifier: ^3.1.3
+    version: 3.1.3
   '@trivago/prettier-plugin-sort-imports':
     specifier: ^4.3.0
     version: 4.3.0(prettier@3.2.4)
@@ -889,15 +889,6 @@ packages:
       to-fast-properties: 2.0.0
     dev: true
 
-  /@cordisjs/logger@0.1.3(cordis@3.6.0):
-    resolution: {integrity: sha512-ZHy7NL+VCsd9msEUZ6VHlfxxeZWDramMsNb54uQ+fwSySkX6WbRqHY3FE7aBVL8baJbZszWH8nKE4hZhRiWJSg==}
-    peerDependencies:
-      cordis: ^3.4.0
-    dependencies:
-      cordis: 3.6.0
-      reggol: 1.6.3
-    dev: false
-
   /@cordisjs/logger@0.1.3(cordis@3.6.1):
     resolution: {integrity: sha512-ZHy7NL+VCsd9msEUZ6VHlfxxeZWDramMsNb54uQ+fwSySkX6WbRqHY3FE7aBVL8baJbZszWH8nKE4hZhRiWJSg==}
     peerDependencies:
@@ -925,14 +916,6 @@ packages:
       - bufferutil
       - supports-color
       - utf-8-validate
-    dev: false
-
-  /@cordisjs/timer@0.2.0(cordis@3.6.0):
-    resolution: {integrity: sha512-6FHNKI9f5y1GskvWm0l6XxkFNi8wswnLwNbTOCeSLQ9oZwx8d9WjE+sQENqN6egkLo5QmMQE+0D8TwU5/WkMxg==}
-    peerDependencies:
-      cordis: ^3.5.1
-    dependencies:
-      cordis: 3.6.0
     dev: false
 
   /@cordisjs/timer@0.2.0(cordis@3.6.1):
@@ -1274,45 +1257,45 @@ packages:
       ns-require: 1.1.4
     dev: false
 
-  /@koishijs/plugin-adapter-dingtalk@2.2.0(@satorijs/satori@3.4.1)(koishi@4.16.6):
+  /@koishijs/plugin-adapter-dingtalk@2.2.0(@satorijs/satori@3.4.2)(koishi@4.16.6):
     resolution: {integrity: sha512-aW83cVtjUd98OqjWFxMbz9cdXj84kmZhs+R5H+b5YGLedZHPUWY1V/gn1Eo0JLRVJ+Ocz8cuYQr0Co5BQBA5Fw==}
     peerDependencies:
       koishi: ^4.16.3
     dependencies:
-      '@satorijs/adapter-dingtalk': 2.2.0(@satorijs/satori@3.4.1)
+      '@satorijs/adapter-dingtalk': 2.2.0(@satorijs/satori@3.4.2)
       koishi: 4.16.6
     transitivePeerDependencies:
       - '@satorijs/satori'
     dev: false
 
-  /@koishijs/plugin-adapter-discord@4.2.0(@satorijs/satori@3.4.1)(koishi@4.16.6):
+  /@koishijs/plugin-adapter-discord@4.2.0(@satorijs/satori@3.4.2)(koishi@4.16.6):
     resolution: {integrity: sha512-GPIHn1n2B+txZnX4pyXyvKH0gUeteRagEztbg/XD3sNFJE7X+Afcze8/FabH3F+OuHjd1UtDWPme/GW8Q9RHNQ==}
     peerDependencies:
       koishi: ^4.16.3
     dependencies:
-      '@satorijs/adapter-discord': 4.2.0(@satorijs/satori@3.4.1)
+      '@satorijs/adapter-discord': 4.2.0(@satorijs/satori@3.4.2)
       koishi: 4.16.6
     transitivePeerDependencies:
       - '@satorijs/satori'
     dev: false
 
-  /@koishijs/plugin-adapter-onebot@6.0.2(@satorijs/satori@3.4.1)(koishi@4.16.6):
+  /@koishijs/plugin-adapter-onebot@6.0.2(@satorijs/satori@3.4.2)(koishi@4.16.6):
     resolution: {integrity: sha512-YOvPux+Tdo1xTMrSa5umWn1Yxx0LoFUi4FcTS30KS7DF4FQTBzDMQvo18On6g+nkv996yh+seHfrAk2Jv30r3Q==}
     peerDependencies:
       koishi: ^4.14.6
     dependencies:
-      '@satorijs/adapter-onebot': 6.0.2(@satorijs/satori@3.4.1)
+      '@satorijs/adapter-onebot': 6.0.2(@satorijs/satori@3.4.2)
       koishi: 4.16.6
     transitivePeerDependencies:
       - '@satorijs/satori'
     dev: false
 
-  /@koishijs/plugin-adapter-satori@1.0.3(@satorijs/satori@3.4.1)(koishi@4.16.6):
+  /@koishijs/plugin-adapter-satori@1.0.3(@satorijs/satori@3.4.2)(koishi@4.16.6):
     resolution: {integrity: sha512-xizsBPz+jkCVVj/wkzi6yAzq1l6fQ6RAHMak6wkxixg36IHBtzz5aVnsWeVWum8rqV5knnQZZ/F+mYI+erSBsg==}
     peerDependencies:
       koishi: ^4.15.6
     dependencies:
-      '@satorijs/adapter-satori': 1.0.3(@satorijs/satori@3.4.1)
+      '@satorijs/adapter-satori': 1.0.3(@satorijs/satori@3.4.2)
       koishi: 4.16.6
     transitivePeerDependencies:
       - '@satorijs/satori'
@@ -1759,56 +1742,38 @@ packages:
       - supports-color
     dev: false
 
-  /@satorijs/adapter-dingtalk@2.2.0(@satorijs/satori@3.4.1):
+  /@satorijs/adapter-dingtalk@2.2.0(@satorijs/satori@3.4.2):
     resolution: {integrity: sha512-TZ+b0iKARZCfm79n8RXZMX6eVj/uOcSIyGlY2ARpwaLgg7V1CORdWMg2CI9Tf5yt0oyfNkk7AFynj0g/TzM9Hg==}
     peerDependencies:
       '@satorijs/satori': ^3.4.0
     dependencies:
-      '@satorijs/satori': 3.4.1
+      '@satorijs/satori': 3.4.2
     dev: false
 
-  /@satorijs/adapter-discord@4.2.0(@satorijs/satori@3.4.1):
+  /@satorijs/adapter-discord@4.2.0(@satorijs/satori@3.4.2):
     resolution: {integrity: sha512-7rBkgQ1ngQTtZ5/Jjt2MtyUccAgOLLerFrMTid4Rq5RfNNrLqZpPXybkeVIbOflRWviIfVrqE+bDywGoJ/obLA==}
     peerDependencies:
       '@satorijs/satori': ^3.4.0
     dependencies:
-      '@satorijs/satori': 3.4.1
+      '@satorijs/satori': 3.4.2
       form-data: 4.0.0
     dev: false
 
-  /@satorijs/adapter-onebot@6.0.2(@satorijs/satori@3.4.1):
+  /@satorijs/adapter-onebot@6.0.2(@satorijs/satori@3.4.2):
     resolution: {integrity: sha512-rECvmghlzkyhu6o+Sy3NVDQ59az3M0DxxYzngmEhTiyoia81fP71xGNURBw+Z6ALBNpUEsh4IKHg1Gq38jq5mQ==}
     peerDependencies:
       '@satorijs/satori': ^3.0.0-rc.0
     dependencies:
-      '@satorijs/satori': 3.4.1
+      '@satorijs/satori': 3.4.2
       qface: 1.4.1
     dev: false
 
-  /@satorijs/adapter-satori@1.0.3(@satorijs/satori@3.4.1):
+  /@satorijs/adapter-satori@1.0.3(@satorijs/satori@3.4.2):
     resolution: {integrity: sha512-ZXbGBZFA9upv537yEp9455ZFju2VtDToBRH/58W5eptE8wTmtCKUe6XjvHRBaE21mnq/dyy7y0EFtXOio4/LEQ==}
     peerDependencies:
       '@satorijs/satori': ^3.2.1
     dependencies:
-      '@satorijs/satori': 3.4.1
-    dev: false
-
-  /@satorijs/core@3.4.1:
-    resolution: {integrity: sha512-s1gdyrAqJuSpnEYzKGnPQPnu3ViC/1Y7a3Uce6f0+PSHpqaQyTuuHSUxmwwOKfoTmjngA/YjeTHNr+pLz+VrsA==}
-    dependencies:
-      '@cordisjs/logger': 0.1.3(cordis@3.6.0)
-      '@cordisjs/timer': 0.2.0(cordis@3.6.0)
-      '@satorijs/element': 3.1.2
-      '@satorijs/protocol': 1.1.3
-      cordis: 3.6.0
-      cordis-axios: 4.0.2
-      cosmokit: 1.5.2
-      schemastery: 3.14.3
-      ws: 8.14.2
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - utf-8-validate
+      '@satorijs/satori': 3.4.2
     dev: false
 
   /@satorijs/core@3.4.2:
@@ -1816,7 +1781,7 @@ packages:
     dependencies:
       '@cordisjs/logger': 0.1.3(cordis@3.6.1)
       '@cordisjs/timer': 0.2.0(cordis@3.6.1)
-      '@satorijs/element': 3.1.2
+      '@satorijs/element': 3.1.3
       '@satorijs/protocol': 1.2.0
       cordis: 3.6.1
       cordis-axios: 4.0.2
@@ -1829,50 +1794,16 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@satorijs/element@2.6.1:
-    resolution: {integrity: sha512-QRPJnKSJoQYD14wPDSmX2q9qwEz7/awlEB5MccTpzEjZF0kfAGRrUPkZIlGKJssx4Psu3swBgvf35YWXDOJs7w==}
+  /@satorijs/element@3.1.3:
+    resolution: {integrity: sha512-As+4GkEESUlovevEkohoouFP22uR/weCS/xZ99AWpJa9l+v4uzNmDCsMl6UAFJXXY58vkeQEteBW8MqOhCAUvw==}
     dependencies:
       cosmokit: 1.5.2
-    dev: false
-
-  /@satorijs/element@3.1.2:
-    resolution: {integrity: sha512-bC3vA/PrSCgJyP+O9UMP0nOPVrcKMbYd/W+crdwF+lX1tXoI7iX20CImXeZXgMIHzliat72cTG7rf7jUenc25A==}
-    dependencies:
-      cosmokit: 1.5.2
-
-  /@satorijs/protocol@1.1.3:
-    resolution: {integrity: sha512-kTwLMF8hQvyahQfIXyKa8+VZ28Ws3JtNQnmKg2FBcYt6rqzOmWKYmb3+tn7bXQ7L1ZtHzw43j2fFk6PWZX3r+g==}
-    dependencies:
-      '@satorijs/element': 2.6.1
-      cosmokit: 1.5.2
-    dev: false
 
   /@satorijs/protocol@1.2.0:
     resolution: {integrity: sha512-90atkYb6N3VUOw9HCod/Z9p626WDeUgkrUY4loZlrAPc3RdEDn7pXa27rJ38kNZT9m53/z5c3AL0LBUc2NVUkA==}
     dependencies:
-      '@satorijs/element': 3.1.2
+      '@satorijs/element': 3.1.3
       cosmokit: 1.5.2
-    dev: false
-
-  /@satorijs/satori@3.4.1:
-    resolution: {integrity: sha512-dKWNmheBqub/PjBL4EyduVcB3VHtqOKIv0z5yvaAHZ92IHw44qJMAaX+s5izhbukSwRgqAwznxt8heMx/+qayw==}
-    dependencies:
-      '@satorijs/core': 3.4.1
-      '@types/ws': 8.5.10
-      file-type: 16.5.4
-      http-proxy-agent: 5.0.0
-      https-proxy-agent: 5.0.1
-      koa: 2.14.2
-      koa-bodyparser: 4.4.1
-      parseurl: 1.3.3
-      path-to-regexp: 6.2.1
-      socks-proxy-agent: 5.0.1
-      ws: 8.14.2
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - supports-color
-      - utf-8-validate
     dev: false
 
   /@satorijs/satori@3.4.2:
@@ -3062,12 +2993,6 @@ packages:
       - debug
     dev: false
 
-  /cordis@3.6.0:
-    resolution: {integrity: sha512-a5w1jCdprdyaafAaRFaiN6JfYCew/BlJek2KqkjIhDSAT9QEKwKFtX3s13TImglt4ex33PXGMMt0TVGbpb5Ydw==}
-    dependencies:
-      cosmokit: 1.5.2
-    dev: false
-
   /cordis@3.6.1:
     resolution: {integrity: sha512-DhRT2t2aWpojX1C8IYiIxaEE40SSlTnJpEKALfk2j4TCyTa398XtZ0uy1xFlOc6/gDGyG1QPAsRj0ly0pjrqlg==}
     dependencies:
@@ -3985,13 +3910,13 @@ packages:
       wav-file-decoder-cjs: 1.0.3
     dev: false
 
-  /koishi-plugin-adapter-villa@0.7.0(@satorijs/satori@3.4.1)(koishi@4.16.6):
+  /koishi-plugin-adapter-villa@0.7.0(@satorijs/satori@3.4.2)(koishi@4.16.6):
     resolution: {integrity: sha512-xikNqCUvxnLmlYB5U9bu+N9Kjt22C1w3WbVEBPaAjifL0B9jpHfYTxhXRuqE3yZrJZANpcF1RZy+ScTrqjF4dw==}
     peerDependencies:
       '@satorijs/satori': ^3.0.0-rc.0
       koishi: ^4.15.0
     dependencies:
-      '@satorijs/satori': 3.4.1
+      '@satorijs/satori': 3.4.2
       file-type: 16.5.4
       koishi: 4.16.6
     dev: false

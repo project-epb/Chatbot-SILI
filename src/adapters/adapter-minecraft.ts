@@ -63,26 +63,16 @@ export class MinecraftBot<C extends Context> extends Bot<C, Config> {
 
   stringifyContent(content: Fragment) {
     const elements = h.parse(content.toString())
-    return elements
-      .map((el) => {
-        if (el.type === 'text') return el
-        switch (el.type) {
-          default:
-            return el
-          case 'at':
-            return h.text(`@${el.attrs.name || el.attrs.id}`)
-          case 'img':
-          case 'image':
-            return h.text('[图片]')
-          case 'video':
-            return h.text('[视频]')
-          case 'audio':
-            return h.text('[音频]')
-          case 'file':
-            return h.text('[文件]')
-          case 'face':
-            return h.text('[表情]')
-        }
+    return h
+      .transform(elements, {
+        at: ({ id, name }) => `@${name || id}`,
+        audio: () => '[音频]',
+        card: () => '[卡片]',
+        file: () => '[文件]',
+        face: () => '[表情]',
+        image: () => '[图片]',
+        quote: () => '[回复]',
+        video: () => '[视频]',
       })
       .join('')
   }

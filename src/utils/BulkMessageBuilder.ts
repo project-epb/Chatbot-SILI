@@ -1,23 +1,22 @@
-import { Session, Universal, segment } from 'koishi'
+import { Session, Universal, h } from 'koishi'
+
+type MsgUser = Omit<Universal.User & Universal.GuildMember, 'id'>
 
 export class BulkMessageBuilder {
-  #figure = segment('message', { forward: '' })
-  #bot: Universal.Author
-  #author: Universal.Author
+  #figure = h('message', { forward: '' })
+  #bot: MsgUser
+  #author: MsgUser
   #content: string
   #isPrependOriginal = false
   constructor(public session: Session) {
     this.#content = session.content
     this.#bot = {
       userId: this.session.bot.userId,
-      nickname: this.session.bot.nickname || this.session.bot.username || 'BOT',
+      nickname: this.session.bot.user.name || 'BOT',
     }
     this.#author = {
-      userId: session.author!.userId,
-      nickname:
-        session.author?.nickname ||
-        session.author?.username ||
-        session.author!.userId,
+      userId: session.userId,
+      nickname: session.username,
     }
   }
 
@@ -28,8 +27,8 @@ export class BulkMessageBuilder {
     return this.#figure
   }
 
-  addLine(author: Universal.Author, message: string) {
-    this.#figure.children.push(segment('message', author, message))
+  addLine(author: MsgUser, message: string) {
+    this.#figure.children.push(h('message', author, message))
     return this
   }
   botSay(msg: string) {
@@ -43,9 +42,7 @@ export class BulkMessageBuilder {
   prependOriginal() {
     if (this.#isPrependOriginal) return this
     this.#isPrependOriginal = true
-    this.#figure.children.unshift(
-      segment('message', this.#author, this.#content)
-    )
+    this.#figure.children.unshift(h('message', this.#author, this.#content))
     return this
   }
 }

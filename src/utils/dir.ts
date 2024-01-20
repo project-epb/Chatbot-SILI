@@ -2,7 +2,7 @@ import { URL, fileURLToPath } from 'node:url'
 
 /**
  * @example ```ts
- * const __dirname = getDirName(import.meta.url)
+ * const __dirname = useDirname(import.meta.url)
  * ```
  */
 export const useDirname = (importMetaUrl: string) => {
