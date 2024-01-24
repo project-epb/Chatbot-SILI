@@ -1,4 +1,4 @@
-import { Context, Fragment, h } from 'koishi'
+import { Context, h } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
@@ -13,22 +13,24 @@ export default class PluginToImage extends BasePlugin {
       .alias('toimg', '转成图片', '转为图片')
       .action(async ({ session }) => {
         let src = ''
-        if (session.quote?.id) {
-          src = this.getImgUrlFromMessage(session.quote.elements)
+        if (session.quote) {
+          src = this.getImgUrlFromMessage(session.quote.content)
         } else {
           await session.send('请发送表情包')
           const msg = await session.prompt(10 * 1000)
           src = this.getImgUrlFromMessage(msg)
         }
         if (!src) return ''
+        this.logger.info('src', `<${src}>`)
         return h.image(src)
       })
   }
 
-  getImgUrlFromMessage(payload: Fragment) {
-    const elements = h.parse((payload as any)?.join() || payload.toString())
+  getImgUrlFromMessage(msg: string) {
+    if (!msg) return
+    const elements = h.parse(msg)
     const [img] = h.select(elements, 'img')
     if (!img) return
-    return img.attrs.src || img.attrs.url
+    return (img.attrs.src || img.attrs.url || '').trim()
   }
 }

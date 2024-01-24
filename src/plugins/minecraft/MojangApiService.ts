@@ -1,7 +1,7 @@
 /**
  * @link https://zh.minecraft.wiki/w/Mojang_API
  */
-import { Service } from 'koishi'
+import { Context, Service } from 'koishi'
 
 import { Fexios } from 'fexios'
 
@@ -15,6 +15,12 @@ export class MojangApiService extends Service {
   private readonly request = new Fexios({
     baseURL: 'https://api.mojang.com',
   })
+
+  constructor(ctx: Context) {
+    super(ctx, 'mojang', true)
+    this.logger.info('[MojangApiService]', 'installed', ctx.mojang)
+  }
+
   isValidUuid(uuid: string) {
     return /^[0-9a-f-A-F-]{32,36}$/.test(uuid)
   }
