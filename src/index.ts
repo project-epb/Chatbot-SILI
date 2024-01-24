@@ -23,6 +23,7 @@ import PluginDatabaseAdmin from '~/dbadmin'
 import PluginDice from '~/dice'
 import PluginHljs from '~/hljs'
 import PluginMediawiki from '~/mediawiki'
+import PluginMinecraft from '~/minecraft'
 import PluginMute from '~/mute'
 import PluginOpenAi from '~/openai'
 import PluginPing from '~/ping'
@@ -35,6 +36,7 @@ import PluginSensitiveFilter from '~/sensitive-words-filter'
 import PluginSiliName from '~/siliName'
 import PluginSpawn from '~/spawn'
 import PluginSticker from '~/sticker'
+import PluginToImage from '~/toImage'
 import PluginVerifyFandomUser from '~/verifyFandomUser'
 import PluginVersion from '~/version'
 import PluginWebShot from '~/webshot'
@@ -317,6 +319,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginAbout)
   ctx.plugin(PluginDice)
   ctx.plugin(PluginHljs)
+  ctx.plugin(PluginMinecraft)
   ctx.plugin(PluginMute)
   ctx.plugin(PluginOpenAi, {
     openaiOptions: {
@@ -337,6 +340,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginQueue)
   ctx.plugin(PluginSiliName)
   ctx.plugin(PluginSticker)
+  ctx.plugin(PluginToImage)
   ctx.plugin(PluginVerifyFandomUser)
   ctx.plugin(PluginVersion)
   ctx.plugin(PluginWebShot)
