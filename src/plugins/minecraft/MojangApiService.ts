@@ -18,7 +18,6 @@ export class MojangApiService extends Service {
 
   constructor(ctx: Context) {
     super(ctx, 'mojang', true)
-    this.logger.info('[MojangApiService]', 'installed', ctx.mojang)
   }
 
   isValidUuid(uuid: string) {

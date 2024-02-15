@@ -45,6 +45,8 @@ import PluginYoudao from '~/youdao'
 
 import AdapterDingtalk from '@koishijs/plugin-adapter-dingtalk'
 import AdapterDiscord from '@koishijs/plugin-adapter-discord'
+// import AdapterOnebot from '@koishijs/plugin-adapter-onebot'
+// import AdapterSatori from '@koishijs/plugin-adapter-satori'
 import * as PluginAdmin from '@koishijs/plugin-admin'
 import PluginAnalytics from '@koishijs/plugin-analytics'
 import PluginAuth from '@koishijs/plugin-auth'
@@ -122,18 +124,22 @@ app.plugin(PluginMongo, {
 /** 安装适配器 */
 app.plugin(function PluginCollectionAdapters(ctx) {
   // QQ
-  //  ctx.plugin('adapter-onebot', {
-  //    protocol: env.ONEBOT_PROTOCOL,
-  //    selfId: env.ONEBOT_SELFID,
-  //    endpoint: env.ONEBOT_ENDPOINT,
-  //  })
+  // ctx.plugin(AdapterOnebot, {
+  //   protocol: env.ONEBOT_PROTOCOL,
+  //   selfId: env.ONEBOT_SELFID,
+  //   endpoint: env.ONEBOT_ENDPOINT,
+  // })
   ctx.plugin(AdapterRed, {
-    endpoint: env.CHRONOCAT_ENDPOINT,
+    endpoint: env.CHRONOCAT_RED_ENDPOINT,
     token: env.CHRONOCAT_TOKEN,
     selfId: env.ONEBOT_SELFID?.trim(),
     path: '/assets/red',
     selfUrl: env.KOISHI_SELF_URL,
   })
+  // ctx.plugin(AdapterSatori, {
+  //   endpoint: env.CHRONOCAT_SATORI_ENDPOINT,
+  //   token: env.CHRONOCAT_TOKEN,
+  // })
 
   // Discord
   // ctx.plugin(AdapterDiscord, {
@@ -328,7 +334,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
     },
     maxTokens: 500,
     recordsPerChannel: 50,
-    model: 'gpt-4-1106-preview',
+    model: 'gpt-4-turbo-preview',
   })
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv, {

@@ -11,7 +11,6 @@ export class PluginMinecraftSkin extends BasePlugin {
     options: any
   ) {
     super(ctx, options, 'minecraft-skin')
-    this.logger.info('installed')
 
     ctx
       .command('minecraft.skin <uuid:string>', '获取 Minecraft 皮肤')

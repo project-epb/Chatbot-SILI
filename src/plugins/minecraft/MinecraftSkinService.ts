@@ -22,7 +22,6 @@ export class MinecraftSkinService extends Service {
 
   constructor(ctx: Context) {
     super(ctx, 'minecraft_skin', true)
-    this.logger.info('[MinecraftSkinService]', 'installed', ctx.minecraft_skin)
   }
 
   assetUrl(

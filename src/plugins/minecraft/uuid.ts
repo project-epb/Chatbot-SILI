@@ -10,7 +10,6 @@ export class PluginMinecraftUuid extends BasePlugin {
     options: any
   ) {
     super(ctx, options, 'minecraft-uuid')
-    this.logger.info('installed')
 
     ctx
       .command('minecraft.uuid [username:string]', '获取 Minecraft UUID')
