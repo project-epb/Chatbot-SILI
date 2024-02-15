@@ -12,7 +12,7 @@ export default class PluginMute extends BasePlugin {
   constructor(public ctx: Context) {
     super(ctx, {}, 'mute')
 
-    ctx = ctx.platform('onebot').channel()
+    ctx = ctx.platform('red').channel()
     ctx
       .command('channel.mute', '<duration:number>', { authority: 3 })
       .option('set-user', '-u <user:user>')
@@ -20,17 +20,21 @@ export default class PluginMute extends BasePlugin {
       .action(({ session, options }, duration) => {
         this.logger.info(options, duration)
         if (options!['set-all']) {
-          session!.bot.internal.setGroupWholeBan(
-            session!.channelId,
-            +duration > 0
-          )
+          session.bot.internal?.muteGroup({
+            group: session!.channelId,
+            enable: +duration > 0,
+          })
         }
         if (options!['set-user']) {
-          session!.bot.internal.setGroupBan(
-            session!.channelId,
-            session!.userId,
-            +duration
-          )
+          session.bot.internal?.muteGroupMembers({
+            group: session!.channelId,
+            memList: [
+              {
+                uin: session!.userId,
+                timeStamp: +duration,
+              },
+            ],
+          })
         }
       })
   }
