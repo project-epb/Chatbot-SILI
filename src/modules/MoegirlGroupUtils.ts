@@ -2,7 +2,7 @@
  * @name MgpGroupUtils
  * @desc 内部插件，萌娘百科B站粉丝群工具箱
  */
-import { Context, Time, segment } from 'koishi'
+import { Context, Time, h, segment } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
@@ -139,7 +139,7 @@ export default class MoegirlGroupUtils extends BasePlugin {
       // 转发
       session.bot.sendMessage(
         process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string,
-        `[MGP_UTILS] B群触发关键词黑名单${await session.app.html.text(log)}`,
+        `[MGP_UTILS] B群触发关键词黑名单${h.image(await session.app.html.text(log), 'image/jpeg')}`,
         process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string
       )
 

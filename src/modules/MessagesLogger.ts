@@ -13,27 +13,22 @@ export default class MessagesLogger extends BasePlugin {
     ctx.on('message', (session) => {
       const content = this.toSlimContent(session.content) || '[UNKNOWN]'
       this.logger.info(
-        `[${session.platform}]`,
-        `[${session.subsubtype}/${session.channelId}]`,
-        `${session.username} (${session.userId})`,
-        `> ${content}`
+        `${session.platform}${
+          session.event.guild
+            ? ` ▸ ${session.event.guild.name} (${session.event.guild.id})`
+            : ''
+        } ▸ ${session.username} (${session.userId})`,
+        `⫸ ${content}`
       )
     })
+
     ctx.on('send', (session) => {
-      // const seg = segment.parse(session.content)
-      // seg.forEach((i, index) => {
-      //   if (i.type === 'img' && i?.attrs?.src?.startsWith('base64://')) {
-      //     seg[index].attrs.src = '(base64)'
-      //   }
-      // })
       const content = this.toSlimContent(session.content) || '[UNKNOWN]'
       ctx
         .logger('SEND')
         .info(
-          `[${session.platform}]`,
-          `[${session.type}/${session.channelId}]`,
-          `${session.username} (${session.selfId})`,
-          `> ${content}`
+          `${session.platform} ▸ ${session.event.channel.name} (${session.event.channel.id})`,
+          `⫸ ${content}`
         )
     })
   }
