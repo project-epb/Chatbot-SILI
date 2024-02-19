@@ -6,6 +6,8 @@ import { resolve } from 'node:path'
 import BasePlugin from '~/_boilerplate'
 
 import {
+  getChannelIdFromSession,
+  getGuildIdFromSession,
   getUserIdFromSession,
   getUserNickFromSession,
   sendMessageBySession,
@@ -116,7 +118,7 @@ export default class PluginReboot extends BasePlugin {
     }
 
     const cmdLogsRaw = await this.readLogFile(LogFile.commandLogs)
-    let cmdLogsImg: h | string = ''
+    let cmdLogsImg: Buffer | undefined
     if (cmdLogsRaw) {
       ;[cmdLogsImg] = await Promise.all([
         await this.ctx.root.html.hljs(cmdLogsRaw, 'shell'),
@@ -131,15 +133,15 @@ export default class PluginReboot extends BasePlugin {
       if (!bot) return console.info('未找到对应的机器人实例。')
 
       console.info(session)
-
-      sendMessageBySession(
-        session,
+      bot.sendMessage(
+        getChannelIdFromSession(session),
         `SILI 重启完毕 (SIGNAL-${(+kSignal).toString(2).padStart(6, '0')})
 共耗时: ${((now - lastSession.time) / 1000).toFixed(2)}s
 请求者: ${h.at(getUserIdFromSession(session), {
           name: getUserNickFromSession(session),
         })}
-${cmdLogsImg || '(没有详细日志)'}`
+${cmdLogsImg ? h.image(cmdLogsImg, 'image/jpeg') : '(没有详细日志)'}`,
+        getGuildIdFromSession(session)
       )
     }
   }

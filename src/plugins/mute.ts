@@ -19,22 +19,25 @@ export default class PluginMute extends BasePlugin {
       .option('set-all', '-a', { type: 'boolean' })
       .action(({ session, options }, duration) => {
         this.logger.info(options, duration)
-        if (options!['set-all']) {
-          session.bot.internal?.muteGroup({
-            group: session!.channelId,
-            enable: +duration > 0,
-          })
+        if (options['set-all']) {
+          if (session.platform === 'red') {
+            session.bot.internal?.muteGroup({
+              group: session!.channelId,
+              enable: +duration > 0,
+            })
+          } else {
+            session.bot.muteChannel(
+              session.channelId,
+              session.guildId,
+              +duration > 0
+            )
+          }
         }
-        if (options!['set-user']) {
-          session.bot.internal?.muteGroupMembers({
-            group: session!.channelId,
-            memList: [
-              {
-                uin: session!.userId,
-                timeStamp: +duration,
-              },
-            ],
-          })
+        if (options['set-user']) {
+          const uid = options['set-user'].includes(':')
+            ? options['set-user'].split(':')[1]
+            : options['set-user']
+          session.bot.muteGuildMember(session.channelId, uid, +duration)
         }
       })
   }

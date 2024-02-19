@@ -52,8 +52,8 @@ export default class MoegirlGroupUtils extends BasePlugin {
 
     // 指令白名单
     ctx.on('command/before-execute', async ({ command, session }) => {
-      const hitWhiteList = this.COMMAND_WHITELIST.some(
-        (i) => command?.name?.startsWith(i)
+      const hitWhiteList = this.COMMAND_WHITELIST.some((i) =>
+        command?.name?.startsWith(i)
       )
       if (hitWhiteList) return
 
@@ -127,23 +127,20 @@ export default class MoegirlGroupUtils extends BasePlugin {
         session.messageId as string
       )
       if (duration === Infinity) {
-        session.bot.internal?.setGroupKick(
-          session.channelId as string,
+        session.bot.kickGuildMember(
+          session.guildId,
           session.userId as string,
           false
         )
       } else {
-        session.bot.internal?.setGroupBan(
-          session.channelId as string,
-          session.userId as string,
-          duration
-        )
+        session.bot.muteGuildMember(session.channelId, session.userId, duration)
       }
 
       // 转发
       session.bot.sendMessage(
         process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string,
-        `[MGP_UTILS] B群触发关键词黑名单${await session.app.html.text(log)}`
+        `[MGP_UTILS] B群触发关键词黑名单${await session.app.html.text(log)}`,
+        process.env.CHANNEL_QQ_MOEGIRL_ADMIN_LOGS as string
       )
 
       // 行车记录仪
