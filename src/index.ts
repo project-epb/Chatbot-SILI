@@ -182,6 +182,8 @@ app.plugin(function PluginCollectionAdapters(ctx) {
       port: Number(env.MINECRAFT_PORT),
       protocol: env.MINECRAFT_PROTOCOL as 'ws' | 'wss',
       token: env.MINECRAFT_TOKEN,
+      retryInterval: 60 * 1000,
+      retryLazy: 5 * 60 * 1000,
     })
   }
 

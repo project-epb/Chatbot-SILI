@@ -1,22 +1,27 @@
 param(
     [string]$command = "pnpm start",
     [string]$SIGNAL_FILE = $(Join-Path -Path $PSScriptRoot -ChildPath ".koishi_signal"),
-    [string]$CMDLOG_FILE = $(Join-Path -Path $PSScriptRoot -ChildPath ".koishi_signal_cmdlogs")
+    [string]$CMDLOG_FILE = $(Join-Path -Path $PSScriptRoot -ChildPath ".koishi_signal_cmdlogs"),
+    [string]$DB_DUMP_SCRIPT = $(Join-Path -Path $PSScriptRoot -ChildPath "scripts\db_dump.ps1")
 )
 
-$env:PROJECT_ROOT_DIR = $PSScriptRoot
+$env:KOISHI_ROOT_DIR = $PSScriptRoot
 
 # 主循环
 function Main() {
-    Write-Host "已启动守护进程..."
-    Write-Host "启动指令: $command"
-    Write-Host "信号文件: $SIGNAL_FILE"
-    Write-Host "日志文件: $CMDLOG_FILE"
+    $env:KOISHI_FIRST_START_TIME = GetNowInISO8601
+
+    Write-Host "正在启动 Koishi 守护进程 ($env:KOISHI_ROOT_DIR)"
+    Write-Host "  $env:KOISHI_FIRST_START_TIME"
+    Write-Host "  - 启动指令: $command"
+    Write-Host "  - 信号文件: $SIGNAL_FILE"
+    Write-Host "  - 日志文件: $CMDLOG_FILE"
 
     ResetSignal
     ResetLog
 
     do {
+        $env:KOISHI_LATEST_START_TIME = GetNowInISO8601
         Invoke-Expression -Command $command
 
         $KSignal = GetSignal
@@ -32,22 +37,30 @@ function Main() {
 
         # 退出循环
         if ($exitCode -ne 0) {
-            Write-Host "意料外的终止信号: $exitCode" -ForegroundColor Red
-            break
+            Write-Host "╭───────────────────╮" -ForegroundColor Red
+            Write-Host "│ 意料外的终止信号: $exitCode │" -ForegroundColor Red
+            Write-Host "╰───────────────────╯" -ForegroundColor Red
+            # break
         }
         elseif (!$isReboot) {
-            Write-Host "预料内的终止信号，再见~" -ForegroundColor Green
+            Write-Host "╭───────────────────────╮" -ForegroundColor Green
+            Write-Host "│ 预料内的终止信号，再见~ │" -ForegroundColor Green
+            Write-Host "╰───────────────────────╯" -ForegroundColor Green
             break
         }
 
         if (!$isSkipWait) {
-            WriteLogLine "计划内重启，将在 5 秒后继续..."
+            Write-Host "╭──────────────────────────────╮" -ForegroundColor Yellow
+            Write-Host "│ 计划内重启，将在 5 秒后继续... │" -ForegroundColor Yellow
+            Write-Host "╰──────────────────────────────╯" -ForegroundColor Yellow
             Start-Sleep -Seconds 5
         }
 
+        $env:KOISHI_LATEST_RESTART_TIME = GetNowInISO8601
+
         if ($isDumpDB) {
             WriteLogLine "正在备份数据库..."
-            RunAndLog ".\scripts\db_dump.ps1 -silent 1"
+            RunAndLog "$DB_DUMP_SCRIPT -silent 1"
         }
 
         if ($isGitSync) {
@@ -134,6 +147,10 @@ function CheckBit($value, $index) {
     }
     $mask = 1 -shl $index
     return ($value -band $mask) -ne 0
+}
+
+function GetNowInISO8601() {
+    return Get-Date -Format "yyyy-MM-ddTHH:mm:sszzz"
 }
 
 Main
