@@ -8,7 +8,7 @@ import {
 } from '$utils/formatSession'
 
 export interface DiceConfig {
-  count: number
+  counts: number
   points: number
   symbol: DiceSymbol
 }
@@ -27,7 +27,7 @@ export enum DiceSymbol {
   PLUS,
   MINUS,
 }
-export enum CoinResult {
+export enum CoinSide {
   FRONT = 1,
   BACK = 2,
 }
@@ -44,8 +44,8 @@ export default class PluginDice extends BasePlugin {
     simpleMinus: '降权',
     coinFront: '正面',
     coinBack: '反面',
-    nDices: '{{count}}个{{point}}面骰',
-    nCoins: '{{count}}枚硬币',
+    nDices: '{{counts}}个{{points}}面骰',
+    nCoins: '{{counts}}枚硬币',
   }
 
   constructor(
@@ -92,9 +92,9 @@ export default class PluginDice extends BasePlugin {
         let difficulty = 0
         if (side) {
           if (side.startsWith('正')) {
-            difficulty = CoinResult.FRONT
+            difficulty = CoinSide.FRONT
           } else if (side.startsWith('反')) {
-            difficulty = CoinResult.BACK
+            difficulty = CoinSide.BACK
           }
         }
         return session.execute({
@@ -109,10 +109,10 @@ export default class PluginDice extends BasePlugin {
    * 掷出骰子，并获取最终结果
    */
   dice(payload: DiceConfig): DiceResult {
-    const { count, points, symbol } = payload
+    const { counts, points, symbol } = payload
 
     // 简单加权，没有投掷
-    if (count < 1) {
+    if (counts < 1) {
       return {
         dice: payload,
         history: [points],
@@ -122,7 +122,7 @@ export default class PluginDice extends BasePlugin {
     }
 
     let history: number[] = []
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < counts; i++) {
       const roll = Math.floor(Math.random() * points) + 1
       history.push(roll)
     }
@@ -148,7 +148,7 @@ export default class PluginDice extends BasePlugin {
    * @returns
    */
   parseDices(str: string): DiceConfig[] {
-    if (!str) return [{ symbol: DiceSymbol.PLUS, count: 1, points: 20 }]
+    if (!str) return [{ symbol: DiceSymbol.PLUS, counts: 1, points: 20 }]
     const diceStrs = str.split(/[+-]/)
     const diceSymbolStrs = ['+', ...(str.match(/[+-]/g) || [])]
 
@@ -170,7 +170,7 @@ export default class PluginDice extends BasePlugin {
         }
         dices.push({
           symbol,
-          count: 0,
+          counts: 0,
           points: parseInt(item),
         })
         return
@@ -199,7 +199,7 @@ export default class PluginDice extends BasePlugin {
 
       dices.push({
         symbol,
-        count: parseInt(count),
+        counts: parseInt(count),
         points: parseInt(points),
       })
     })
@@ -208,18 +208,18 @@ export default class PluginDice extends BasePlugin {
   }
 
   toDiceString(dice: DiceConfig) {
-    const { count, points, symbol } = dice
+    const { counts, points, symbol } = dice
     const symbolStr = symbol === DiceSymbol.PLUS ? '' : '-'
-    if (count < 1) {
+    if (counts < 1) {
       return `${symbolStr}${points}`
     }
-    return `${symbolStr}${count}d${points}`
+    return `${symbolStr}${counts}d${points}`
   }
 
   toDiceDescription(dice: DiceConfig, withSymbol = true) {
-    const { count, points, symbol } = dice
+    const { counts, points, symbol } = dice
 
-    if (count < 1) {
+    if (counts < 1) {
       const join =
         symbol === DiceSymbol.PLUS ? this.MSG.simplePlus : this.MSG.simpleMinus
       return `${withSymbol ? join : ''}${points}点`
@@ -229,7 +229,7 @@ export default class PluginDice extends BasePlugin {
           ? this.MSG.plus
           : this.MSG.minus
         : ''
-      return `${withSymbol ? join : ''}${interpolate(points === 2 ? this.MSG.nCoins : this.MSG.nDices, { count, points })}`
+      return `${withSymbol ? join : ''}${interpolate(points === 2 ? this.MSG.nCoins : this.MSG.nDices, { counts, points })}`
     }
   }
 
@@ -245,7 +245,7 @@ export default class PluginDice extends BasePlugin {
     // 特殊情况：硬币
     if (length === 1 && results[0].dice.points === 2) {
       const coinResultText =
-        results[0].final === CoinResult.FRONT
+        results[0].final === CoinSide.FRONT
           ? this.MSG.coinFront
           : this.MSG.coinBack
       lines.push(
@@ -263,10 +263,10 @@ export default class PluginDice extends BasePlugin {
     const canBeCritical =
       checkCritical &&
       difficulty &&
-      results.filter((item) => item.dice.count > 0 && item.dice.points >= 5)
+      results.filter((item) => item.dice.counts > 0 && item.dice.points >= 5)
         .length === 1
     const firstRandomDice = canBeCritical
-      ? results.find((i) => i.dice.count > 0)
+      ? results.find((i) => i.dice.counts > 0)
       : null
     const criticalResult = firstRandomDice
       ? this.checkCriticalResult(firstRandomDice.dice, firstRandomDice)
@@ -307,7 +307,7 @@ export default class PluginDice extends BasePlugin {
   }
 
   checkCriticalResult(dice: DiceConfig, result: DiceResult) {
-    const { count, points } = dice
+    const { counts, points } = dice
     const { direct, final } = result
 
     // 不要检查降权
@@ -315,7 +315,7 @@ export default class PluginDice extends BasePlugin {
       return CriticalResult.NONE
     }
 
-    if (count === 1) {
+    if (counts === 1) {
       if (direct === 1) {
         return CriticalResult.FAILURE
       } else if (direct === points) {
