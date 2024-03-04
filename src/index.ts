@@ -16,10 +16,12 @@ import { MinecraftConnect } from '@/modules/MinecraftConnect'
 import MgpGroupUtils from '@/modules/MoegirlGroupUtils'
 import ProcessErrorHandler from '@/modules/ProcessErrorHandler'
 import HTMLService from '@/services/HTMLService'
+import PiggybackService from '@/services/PiggybackService'
 
 import PluginAbout from '~/about'
 import PatchCallme from '~/callme'
 import PluginDatabaseAdmin from '~/dbadmin'
+import { PluginDebug } from '~/debug'
 import PluginDice from '~/dice'
 import PluginHljs from '~/hljs'
 import PluginMediawiki from '~/mediawiki'
@@ -371,8 +373,10 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(MessagesLogger)
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)
+  ctx.plugin(PiggybackService)
   ctx.plugin(ProcessErrorHandler)
   ctx.plugin(PluginDatabaseAdmin)
+  ctx.plugin(PluginDebug)
   ctx.plugin(PluginReboot)
   ctx.plugin(PluginSensitiveFilter)
   ctx.plugin(PluginSpawn, { shell: 'pwsh' })
