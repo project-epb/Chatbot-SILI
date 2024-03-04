@@ -34,6 +34,7 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
       baseURL,
       headers: {
         referer: 'https://www.pixiv.net',
+        'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7',
       },
     })
 

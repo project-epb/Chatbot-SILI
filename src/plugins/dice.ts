@@ -1,4 +1,4 @@
-import { Context, h } from 'koishi'
+import { Context, h, interpolate } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
@@ -27,6 +27,10 @@ export enum DiceSymbol {
   PLUS,
   MINUS,
 }
+export enum CoinResult {
+  FRONT = 1,
+  BACK = 2,
+}
 
 export default class PluginDice extends BasePlugin {
   MSG = {
@@ -38,7 +42,10 @@ export default class PluginDice extends BasePlugin {
     minus: '减去',
     simplePlus: '加权',
     simpleMinus: '降权',
-    normalDice: '$count 个 $points 面骰',
+    coinFront: '正面',
+    coinBack: '反面',
+    nDices: '{{0}}个{{1}}面骰',
+    nCoins: '{{0}}枚硬币',
   }
 
   constructor(
@@ -56,7 +63,7 @@ export default class PluginDice extends BasePlugin {
       })
       .alias('掷骰子', '投掷', '检定', 'r', 'roll')
       .usage(
-        'dice [骰子表达式] [-d 难度值] [-C]\n例如“两个20面骰，简单加权5”：dice 2d20+5'
+        '投掷 [骰子表达式] [-d 难度值] [-C]\n例如“两个20面骰，简单加权5”：dice 2d20+5'
       )
       .option('no-critical', '-C 不检查大成功/大失败', { type: 'boolean' })
       .option('difficulty', '-d <difficulty:posint> 难度值', { type: 'posint' })
@@ -76,6 +83,25 @@ export default class PluginDice extends BasePlugin {
         } catch (err) {
           return err.message || '' + err
         }
+      })
+    this.ctx
+      .command('dice/flipcoin [side:string]', '抛硬币', { minInterval: 1000 })
+      .alias('抛硬币', '硬币', 'coin', 'flip', 'c')
+      .usage('抛硬币 [正/反]')
+      .action(({ session }, side) => {
+        let difficulty = 0
+        if (side) {
+          if (side.startsWith('正')) {
+            difficulty = CoinResult.FRONT
+          } else if (side.startsWith('反')) {
+            difficulty = CoinResult.BACK
+          }
+        }
+        return session.execute({
+          name: 'dice',
+          args: ['1d2'],
+          options: { difficulty },
+        })
       })
   }
 
@@ -159,12 +185,12 @@ export default class PluginDice extends BasePlugin {
       if (parseInt(count) < 1) {
         throw new Error(`(${item}) 掷出了……空气？这不对吧，骰子数量太少啦！`)
       }
-      if (parseInt(count) > 100) {
+      if (parseInt(count) > 1000) {
         throw new Error(
           `(${item}) 掷出了……一卡车骰子？这不对吧，骰子数量太多啦！`
         )
       }
-      if (parseInt(points) > 100) {
+      if (parseInt(points) > 1000) {
         throw new Error(`(${item}) 掷出了……玻璃球？这不对吧，骰子点数太多啦！`)
       }
       if (parseInt(points) < 2) {
@@ -203,9 +229,7 @@ export default class PluginDice extends BasePlugin {
           ? this.MSG.plus
           : this.MSG.minus
         : ''
-      return `${withSymbol ? join : ''}${count}个${
-        points > 2 ? `${points}面骰` : '硬币'
-      }`
+      return `${withSymbol ? join : ''}${interpolate(points === 2 ? this.MSG.nCoins : this.MSG.nDices, [count, points])}`
     }
   }
 
@@ -217,6 +241,23 @@ export default class PluginDice extends BasePlugin {
     const length = results.length
     const total = results.reduce((a, b) => a + b.final, 0)
     const lines: string[] = []
+
+    // 特殊情况：硬币
+    if (length === 1 && results[0].dice.points === 2) {
+      const coinResultText =
+        results[0].final === CoinResult.FRONT
+          ? this.MSG.coinFront
+          : this.MSG.coinBack
+      lines.push(
+        `随着一声清脆悦耳的“叮当”，硬币在桌面上翻腾几圈，最终稳稳地停留在……${coinResultText}！`
+      )
+      if (difficulty >= 1 && difficulty <= 2) {
+        lines.push(
+          results[0].final === difficulty ? this.MSG.success : this.MSG.failure
+        )
+      }
+      return lines.join('\n')
+    }
 
     // 当面数大于等于5的随机骰子数量为1时，才会检查大成功/大失败
     const canBeCritical =
@@ -247,13 +288,12 @@ export default class PluginDice extends BasePlugin {
     }
 
     results.forEach((item, index) => {
-      const { dice, final, direct } = item
+      const { dice, final, history } = item
       const diceStr = this.toDiceString(dice)
       lines.push(
-        `${this.toDiceDescription(
-          dice,
-          index > 0
-        )} = ${diceStr}(${direct}) = ${final}`
+        `${this.toDiceDescription(dice, index > 0)} = ${diceStr}(${
+          history.length > 5 ? history.slice(0, 5).join(',') + '...' : history
+        }) = ${final}`
       )
     })
 
