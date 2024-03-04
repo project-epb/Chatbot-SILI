@@ -4,14 +4,12 @@
  * @desc pixiv插画查看工具
  * @authority 1
  */
-import { Context, Time, segment } from 'koishi'
+import { Context, Time, h } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
 import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
-import fexios from 'fexios'
-
-// const API_BASE = process.env.API_PIXIV_BASE
+import { Fexios } from 'fexios'
 
 const defaultConfigs = {
   baseURL: 'https://www.pixiv.net',
@@ -19,10 +17,9 @@ const defaultConfigs = {
 }
 
 export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
-  constructor(
-    public ctx: Context,
-    initOptions?: Partial<typeof defaultConfigs>
-  ) {
+  readonly request: Fexios
+
+  constructor(ctx: Context, initOptions?: Partial<typeof defaultConfigs>) {
     super(
       ctx,
       {
@@ -32,14 +29,21 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
       'pixiv'
     )
 
-    const { baseURL } = this.options
-    const ajax = fexios.create({
+    const { baseURL = defaultConfigs.baseURL } = this.options
+    this.request = new Fexios({
       baseURL,
       headers: {
         referer: 'https://www.pixiv.net',
       },
     })
 
+    this.#setupCommands()
+    this.#setupMiddlewares()
+  }
+
+  #setupCommands() {
+    const ctx = this.ctx
+    const req = this.request
     ctx
       .command('pixiv [id:posint]', 'pixiv.net 相关功能')
       .action(({ session, name }, id) => {
@@ -68,13 +72,13 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
         let info, pages
         try {
           ;[{ data: info }, { data: pages }] = await Promise.all([
-            ajax.get(`/ajax/illust/${id}?full=1`),
-            ajax.get(`/ajax/illust/${id}/pages`),
+            req.get(`/ajax/illust/${id}?full=1`),
+            req.get(`/ajax/illust/${id}/pages`),
           ])
         } catch (error) {
           this.logger.warn(error)
           return [
-            segment.quote(session.messageId as string),
+            h.quote(session.messageId as string),
             error?.response?.data?.message || error.message || '出现未知问题',
           ].join('')
         }
@@ -93,7 +97,7 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
         const builder = new BulkMessageBuilder(session)
         builder.prependOriginal()
         const lines = [
-          segment.image(`${baseURL}${imageUrl}`),
+          h.image(this.makePximgURL(imageUrl)),
           totalImages ? `第 ${selectedPage} 张，共 ${totalImages} 张` : null,
           `${info.title}`,
           desc.length > 500 ? desc.substring(0, 500) + '...' : desc,
@@ -101,7 +105,7 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
           `👍${info.likeCount} ❤️${info.bookmarkCount} 👀${info.viewCount}`,
           `发布时间: ${new Date(info.createDate).toLocaleString()}`,
           allTags.length ? allTags.join(' ') : null,
-          `${baseURL}/i/${info.id}`,
+          new URL(`/i/${id}`, this.options.baseURL).href,
         ].map((i) =>
           typeof i === 'string' ? i.trim().replace(/\n+/g, '\n') : i
         )
@@ -119,13 +123,13 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
           return session.execute({ name: cmdName, options: { help: true } })
         }
 
-        let data
+        let data: any
         try {
-          data = (await fexios.get(`${baseURL}/ajax/user/${id}?full=1`)).data
+          data = (await req.get(`/ajax/user/${id}?full=1`)).data
         } catch (error) {
           this.logger.warn(error)
           return [
-            segment.quote(session.messageId as string),
+            h.quote(session.messageId as string),
             error.message || '出现未知问题',
           ].join('')
         }
@@ -135,7 +139,7 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
         const builder = new BulkMessageBuilder(session)
         builder.prependOriginal()
         const lines = [
-          segment.image(`${baseURL}${imageBig}`),
+          h.image(this.makePximgURL(imageBig)),
           `${name} (${userId})`,
           comment,
         ].map((i) =>
@@ -145,8 +149,10 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
 
         return builder.all()
       })
+  }
 
-    // 快捷方式
+  #setupMiddlewares() {
+    const ctx = this.ctx
     ctx.middleware(async (session, next) => {
       await next()
       const reg =
@@ -156,5 +162,15 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
         session.execute({ name: 'pixiv.illust', args: [pixivId[1]] })
       }
     })
+  }
+
+  makePximgURL(url: string) {
+    if (url.startsWith('http')) {
+      if (!this.options.pximgURL) {
+        return url
+      }
+      url = new URL(url).pathname
+    }
+    return new URL(url, this.options.pximgURL || this.options.baseURL).href
   }
 }
