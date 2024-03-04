@@ -44,8 +44,8 @@ export default class PluginDice extends BasePlugin {
     simpleMinus: '降权',
     coinFront: '正面',
     coinBack: '反面',
-    nDices: '{{0}}个{{1}}面骰',
-    nCoins: '{{0}}枚硬币',
+    nDices: '{{count}}个{{point}}面骰',
+    nCoins: '{{count}}枚硬币',
   }
 
   constructor(
@@ -229,7 +229,7 @@ export default class PluginDice extends BasePlugin {
           ? this.MSG.plus
           : this.MSG.minus
         : ''
-      return `${withSymbol ? join : ''}${interpolate(points === 2 ? this.MSG.nCoins : this.MSG.nDices, [count, points])}`
+      return `${withSymbol ? join : ''}${interpolate(points === 2 ? this.MSG.nCoins : this.MSG.nDices, { count, points })}`
     }
   }
 
