@@ -479,7 +479,7 @@ export default class PluginOpenAi extends BasePlugin {
   }
 
   addRecord(session: Session) {
-    const content = session.content
+    const content = session.elements?.join('') || ''
     if (content.includes('[chat-summary]')) {
       return
     }

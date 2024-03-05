@@ -47,8 +47,6 @@ import PluginYoudao from '~/youdao'
 
 import AdapterDingtalk from '@koishijs/plugin-adapter-dingtalk'
 import AdapterDiscord from '@koishijs/plugin-adapter-discord'
-// import AdapterOnebot from '@koishijs/plugin-adapter-onebot'
-// import AdapterSatori from '@koishijs/plugin-adapter-satori'
 import * as PluginAdmin from '@koishijs/plugin-admin'
 import PluginAnalytics from '@koishijs/plugin-analytics'
 import PluginAuth from '@koishijs/plugin-auth'
@@ -68,6 +66,7 @@ import * as PluginSandbox from '@koishijs/plugin-sandbox'
 import PluginServer from '@koishijs/plugin-server'
 import * as PluginStatus from '@koishijs/plugin-status'
 
+import AdapterOnebot from 'koishi-plugin-adapter-onebot'
 import AdapterRed from 'koishi-plugin-adapter-red'
 import AdapterVilla from 'koishi-plugin-adapter-villa'
 import PluginAssetsS3 from 'koishi-plugin-assets-s3'
@@ -126,18 +125,18 @@ app.plugin(PluginMongo, {
 /** 安装适配器 */
 app.plugin(function PluginCollectionAdapters(ctx) {
   // QQ
-  // ctx.plugin(AdapterOnebot, {
-  //   protocol: env.ONEBOT_PROTOCOL,
-  //   selfId: env.ONEBOT_SELFID,
-  //   endpoint: env.ONEBOT_ENDPOINT,
-  // })
-  ctx.plugin(AdapterRed, {
-    endpoint: env.CHRONOCAT_RED_ENDPOINT,
-    token: env.CHRONOCAT_TOKEN,
+  ctx.plugin(AdapterOnebot, {
+    protocol: env.ONEBOT_PROTOCOL,
     selfId: env.ONEBOT_SELFID?.trim(),
-    path: '/assets/red',
-    selfUrl: env.KOISHI_SELF_URL,
+    endpoint: env.ONEBOT_ENDPOINT,
   })
+  // ctx.plugin(AdapterRed, {
+  //   endpoint: env.CHRONOCAT_RED_ENDPOINT,
+  //   token: env.CHRONOCAT_TOKEN,
+  //   selfId: env.ONEBOT_SELFID?.trim(),
+  //   path: '/assets/red',
+  //   selfUrl: env.KOISHI_SELF_URL,
+  // })
   // ctx.plugin(AdapterSatori, {
   //   endpoint: env.CHRONOCAT_SATORI_ENDPOINT,
   //   token: env.CHRONOCAT_TOKEN,

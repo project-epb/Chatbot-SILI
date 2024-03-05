@@ -11,9 +11,6 @@ dependencies:
   '@koishijs/plugin-adapter-discord':
     specifier: ^4.2.2
     version: 4.2.2(@satorijs/satori@3.5.3)(koishi@4.16.8)
-  '@koishijs/plugin-adapter-onebot':
-    specifier: ^6.0.2
-    version: 6.0.2(@satorijs/satori@3.5.3)(koishi@4.16.8)
   '@koishijs/plugin-adapter-satori':
     specifier: ^1.0.8
     version: 1.0.8(@satorijs/satori@3.5.3)(koishi@4.16.8)
@@ -80,6 +77,9 @@ dependencies:
   koishi:
     specifier: ^4.16.8
     version: 4.16.8
+  koishi-plugin-adapter-onebot:
+    specifier: ^6.5.0
+    version: 6.5.0(koishi@4.16.8)
   koishi-plugin-adapter-red:
     specifier: ^2.9.7
     version: 2.9.7(koishi@4.16.8)
@@ -1303,17 +1303,6 @@ packages:
       - '@satorijs/satori'
     dev: false
 
-  /@koishijs/plugin-adapter-onebot@6.0.2(@satorijs/satori@3.5.3)(koishi@4.16.8):
-    resolution: {integrity: sha512-YOvPux+Tdo1xTMrSa5umWn1Yxx0LoFUi4FcTS30KS7DF4FQTBzDMQvo18On6g+nkv996yh+seHfrAk2Jv30r3Q==}
-    peerDependencies:
-      koishi: ^4.14.6
-    dependencies:
-      '@satorijs/adapter-onebot': 6.0.2(@satorijs/satori@3.5.3)
-      koishi: 4.16.8
-    transitivePeerDependencies:
-      - '@satorijs/satori'
-    dev: false
-
   /@koishijs/plugin-adapter-satori@1.0.8(@satorijs/satori@3.5.3)(koishi@4.16.8):
     resolution: {integrity: sha512-weKNQEWuW6oqNL4ZBEsoglv/0McWDPMVG9QjAgZv/wNnzZLG02svTvOKSYzcl/oYy6ybfwTycWQAKnAozXLYLw==}
     peerDependencies:
@@ -1785,15 +1774,6 @@ packages:
     dependencies:
       '@satorijs/satori': 3.5.3
       form-data: 4.0.0
-    dev: false
-
-  /@satorijs/adapter-onebot@6.0.2(@satorijs/satori@3.5.3):
-    resolution: {integrity: sha512-rECvmghlzkyhu6o+Sy3NVDQ59az3M0DxxYzngmEhTiyoia81fP71xGNURBw+Z6ALBNpUEsh4IKHg1Gq38jq5mQ==}
-    peerDependencies:
-      '@satorijs/satori': ^3.0.0-rc.0
-    dependencies:
-      '@satorijs/satori': 3.5.3
-      qface: 1.4.1
     dev: false
 
   /@satorijs/adapter-satori@1.0.8(@satorijs/satori@3.5.3):
@@ -3947,6 +3927,15 @@ packages:
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /koishi-plugin-adapter-onebot@6.5.0(koishi@4.16.8):
+    resolution: {integrity: sha512-8Mk6oCsd78tcFZTErGJ0Eqboj5AnJjW8B0SEyZb7bKUJFg5s6nZ24OvJc+h2yj3WYE6uSNCVQnBzeQCSo+CHlg==}
+    peerDependencies:
+      koishi: ^4.17.1
+    dependencies:
+      koishi: 4.16.8
+      qface: 1.4.1
     dev: false
 
   /koishi-plugin-adapter-red@2.9.7(koishi@4.16.8):

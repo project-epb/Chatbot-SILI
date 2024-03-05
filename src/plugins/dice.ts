@@ -242,8 +242,12 @@ export default class PluginDice extends BasePlugin {
     const total = results.reduce((a, b) => a + b.final, 0)
     const lines: string[] = []
 
-    // 特殊情况：硬币
-    if (length === 1 && results[0].dice.points === 2) {
+    // 特殊情况：硬币（有且仅有一个 1d2）
+    if (
+      length === 1 &&
+      results[0].dice.counts === 1 &&
+      results[0].dice.points === 2
+    ) {
       const coinResultText =
         results[0].final === CoinSide.FRONT
           ? this.MSG.coinFront

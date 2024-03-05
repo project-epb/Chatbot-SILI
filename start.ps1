@@ -7,6 +7,11 @@ param(
 
 $env:KOISHI_ROOT_DIR = $PSScriptRoot
 
+# 将代码页配置为 UTF-8
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+[Console]::InputEncoding = $OutputEncoding
+[Console]::OutputEncoding = $OutputEncoding
+
 # 主循环
 function Main() {
     $env:KOISHI_FIRST_START_TIME = GetNowInISO8601
@@ -92,7 +97,6 @@ function ResetLog() {
     Remove-Item $CMDLOG_FILE -ErrorAction SilentlyContinue
 }
 function RunAndLog($command) {
-    $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     WriteLogLine "> $command"
     $result = Invoke-Expression -Command $command
     $result = AddIndentation $result 2
@@ -100,7 +104,7 @@ function RunAndLog($command) {
     $result | Out-File -FilePath $CMDLOG_FILE -Append
 }
 function WriteLogLine($line) {
-    $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $time = GetNowInISO8601
     $line = "[$time] $line"
     Write-Host $line
     $line | Out-File -FilePath $CMDLOG_FILE -Append

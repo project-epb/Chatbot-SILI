@@ -12,7 +12,7 @@ export default class PluginMute extends BasePlugin {
   constructor(public ctx: Context) {
     super(ctx, {}, 'mute')
 
-    ctx = ctx.platform('red').channel()
+    ctx = ctx.platform('red', 'onebot').channel()
     ctx
       .command('channel.mute', '<duration:number>', { authority: 3 })
       .option('set-user', '-u <user:user>')
