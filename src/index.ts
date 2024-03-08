@@ -78,6 +78,7 @@ import * as PluginDialogueFlow from 'koishi-plugin-dialogue-flow'
 import * as PluginDialogueRateLimit from 'koishi-plugin-dialogue-rate-limit'
 import PluginGithub from 'koishi-plugin-github'
 import * as PluginImageSearch from 'koishi-plugin-image-search'
+import * as PluginNovelAi from 'koishi-plugin-novelai'
 import PluginPuppeteer from 'koishi-plugin-puppeteer'
 import * as PluginRateLimit from 'koishi-plugin-rate-limit'
 import * as PluginRecall from 'koishi-plugin-recall'
@@ -330,6 +331,31 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginHljs)
   ctx.plugin(PluginMinecraft)
   ctx.plugin(PluginMute)
+  if (process.env.NOVELAI_USERNAME) {
+    // 部分开启 NovelAI 测试
+    ctx
+      .channel(
+        process.env.CHANNEL_QQ_SANDBOX,
+        process.env.CHANNEL_QQ_NGNL_COMMON,
+        process.env.CHANNEL_QQ_IPE
+      )
+      .plugin(PluginNovelAi, {
+        type: 'login',
+        email: process.env.NOVELAI_USERNAME,
+        password: process.env.NOVELAI_PASSWORD,
+        latinOnly: true,
+      })
+    ctx.command('novelai', {
+      minInterval(session) {
+        if ((session.user as any)?.authority > 1) return 0
+        return 60 * 1000
+      },
+      maxUsage(session) {
+        if ((session.user as any)?.authority > 1) return undefined
+        return 10
+      },
+    })
+  }
   ctx.plugin(PluginOpenAi, {
     openaiOptions: {
       baseURL: env.OPENAI_BASE_RUL,

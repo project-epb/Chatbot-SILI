@@ -6,7 +6,7 @@ export class PluginDebug extends BasePlugin {
   constructor(ctx: Context) {
     super(ctx, {}, 'plugin-debug')
 
-    ctx.inject(['piggyback'], () => {
+    ctx.inject(['piggyback'], (ctx) => {
       ctx
         .command(
           'debug.piggyback <command:text>',
