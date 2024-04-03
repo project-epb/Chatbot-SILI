@@ -336,6 +336,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
     ctx
       .channel(
         process.env.CHANNEL_QQ_SANDBOX,
+        process.env.CHANNEL_QQ_SILI_HOME,
         process.env.CHANNEL_QQ_NGNL_COMMON,
         process.env.CHANNEL_QQ_IPE
       )
@@ -343,6 +344,10 @@ app.plugin(function PluginCollectionSILICore(ctx) {
         type: 'login',
         email: process.env.NOVELAI_USERNAME,
         password: process.env.NOVELAI_PASSWORD,
+        model: 'nai-v3',
+        basePrompt: 'best quality, amazing quality, very aesthetic, absurdres',
+        resolution: { width: 832, height: 1216 },
+        scale: 8,
         latinOnly: true,
       })
     ctx.command('novelai', {
