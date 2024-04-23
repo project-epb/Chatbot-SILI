@@ -26,7 +26,7 @@ export default class PatchCallme extends BasePlugin {
     ctx
       .command('callme', '', { minInterval: Time.hour, maxUsage: 5 })
       .channelFields(['disable'])
-      .userFields(['name'])
+      .userFields(['name', 'id'])
       .check(({ session, options }, name) => {
         if (
           session!.channel?.disable?.includes('callme') ||
@@ -35,7 +35,7 @@ export default class PatchCallme extends BasePlugin {
           return
         }
         if (!name) {
-          const escapedName = segment.escape(session!.user.name)
+          const escapedName = segment.escape(session?.user?.name || '')
           return session!.user?.name ? (
             <random>
               <template>SILI认得你，{escapedName}，你好~</template>
@@ -77,6 +77,23 @@ export default class PatchCallme extends BasePlugin {
                 <template>SILI不喜欢这个名字！</template>
                 <template>这样是不对的，请不要拿SILI开玩笑！</template>
                 <template>SILI觉得这个名字很冒犯！</template>
+              </random>
+            </>
+          )
+        }
+      })
+      .check(async ({ session }, name) => {
+        if (!name) return
+        const existUser = await session.app.database.get('user', { name })
+        if (
+          existUser.length &&
+          existUser.some((user) => user.id !== session.user.id)
+        ) {
+          return (
+            <>
+              <random>
+                <template>这个名字已经被占用了哟~</template>
+                <template>这个名字已经有人用过了~</template>
               </random>
             </>
           )
