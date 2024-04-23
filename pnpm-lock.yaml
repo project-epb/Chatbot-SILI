@@ -68,6 +68,9 @@ dependencies:
   '@koishijs/plugin-status':
     specifier: ^7.4.10
     version: 7.4.10(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+  dice-roller-parser:
+    specifier: ^0.1.8
+    version: 0.1.8
   fexios:
     specifier: ^1.5.0
     version: 1.5.0
@@ -3130,6 +3133,10 @@ packages:
 
   /devtools-protocol@0.0.1107588:
     resolution: {integrity: sha512-yIR+pG9x65Xko7bErCUSQaDLrO/P1p3JUzEk7JCU4DowPcGHkTGUGQapcfcLc4qj0UaALwZ+cr0riFgiqpixcg==}
+    dev: false
+
+  /dice-roller-parser@0.1.8:
+    resolution: {integrity: sha512-/UYDWMX1FHU6RR3iZGfexKlqyBJXSPuHPkvvpZ8k3QVjaXVc56W5GeLc/0bf9qLZTn1YdVFrIBLzvBt/9UHoNw==}
     dev: false
 
   /diff@4.0.2:

@@ -46,6 +46,7 @@
     "@koishijs/plugin-sandbox": "^3.2.4",
     "@koishijs/plugin-server": "^3.1.7",
     "@koishijs/plugin-status": "^7.4.10",
+    "dice-roller-parser": "^0.1.8",
     "fexios": "^1.5.0",
     "json5": "^2.2.3",
     "koishi": "^4.16.8",

@@ -6,6 +6,25 @@ import {
   getUserIdFromSession,
   getUserNickFromSession,
 } from '$utils/formatSession'
+import { DiceRoller } from 'dice-roller-parser'
+import type {
+  DiceExpressionRoll,
+  DiceRollResult,
+  DieRoll,
+  ExpressionRoll,
+  FateDieRoll,
+  GroupRoll,
+  MathFunctionRoll,
+} from 'dice-roller-parser'
+
+export type AllPossibleRolls =
+  | DiceRollResult
+  | DieRoll
+  | ExpressionRoll
+  | GroupRoll
+  | MathFunctionRoll
+  | DiceExpressionRoll
+  | FateDieRoll
 
 export interface DiceConfig {
   counts: number
@@ -47,13 +66,12 @@ export default class PluginDice extends BasePlugin {
     nDices: '{{counts}}个{{points}}面骰',
     nCoins: '{{counts}}枚硬币',
   }
+  readonly dr: DiceRoller
 
-  constructor(
-    public ctx: Context,
-    public options: any
-  ) {
+  constructor(ctx: Context, options: any) {
     super(ctx, options, 'dice')
     this.initCommands()
+    this.dr = new DiceRoller()
   }
 
   private initCommands() {
@@ -63,19 +81,13 @@ export default class PluginDice extends BasePlugin {
       })
       .alias('掷骰子', '投掷', '检定', 'r', 'roll')
       .usage(
-        '投掷 [骰子表达式] [-d 难度值] [-C]\n例如“两个20面骰，简单加权5”：dice 2d20+5'
+        '投掷 [骰子表达式] [-C]\n支持 roll20 语法，例如“两个20面骰，简单加权5，大于12”：dice 2d20+5>12'
       )
       .option('no-critical', '-C 不检查大成功/大失败', { type: 'boolean' })
-      .option('difficulty', '-d <difficulty:posint> 难度值', { type: 'posint' })
       .action(async ({ session, options }, diceStr) => {
         try {
-          const dices = this.parseDices(diceStr)
-          const results = dices.map((item) => this.dice(item))
-          const resultStr = this.toResultString(
-            results,
-            options.difficulty,
-            !options['no-critical']
-          )
+          const result = this.dr.roll(diceStr)
+          const resultStr = this.printResult(result, !options['no-critical'])
 
           return `${h.at(getUserIdFromSession(session), {
             name: getUserNickFromSession(session),
@@ -233,23 +245,19 @@ export default class PluginDice extends BasePlugin {
     }
   }
 
-  /**
-   * 在难度x检定中掷出了x个x面骰，结果为x(+x)：成功/失败/大成功/大失败
-   * 当骰子数量为1时，如果掷出了1点或最大点数，会有特殊的提示，此时不显示加权值，提示为大成功/大失败
-   */
-  toResultString(results: DiceResult[], difficulty = 0, checkCritical = true) {
-    const length = results.length
-    const total = results.reduce((a, b) => a + b.final, 0)
+  printResult(result: AllPossibleRolls, checkCritical = true) {
+    const diceCounts = result.die
+    const finalValue = result.value
     const lines: string[] = []
 
     // 特殊情况：硬币（有且仅有一个 1d2）
     if (
-      length === 1 &&
-      results[0].dice.counts === 1 &&
-      results[0].dice.points === 2
+      diceCounts === 1 &&
+      result[0].dice.counts === 1 &&
+      result[0].dice.points === 2
     ) {
       const coinResultText =
-        results[0].final === CoinSide.FRONT
+        result[0].final === CoinSide.FRONT
           ? this.MSG.coinFront
           : this.MSG.coinBack
       lines.push(
@@ -257,7 +265,7 @@ export default class PluginDice extends BasePlugin {
       )
       if (difficulty >= 1 && difficulty <= 2) {
         lines.push(
-          results[0].final === difficulty ? this.MSG.success : this.MSG.failure
+          result[0].final === difficulty ? this.MSG.success : this.MSG.failure
         )
       }
       return lines.join('\n')
@@ -267,10 +275,10 @@ export default class PluginDice extends BasePlugin {
     const canBeCritical =
       checkCritical &&
       difficulty &&
-      results.filter((item) => item.dice.counts > 0 && item.dice.points >= 5)
+      result.filter((item) => item.dice.counts > 0 && item.dice.points >= 5)
         .length === 1
     const firstRandomDice = canBeCritical
-      ? results.find((i) => i.dice.counts > 0)
+      ? result.find((i) => i.dice.counts > 0)
       : null
     const criticalResult = firstRandomDice
       ? this.checkCriticalResult(firstRandomDice.dice, firstRandomDice)
@@ -284,14 +292,16 @@ export default class PluginDice extends BasePlugin {
             : this.MSG.criticalFailure
         )
       } else {
-        lines.push(total >= difficulty ? this.MSG.success : this.MSG.failure)
+        lines.push(
+          finalValue >= difficulty ? this.MSG.success : this.MSG.failure
+        )
       }
-      lines.push(`在难度 ${difficulty} 检定中行了 ${length} 次投掷：`)
+      lines.push(`在难度 ${difficulty} 检定中行了 ${diceCounts} 次投掷：`)
     } else {
-      lines.push(`共进行了 ${length} 次投掷：`)
+      lines.push(`共进行了 ${diceCounts} 次投掷：`)
     }
 
-    results.forEach((item, index) => {
+    result.forEach((item, index) => {
       const { dice, final, history } = item
       const diceStr = this.toDiceString(dice)
       lines.push(
@@ -302,30 +312,13 @@ export default class PluginDice extends BasePlugin {
     })
 
     if (difficulty) {
-      lines.push(`结果 = ${total} - ${difficulty} = ${total - difficulty}`)
+      lines.push(
+        `结果 = ${finalValue} - ${difficulty} = ${finalValue - difficulty}`
+      )
     } else {
-      lines.push(`结果 = ${total}`)
+      lines.push(`结果 = ${finalValue}`)
     }
 
     return lines.join('\n')
-  }
-
-  checkCriticalResult(dice: DiceConfig, result: DiceResult) {
-    const { counts, points } = dice
-    const { direct, final } = result
-
-    // 不要检查降权
-    if (final < 0) {
-      return CriticalResult.NONE
-    }
-
-    if (counts === 1) {
-      if (direct === 1) {
-        return CriticalResult.FAILURE
-      } else if (direct === points) {
-        return CriticalResult.SUCCESS
-      }
-    }
-    return CriticalResult.NONE
   }
 }
