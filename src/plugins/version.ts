@@ -5,7 +5,7 @@
  * @authority 1
  */
 
-import { Context, version as KOISHI_VERSION } from 'koishi'
+import { Context, version as KOISHI_VERSION, h } from 'koishi'
 import BasePlugin from '~/_boilerplate'
 
 export default class PluginVersion extends BasePlugin {
@@ -24,15 +24,13 @@ export default class PluginVersion extends BasePlugin {
         const siliCoreInfo = (
           await import('../../package.json', { assert: { type: 'json' } })
         ).default
-        const onebotInfo = await ctx.bots
-          .find((i) => i.platform === 'onebot')
-          ?.internal.getVersionInfo()
+        const platforms = Array.from(new Set(ctx.root.bots.map((i) => i.platform)))
         const registeredPlugins = ctx.registry.entries()
         console.info(registeredPlugins)
 
         if (!options!.all) {
           return `[SILI Core] v${siliCoreInfo.version} (${gitHashInfo?.trim()})
-[Onebot] protocol ${onebotInfo?.protocol_version} / go-cqhttp ${onebotInfo?.version}
+[Platforms] ${platforms}
 [Koishi.js] v${KOISHI_VERSION}`
         }
 
@@ -52,13 +50,13 @@ export default class PluginVersion extends BasePlugin {
         const img = await ctx.html.hljs(
           [
             `[SILI Core] v${siliCoreInfo.version} (${gitHashInfo})`,
-            `[Onebot] protocol ${onebotInfo?.protocol_version} / go-cqhttp ${onebotInfo?.version}`,
+            `[Platforms] ${platforms}`,
             `[Koishi.js] v${KOISHI_VERSION}`,
             `  - ${plugins.join('\n  - ')}`,
           ].join('\n'),
           'markdown'
         )
-        return img || '检查版本时发生未知错误。'
+        return img ? h.image(img,'image/jpeg') : '检查版本时发生未知错误。'
       })
   }
 }

@@ -50,9 +50,10 @@ export default class PatchCallme extends BasePlugin {
           )
         }
       })
+      // 检查不合法词汇
       .check((_, name) => {
         if (!name) return
-        const invalid = /[<>]/.test(name)
+        const invalid = /[<>\x00-\x1F\x7F]/.test(name)
         if (invalid) {
           return (
             <>
@@ -66,6 +67,7 @@ export default class PatchCallme extends BasePlugin {
           )
         }
       })
+      // 检查违禁词
       .check((_, name) => {
         if (!name) return
         const verify = ctx.mint.verify(name)
@@ -82,13 +84,16 @@ export default class PatchCallme extends BasePlugin {
           )
         }
       })
+      // 检查是否重名
       .check(async ({ session }, name) => {
         if (!name) return
-        const existUser = await session.app.database.get('user', { name })
-        if (
-          existUser.length &&
-          existUser.some((user) => user.id !== session.user.id)
-        ) {
+        if (session.user.name === name) return
+        const [existUser] = await session.app.database.get(
+          'user',
+          { name, id: { $not: session.user.id } },
+          { limit: 1 }
+        )
+        if (existUser) {
           return (
             <>
               <random>

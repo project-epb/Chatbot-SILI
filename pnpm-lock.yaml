@@ -119,6 +119,9 @@ dependencies:
   koishi-plugin-mediawiki:
     specifier: ^2.1.0
     version: 2.1.0(koishi-plugin-puppeteer@3.7.3)(koishi@4.16.8)
+  koishi-plugin-novelai:
+    specifier: ^1.21.1
+    version: 1.21.1(koishi@4.16.8)
   koishi-plugin-puppeteer:
     specifier: ^3.7.3
     version: 3.7.3(koishi@4.16.8)(typescript@5.3.3)
@@ -2584,6 +2587,11 @@ packages:
     hasBin: true
     dev: true
 
+  /adm-zip@0.5.10:
+    resolution: {integrity: sha512-x0HvcHqVJNTPk/Bw8JbLWlWoo6Wwnsug0fnYYro1HBrjxZ3G7/AZk7Ahv8JwDe1uIcz8eBqvu86FuF1POiG7vQ==}
+    engines: {node: '>=6.0'}
+    dev: false
+
   /agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
     engines: {node: '>= 6.0.0'}
@@ -3687,6 +3695,14 @@ packages:
     engines: {node: '>= 4'}
     dev: true
 
+  /image-size@1.1.1:
+    resolution: {integrity: sha512-541xKlUw6jr/6gGuk92F+mYM5zaFAc5ahphvkqvNe2bQ6gVBkd6bfrmVJ2t4KDAfikAYZyIqTnktX3i6/aQDrQ==}
+    engines: {node: '>=16.x'}
+    hasBin: true
+    dependencies:
+      queue: 6.0.2
+    dev: false
+
   /inaba@1.1.1:
     resolution: {integrity: sha512-VYgrcz9EwjHELNU74R/p81U/G00u8KuFzao43pyNp7UZix+NY78eUzBy1Ks0tSgxgia+luJMvTD67vV02pk9yg==}
     dev: false
@@ -4078,6 +4094,17 @@ packages:
       wiki-saikou: 3.3.1
     dev: false
 
+  /koishi-plugin-novelai@1.21.1(koishi@4.16.8):
+    resolution: {integrity: sha512-GJIezyMYkZSXT5KluOj+lIqhS/WnJC3a11ZHg/Jdnj6AlrAuK5+PFqr0uHSa/nswa2HxIyGgOHJrfuqJTR+EDQ==}
+    peerDependencies:
+      koishi: ^4.16.8
+    dependencies:
+      adm-zip: 0.5.10
+      image-size: 1.1.1
+      koishi: 4.16.8
+      libsodium-wrappers-sumo: 0.7.13
+    dev: false
+
   /koishi-plugin-puppeteer@3.7.3(koishi@4.16.8)(typescript@5.3.3):
     resolution: {integrity: sha512-zcS1QKotfmLwGs0IhJ+7NfWx0m5HVzpIeBw4jsyd4IZM6+M4mcn/XRaiXdAHZAFQdfocyS5m1dxIbeoH2NVF0Q==}
     peerDependencies:
@@ -4161,6 +4188,16 @@ packages:
       - debug
       - supports-color
       - utf-8-validate
+    dev: false
+
+  /libsodium-sumo@0.7.13:
+    resolution: {integrity: sha512-zTGdLu4b9zSNLfovImpBCbdAA4xkpkZbMnSQjP8HShyOutnGjRHmSOKlsylh1okao6QhLiz7nG98EGn+04cZjQ==}
+    dev: false
+
+  /libsodium-wrappers-sumo@0.7.13:
+    resolution: {integrity: sha512-lz4YdplzDRh6AhnLGF2Dj2IUj94xRN6Bh8T0HLNwzYGwPehQJX6c7iYVrFUPZ3QqxE0bqC+K0IIqqZJYWumwSQ==}
+    dependencies:
+      libsodium-sumo: 0.7.13
     dev: false
 
   /lodash._reinterpolate@3.0.0:
@@ -4613,6 +4650,12 @@ packages:
   /queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
     dev: true
+
+  /queue@6.0.2:
+    resolution: {integrity: sha512-iHZWu+q3IdFZFX36ro/lKBkSvfkztY5Y7HMiPlOUjhupPcG2JMfst2KKEpu5XndviX/3UhFbRngUPNKtgvtZiA==}
+    dependencies:
+      inherits: 2.0.4
+    dev: false
 
   /raw-body@2.5.2:
     resolution: {integrity: sha512-8zGqypfENjCIqGhgXToC8aB2r7YrBX+AQAfIPs/Mlk+BtPTztOvTS01NRW/3Eh60J+a48lt8qsCzirQ6loCVfA==}

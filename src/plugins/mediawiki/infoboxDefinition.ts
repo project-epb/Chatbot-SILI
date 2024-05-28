@@ -31,7 +31,9 @@ export const INFOBOX_DEFINITION: {
       /* 右下角悬浮的功能按钮 */
       #bottomRightCorner, 
       /* 全站公告弹窗 */
-      body > .n-modal-container
+      body > .n-modal-container,
+      /* [[WAF]] */
+      .mw-parser-output [data-id="lr-overlay"]
       {
         display: none !important;
       }
