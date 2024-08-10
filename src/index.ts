@@ -11,6 +11,7 @@ import { App, Dict, Random, type Session, Time } from 'koishi'
 import { resolve } from 'node:path'
 
 import { MinecraftBot } from '@/adapters/adapter-minecraft'
+import FallbackHandler from '@/modules/FallbackHandler'
 import MessagesLogger from '@/modules/MessagesLogger'
 import { MinecraftConnect } from '@/modules/MinecraftConnect'
 import MgpGroupUtils from '@/modules/MoegirlGroupUtils'
@@ -163,32 +164,6 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   //   })
   // }
 
-  // Villa
-  ctx.plugin(AdapterVilla, {
-    id: process.env.VILLA_APPID,
-    secret: process.env.VILLA_APPSECRET,
-    pubKey: process.env.VILLA_PUBKEY,
-    path: '/api/callback/villa',
-    emoticon: undefined,
-    transfer: undefined,
-    /**
-     * @TODO: `underscores_in_headers on;` should be set in nginx config
-     */
-    verifyCallback: true,
-  })
-
-  // Minecraft
-  if (env.MINECRAFT_TOKEN) {
-    ctx.plugin(MinecraftBot, {
-      host: env.MINECRAFT_HOST,
-      port: Number(env.MINECRAFT_PORT),
-      protocol: env.MINECRAFT_PROTOCOL as 'ws' | 'wss',
-      token: env.MINECRAFT_TOKEN,
-      retryInterval: 60 * 1000,
-      retryLazy: 5 * 60 * 1000,
-    })
-  }
-
   // Repl
   // ctx.plugin('adapter-repl')
 })
@@ -336,6 +311,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
     ctx
       .channel(
         process.env.CHANNEL_QQ_SANDBOX,
+        process.env.CHANNEL_QQ_SILI_HOME,
         process.env.CHANNEL_QQ_NGNL_COMMON,
         process.env.CHANNEL_QQ_IPE
       )
@@ -343,6 +319,10 @@ app.plugin(function PluginCollectionSILICore(ctx) {
         type: 'login',
         email: process.env.NOVELAI_USERNAME,
         password: process.env.NOVELAI_PASSWORD,
+        model: 'nai-v3',
+        basePrompt: 'best quality, amazing quality, very aesthetic, absurdres',
+        resolution: { width: 832, height: 1216 },
+        scale: 8,
         latinOnly: true,
       })
     ctx.command('novelai', {
@@ -363,7 +343,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
     },
     maxTokens: 500,
     recordsPerChannel: 50,
-    model: 'gpt-4-turbo-preview',
+    model: env.OPENAI_MODEL || 'gpt-4o',
   })
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv, {
@@ -395,6 +375,7 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.command('admin', '维护指令集')
   ctx.command('tools', '实用工具集')
   ctx.plugin(HTMLService)
+  ctx.plugin(FallbackHandler)
   ctx.plugin(MessagesLogger)
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)

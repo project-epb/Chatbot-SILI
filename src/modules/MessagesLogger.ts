@@ -31,6 +31,10 @@ export default class MessagesLogger extends BasePlugin {
           `⫸ ${content}`
         )
     })
+
+    ctx.on('poke', (session) => {
+      session.send('不许戳')
+    })
   }
 
   /**
