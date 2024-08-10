@@ -22,10 +22,10 @@ importers:
         version: 1.4.0(koishi@4.16.8)
       '@koishijs/plugin-analytics':
         specifier: ^2.0.6
-        version: 2.0.6(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+        version: 2.0.6(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)
       '@koishijs/plugin-auth':
         specifier: ^4.1.6
-        version: 4.1.6(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+        version: 4.1.6(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)
       '@koishijs/plugin-bind':
         specifier: ^1.5.1
         version: 1.5.1(koishi@4.16.8)
@@ -37,40 +37,43 @@ importers:
         version: 1.3.4(koishi@4.16.8)
       '@koishijs/plugin-commands':
         specifier: ^3.5.1
-        version: 3.5.1(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+        version: 3.5.1(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)
       '@koishijs/plugin-console':
         specifier: ^5.27.9
         version: 5.27.9(koishi@4.16.8)
       '@koishijs/plugin-database-mongo':
         specifier: ^4.11.0
-        version: 4.11.0(@minatojs/core@2.9.0)(koishi@4.16.8)
+        version: 4.11.0(@minatojs/core@2.9.0)(koishi@4.16.8)(socks@2.7.1)
       '@koishijs/plugin-dataview':
         specifier: ^2.3.1
-        version: 2.3.1(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+        version: 2.3.1(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)
       '@koishijs/plugin-echo':
         specifier: ^2.2.5
         version: 2.2.5(koishi@4.16.8)
       '@koishijs/plugin-explorer':
         specifier: ^1.5.1
-        version: 1.5.1(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+        version: 1.5.1(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)
       '@koishijs/plugin-help':
         specifier: ^2.4.3
         version: 2.4.3(koishi@4.16.8)
       '@koishijs/plugin-insight':
         specifier: ^3.5.1
-        version: 3.5.1(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+        version: 3.5.1(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)
       '@koishijs/plugin-logger':
         specifier: ^2.6.7
-        version: 2.6.7(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+        version: 2.6.7(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)
       '@koishijs/plugin-sandbox':
         specifier: ^3.2.4
-        version: 3.2.4(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+        version: 3.2.4(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)
       '@koishijs/plugin-server':
         specifier: ^3.1.7
         version: 3.1.7(koishi@4.16.8)
       '@koishijs/plugin-status':
         specifier: ^7.4.10
-        version: 7.4.10(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)
+        version: 7.4.10(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)
+      dice-roller-parser:
+        specifier: ^0.1.8
+        version: 0.1.8
       fexios:
         specifier: ^1.5.0
         version: 1.5.0
@@ -100,16 +103,16 @@ importers:
         version: 4.1.3(koishi@4.16.8)
       koishi-plugin-dialogue-author:
         specifier: ^1.2.1
-        version: 1.2.1(koishi-plugin-dialogue@4.1.3)(koishi@4.16.8)
+        version: 1.2.1(koishi-plugin-dialogue@4.1.3(koishi@4.16.8))(koishi@4.16.8)
       koishi-plugin-dialogue-context:
         specifier: ^1.0.4
-        version: 1.0.4(koishi-plugin-dialogue@4.1.3)(koishi@4.16.8)
+        version: 1.0.4(koishi-plugin-dialogue@4.1.3(koishi@4.16.8))(koishi@4.16.8)
       koishi-plugin-dialogue-flow:
         specifier: ^1.0.4
-        version: 1.0.4(koishi-plugin-dialogue@4.1.3)(koishi@4.16.8)
+        version: 1.0.4(koishi-plugin-dialogue@4.1.3(koishi@4.16.8))(koishi@4.16.8)
       koishi-plugin-dialogue-rate-limit:
         specifier: ^1.0.3
-        version: 1.0.3(koishi-plugin-dialogue@4.1.3)(koishi@4.16.8)
+        version: 1.0.3(koishi-plugin-dialogue@4.1.3(koishi@4.16.8))(koishi@4.16.8)
       koishi-plugin-github:
         specifier: ^5.5.1
         version: 5.5.1(koishi@4.16.8)
@@ -118,7 +121,7 @@ importers:
         version: 4.3.0(koishi@4.16.8)
       koishi-plugin-mediawiki:
         specifier: ^2.1.0
-        version: 2.1.0(koishi-plugin-puppeteer@3.7.3)(koishi@4.16.8)
+        version: 2.1.0(koishi-plugin-puppeteer@3.7.3(koishi@4.16.8)(typescript@5.3.3))(koishi@4.16.8)
       koishi-plugin-novelai:
         specifier: ^1.21.1
         version: 1.21.1(koishi@4.16.8)
@@ -1513,6 +1516,9 @@ packages:
 
   devtools-protocol@0.0.1107588:
     resolution: {integrity: sha512-yIR+pG9x65Xko7bErCUSQaDLrO/P1p3JUzEk7JCU4DowPcGHkTGUGQapcfcLc4qj0UaALwZ+cr0riFgiqpixcg==}
+
+  dice-roller-parser@0.1.8:
+    resolution: {integrity: sha512-/UYDWMX1FHU6RR3iZGfexKlqyBJXSPuHPkvvpZ8k3QVjaXVc56W5GeLc/0bf9qLZTn1YdVFrIBLzvBt/9UHoNw==}
 
   diff@4.0.2:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
@@ -3510,13 +3516,13 @@ snapshots:
     dependencies:
       koishi: 4.16.8
 
-  '@koishijs/plugin-analytics@2.0.6(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)':
+  '@koishijs/plugin-analytics@2.0.6(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)':
     dependencies:
       '@koishijs/console': 5.25.4(koishi@4.16.8)
       '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
       koishi: 4.16.8
 
-  '@koishijs/plugin-auth@4.1.6(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)':
+  '@koishijs/plugin-auth@4.1.6(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)':
     dependencies:
       '@koishijs/console': 5.25.4(koishi@4.16.8)
       '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
@@ -3534,11 +3540,12 @@ snapshots:
     dependencies:
       koishi: 4.16.8
 
-  '@koishijs/plugin-commands@3.5.1(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)':
+  '@koishijs/plugin-commands@3.5.1(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)':
     dependencies:
       '@koishijs/console': 5.27.9(koishi@4.16.8)
-      '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
       koishi: 4.16.8
+    optionalDependencies:
+      '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
 
   '@koishijs/plugin-console@5.27.9(koishi@4.16.8)':
     dependencies:
@@ -3551,9 +3558,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@koishijs/plugin-database-mongo@4.11.0(@minatojs/core@2.9.0)(koishi@4.16.8)':
+  '@koishijs/plugin-database-mongo@4.11.0(@minatojs/core@2.9.0)(koishi@4.16.8)(socks@2.7.1)':
     dependencies:
-      '@minatojs/driver-mongo': 2.11.0(@minatojs/core@2.9.0)
+      '@minatojs/driver-mongo': 2.11.0(@minatojs/core@2.9.0)(socks@2.7.1)
       koishi: 4.16.8
     transitivePeerDependencies:
       - '@aws-sdk/credential-providers'
@@ -3565,7 +3572,7 @@ snapshots:
       - snappy
       - socks
 
-  '@koishijs/plugin-dataview@2.3.1(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)':
+  '@koishijs/plugin-dataview@2.3.1(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)':
     dependencies:
       '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
       koishi: 4.16.8
@@ -3574,7 +3581,7 @@ snapshots:
     dependencies:
       koishi: 4.16.8
 
-  '@koishijs/plugin-explorer@1.5.1(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)':
+  '@koishijs/plugin-explorer@1.5.1(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)':
     dependencies:
       '@koishijs/console': 5.27.9(koishi@4.16.8)
       '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
@@ -3588,19 +3595,20 @@ snapshots:
     dependencies:
       koishi: 4.16.8
 
-  '@koishijs/plugin-insight@3.5.1(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)':
+  '@koishijs/plugin-insight@3.5.1(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)':
     dependencies:
       '@koishijs/console': 5.25.6(koishi@4.16.8)
       '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
       koishi: 4.16.8
 
-  '@koishijs/plugin-logger@2.6.7(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)':
+  '@koishijs/plugin-logger@2.6.7(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)':
     dependencies:
       '@koishijs/console': 5.25.6(koishi@4.16.8)
-      '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
       koishi: 4.16.8
+    optionalDependencies:
+      '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
 
-  '@koishijs/plugin-sandbox@3.2.4(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)':
+  '@koishijs/plugin-sandbox@3.2.4(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)':
     dependencies:
       '@koishijs/console': 5.25.4(koishi@4.16.8)
       '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
@@ -3615,7 +3623,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@koishijs/plugin-status@7.4.10(@koishijs/plugin-console@5.27.9)(koishi@4.16.8)':
+  '@koishijs/plugin-status@7.4.10(@koishijs/plugin-console@5.27.9(koishi@4.16.8))(koishi@4.16.8)':
     dependencies:
       '@koishijs/console': 5.27.9(koishi@4.16.8)
       '@koishijs/plugin-console': 5.27.9(koishi@4.16.8)
@@ -3632,11 +3640,11 @@ snapshots:
     dependencies:
       cosmokit: 1.5.2
 
-  '@minatojs/driver-mongo@2.11.0(@minatojs/core@2.9.0)':
+  '@minatojs/driver-mongo@2.11.0(@minatojs/core@2.9.0)(socks@2.7.1)':
     dependencies:
       '@minatojs/core': 2.9.0
       cosmokit: 1.5.2
-      mongodb: 6.3.0
+      mongodb: 6.3.0(socks@2.7.1)
       reggol: 1.6.3
     transitivePeerDependencies:
       - '@aws-sdk/credential-providers'
@@ -3800,9 +3808,10 @@ snapshots:
       progress: 2.0.3
       proxy-from-env: 1.1.0
       tar-fs: 2.1.1
-      typescript: 5.3.3
       unbzip2-stream: 1.4.3
       yargs: 17.7.1
+    optionalDependencies:
+      typescript: 5.3.3
     transitivePeerDependencies:
       - supports-color
 
@@ -4667,6 +4676,7 @@ snapshots:
   debug@4.3.4(supports-color@8.1.1):
     dependencies:
       ms: 2.1.2
+    optionalDependencies:
       supports-color: 8.1.1
 
   deep-equal@1.0.1: {}
@@ -4694,6 +4704,8 @@ snapshots:
   destroy@1.2.0: {}
 
   devtools-protocol@0.0.1107588: {}
+
+  dice-roller-parser@0.1.8: {}
 
   diff@4.0.2: {}
 
@@ -5220,22 +5232,22 @@ snapshots:
       cheerio: 1.0.0-rc.12
       koishi: 4.16.8
 
-  koishi-plugin-dialogue-author@1.2.1(koishi-plugin-dialogue@4.1.3)(koishi@4.16.8):
+  koishi-plugin-dialogue-author@1.2.1(koishi-plugin-dialogue@4.1.3(koishi@4.16.8))(koishi@4.16.8):
     dependencies:
       koishi: 4.16.8
       koishi-plugin-dialogue: 4.1.3(koishi@4.16.8)
 
-  koishi-plugin-dialogue-context@1.0.4(koishi-plugin-dialogue@4.1.3)(koishi@4.16.8):
+  koishi-plugin-dialogue-context@1.0.4(koishi-plugin-dialogue@4.1.3(koishi@4.16.8))(koishi@4.16.8):
     dependencies:
       koishi: 4.16.8
       koishi-plugin-dialogue: 4.1.3(koishi@4.16.8)
 
-  koishi-plugin-dialogue-flow@1.0.4(koishi-plugin-dialogue@4.1.3)(koishi@4.16.8):
+  koishi-plugin-dialogue-flow@1.0.4(koishi-plugin-dialogue@4.1.3(koishi@4.16.8))(koishi@4.16.8):
     dependencies:
       koishi: 4.16.8
       koishi-plugin-dialogue: 4.1.3(koishi@4.16.8)
 
-  koishi-plugin-dialogue-rate-limit@1.0.3(koishi-plugin-dialogue@4.1.3)(koishi@4.16.8):
+  koishi-plugin-dialogue-rate-limit@1.0.3(koishi-plugin-dialogue@4.1.3(koishi@4.16.8))(koishi@4.16.8):
     dependencies:
       koishi: 4.16.8
       koishi-plugin-dialogue: 4.1.3(koishi@4.16.8)
@@ -5265,7 +5277,7 @@ snapshots:
       koishi: 4.16.8
       marked: 4.3.0
 
-  koishi-plugin-mediawiki@2.1.0(koishi-plugin-puppeteer@3.7.3)(koishi@4.16.8):
+  koishi-plugin-mediawiki@2.1.0(koishi-plugin-puppeteer@3.7.3(koishi@4.16.8)(typescript@5.3.3))(koishi@4.16.8):
     dependencies:
       koishi: 4.16.8
       koishi-plugin-puppeteer: 3.7.3(koishi@4.16.8)(typescript@5.3.3)
@@ -5417,11 +5429,13 @@ snapshots:
       '@types/whatwg-url': 11.0.3
       whatwg-url: 13.0.0
 
-  mongodb@6.3.0:
+  mongodb@6.3.0(socks@2.7.1):
     dependencies:
       '@mongodb-js/saslprep': 1.1.0
       bson: 6.2.0
       mongodb-connection-string-url: 3.0.0
+    optionalDependencies:
+      socks: 2.7.1
 
   ms@2.1.2: {}
 
@@ -5562,9 +5576,10 @@ snapshots:
       https-proxy-agent: 5.0.1
       proxy-from-env: 1.1.0
       tar-fs: 2.1.1
-      typescript: 5.3.3
       unbzip2-stream: 1.4.3
       ws: 8.13.0
+    optionalDependencies:
+      typescript: 5.3.3
     transitivePeerDependencies:
       - bufferutil
       - encoding
