@@ -1,16 +1,49 @@
 import { MediaWikiApi } from 'wiki-saikou'
 
-const MOCK_HEADER = {
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.78',
-}
-const USE_MOCK_HEADER = ['huijiwiki.com']
+const USE_MOCK_HEADER = [
+  {
+    match: (url: string) => url.includes('huijiwiki.com'),
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0',
+    },
+  },
+]
+const USE_AUTHORIZATION: {
+  match: (url: string) => boolean
+  username: string
+  password: string
+  cookies: { [key: string]: string } | null
+}[] = [
+  {
+    match: (url: string) => url.includes('.moegirl.org.cn'),
+    username: process.env.MW_BOTPASSWORD_MOEGIRL_USERNAME,
+    password: process.env.MW_BOTPASSWORD_MOEGIRL_PASSWORD,
+    cookies: null,
+  },
+]
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useApi(baseURL: string): MediaWikiApi {
+export async function useApi(baseURL: string): Promise<MediaWikiApi> {
   const api = new MediaWikiApi(baseURL)
-  if (USE_MOCK_HEADER.some((sub) => baseURL.includes(sub))) {
-    api.defaultOptions = { headers: MOCK_HEADER }
+
+  const mockHeaders = USE_MOCK_HEADER.find((i) => i.match(baseURL))
+  if (mockHeaders) {
+    console.info('Use mock headers:', baseURL, mockHeaders.headers)
+    api.defaultOptions = { headers: mockHeaders.headers }
+  }
+
+  const auth = USE_AUTHORIZATION.find((i) => i.match(baseURL))
+  if (auth && auth.username && auth.password) {
+    console.info('Use authorization:', baseURL, auth.username)
+    if (auth.cookies) {
+      console.info('Use cookies:', baseURL, auth.cookies)
+      api.cookies = auth.cookies
+    } else {
+      await api.login(auth.username, auth.password)
+      console.info('Logged in:', baseURL, auth.username, api.cookies)
+      auth.cookies = api.cookies
+    }
   }
   return api
 }

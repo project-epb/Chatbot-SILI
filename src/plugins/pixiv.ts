@@ -50,7 +50,8 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
       .action(({ session, name }, id) => {
         if (!session) return
         if (id) {
-          return session.execute({ name: 'pixiv.illust', args: [id] })
+          // return session.execute({ name: 'pixiv.illust', args: [id] })
+          return session.execute(`pixiv.illust ${id}`)
         }
         return session.execute({ name, options: { help: true } })
       })
@@ -68,7 +69,11 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
           return session.execute({ name, options: { help: true } })
         }
 
-        this.logger.info({ id, options })
+        this.logger.info('pixiv.illust:', id, options)
+
+        // FIXME: no idea why
+        options.page ??= 1
+        options.original ??= false
 
         let info, pages
         try {

@@ -104,7 +104,7 @@ export default class PluginMediawiki extends BasePlugin {
         }
 
         // Generate API client
-        const api = useApi(mwApi)
+        const api = await useApi(mwApi)
 
         // 去重并缓存用户输入的标题及锚点
         const titles = Array.from(
@@ -145,12 +145,22 @@ export default class PluginMediawiki extends BasePlugin {
             exsectionformat: 'plain',
             inprop: 'url|displaytitle',
           })
+          .then((res) => {
+            // @ts-ignore
+            if (res.data.error || res.data.errors) {
+              throw new Error(
+                // @ts-ignore
+                JSON.stringify(res.data.error || res.data.errors, null, 2)
+              )
+            }
+            return res
+          })
           .catch((e) => {
             session.send(`查询时遇到问题：${e || '-'}`)
             throw e
           })
 
-        this.logger.debug('QUERY DATA', data.query)
+        this.logger.info('QUERY DATA', data.query)
 
         // Cache variables
         const { pages, redirects, interwiki, specialpagealiases, namespaces } =
@@ -361,13 +371,9 @@ export default class PluginMediawiki extends BasePlugin {
           keywords = (await session.prompt(30 * 1000)).trim()
           if (!keywords || keywords === '.' || keywords === '。') return ''
         }
-        const api = useApi(session.channel.mwApi)
+        const api = await useApi(session.channel.mwApi)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const {
-          data: {
-            query: { searchinfo, search, pages },
-          },
-        } = await api.post<{
+        const { data } = await api.post<{
           query: {
             searchinfo: {
               totalhits: number
@@ -403,6 +409,9 @@ export default class PluginMediawiki extends BasePlugin {
           gsrnamespace: '0',
           gsrlimit: '5',
         })
+
+        this.logger.info('Search DATA', data)
+        const { searchinfo, search, pages } = data.query
 
         const bulk = new BulkMessageBuilder(session)
 
