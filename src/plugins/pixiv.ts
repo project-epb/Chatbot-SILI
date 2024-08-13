@@ -12,8 +12,9 @@ import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
 import { Fexios } from 'fexios'
 
 const defaultConfigs = {
-  baseURL: 'https://www.pixiv.net',
-  pximgURL: '',
+  apiBaseURL: 'https://www.pixiv.net',
+  webBaseURL: 'https://www.pixiv.net',
+  pximgBaseURL: '',
 }
 
 export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
@@ -29,9 +30,9 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
       'pixiv'
     )
 
-    const { baseURL = defaultConfigs.baseURL } = this.options
+    const { apiBaseURL = defaultConfigs.apiBaseURL } = this.options
     this.request = new Fexios({
-      baseURL,
+      baseURL: apiBaseURL,
       headers: {
         referer: 'https://www.pixiv.net',
         'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7',
@@ -78,9 +79,15 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
         let info, pages
         try {
           ;[{ data: info }, { data: pages }] = await Promise.all([
-            req.get(`/ajax/illust/${id}?full=1`),
-            req.get(`/ajax/illust/${id}/pages`),
+            req.get(`ajax/illust/${id}?full=1`),
+            req.get(`ajax/illust/${id}/pages`),
           ])
+          if (info.body) {
+            info = info.body
+          }
+          if (pages.body) {
+            pages = pages.body
+          }
         } catch (error) {
           this.logger.warn(error)
           return [
@@ -111,7 +118,7 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
           `👍${info.likeCount} ❤️${info.bookmarkCount} 👀${info.viewCount}`,
           `发布时间: ${new Date(info.createDate).toLocaleString()}`,
           allTags.length ? allTags.join(' ') : null,
-          new URL(`/i/${id}`, this.options.baseURL).href,
+          new URL(`/i/${id}`, this.options.webBaseURL).href,
         ].map((i) =>
           typeof i === 'string' ? i.trim().replace(/\n+/g, '\n') : i
         )
@@ -131,7 +138,10 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
 
         let data: any
         try {
-          data = (await req.get(`/ajax/user/${id}?full=1`)).data
+          data = (await req.get(`ajax/user/${id}?full=1`)).data
+          if (data.body) {
+            data = data.body
+          }
         } catch (error) {
           this.logger.warn(error)
           return [
@@ -172,11 +182,16 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
 
   makePximgURL(url: string) {
     if (url.startsWith('http')) {
-      if (!this.options.pximgURL) {
+      if (!this.options.pximgBaseURL) {
         return url
       }
       url = new URL(url).pathname
     }
-    return new URL(url, this.options.pximgURL || this.options.baseURL).href
+    return new URL(
+      url,
+      this.options.pximgBaseURL ||
+        this.options.apiBaseURL ||
+        this.options.webBaseURL
+    ).href
   }
 }

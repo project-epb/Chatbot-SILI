@@ -347,8 +347,9 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   })
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv, {
-    baseURL: env.API_PIXIV_BASE,
-    pximgURL: env.API_PIXIV_IMG,
+    apiBaseURL: env.PIXIV_API_BASE,
+    webBaseURL: env.PIXIV_WEB_BASE,
+    pximgBaseURL: env.PIXIV_IMG_BASE,
   })
   ctx.plugin(PluginPowerUser)
   ctx.plugin(PluginProfile)
