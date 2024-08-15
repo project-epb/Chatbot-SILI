@@ -25,6 +25,7 @@ import PluginDatabaseAdmin from '~/dbadmin'
 import { PluginDebug } from '~/debug'
 import PluginDice from '~/dice'
 import PluginHljs from '~/hljs'
+import { PluginLookupIP } from '~/lookup-ip'
 import PluginMediawiki from '~/mediawiki'
 import PluginMinecraft from '~/minecraft'
 import PluginMute from '~/mute'
@@ -304,6 +305,11 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginAbout)
   ctx.plugin(PluginDice)
   ctx.plugin(PluginHljs)
+  if (process.env.TOKEN_IPGEOLOCATION) {
+    ctx.plugin(PluginLookupIP, {
+      ipgeoApiKey: process.env.TOKEN_IPGEOLOCATION,
+    })
+  }
   ctx.plugin(PluginMinecraft)
   ctx.plugin(PluginMute)
   if (process.env.NOVELAI_USERNAME) {
