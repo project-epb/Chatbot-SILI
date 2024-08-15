@@ -36,7 +36,7 @@ type SessionLog = {
 export default class PluginReboot extends BasePlugin {
   static inject = ['html']
 
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, {}, 'reboot')
 
     this.initCommands()

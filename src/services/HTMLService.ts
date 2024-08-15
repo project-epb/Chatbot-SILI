@@ -27,7 +27,7 @@ export default class HTMLService extends Service {
     shotOptions = {
       encoding: 'binary',
       type: 'jpeg',
-      quality: 85,
+      quality: 90,
       ...shotOptions,
     }
     if (shotOptions.type !== 'jpeg') {
@@ -248,7 +248,7 @@ code.hljs[class~='lang-wiki']:before {
     shotOptions = {
       encoding: 'binary',
       type: 'jpeg',
-      quality: 85,
+      quality: 90,
       ...shotOptions,
     }
     if (shotOptions.type !== 'jpeg') {

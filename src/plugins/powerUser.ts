@@ -7,8 +7,8 @@ export default class PluginPowerUser extends BasePlugin {
     return (process.env.POWERUSER_LIST || '').split('|')
   }
 
-  constructor(ctx: Context, options = {}) {
-    super(ctx, options, 'power-user')
+  constructor(ctx: Context, config: unknown) {
+    super(ctx, config, 'power-user')
 
     ctx
       .command('admin/power <cmd:text>', 'THIS IS 抛瓦！（超级权限）', {

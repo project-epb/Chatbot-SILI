@@ -7,7 +7,7 @@ export default class PluginAbout extends BasePlugin {
   #masterName = '机智的小鱼君'
   #masterPidCache: Map<string, string> = new Map()
 
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, null, 'about')
 
     ctx

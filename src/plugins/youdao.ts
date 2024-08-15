@@ -11,7 +11,7 @@ import BasePlugin from '~/_boilerplate'
 import fexios from 'fexios'
 
 export default class PluginYoudao extends BasePlugin {
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, {}, 'youdao')
 
     ctx

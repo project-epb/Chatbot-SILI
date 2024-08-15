@@ -9,7 +9,7 @@ import { Context, sleep } from 'koishi'
 import BasePlugin from '~/_boilerplate'
 
 export default class PluginQueue extends BasePlugin {
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, {}, 'queue')
 
     ctx

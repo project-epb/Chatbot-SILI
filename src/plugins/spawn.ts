@@ -43,8 +43,8 @@ export class ShellService extends Service {
 }
 
 export default class PluginSpawn extends BasePlugin {
-  constructor(ctx: Context, options?: ExecOptions) {
-    super(ctx, options, 'spawn')
+  constructor(ctx: Context, config?: ExecOptions) {
+    super(ctx, config, 'spawn')
     ctx.plugin(ShellService)
 
     ctx
@@ -59,7 +59,7 @@ export default class PluginSpawn extends BasePlugin {
           (data) => {
             session?.sendQueued(data)
           },
-          options
+          config
         )
         return `[SPAWN] 命令执行完毕
 耗时 ${((Date.now() - startTime) / 1000).toFixed(2)}s

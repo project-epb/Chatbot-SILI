@@ -20,7 +20,7 @@ declare module 'koishi' {
 export default class PatchCallme extends BasePlugin {
   static inject = ['mint']
 
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, null, 'callme')
 
     ctx

@@ -19,7 +19,7 @@ declare module 'koishi' {
 }
 
 export default class PluginVerifyFandomUser extends BasePlugin {
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, {}, 'verify-fandom-user')
 
     ctx = ctx.channel()

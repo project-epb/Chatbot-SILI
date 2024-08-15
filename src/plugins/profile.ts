@@ -11,7 +11,7 @@ import BasePlugin from '~/_boilerplate'
 import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
 
 export default class PluginProfile extends BasePlugin {
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, null, 'profile')
 
     ctx
@@ -20,7 +20,7 @@ export default class PluginProfile extends BasePlugin {
       .action(async ({ session, options }) => {
         if (!session) return
         let user: User
-        const authorUniqId = `${session.platform}:${session.author.userId}`
+        const authorUniqId = `${session.platform}:${session.userId}`
         let platform: string, uid: string
         if (options.user) {
           ;[platform, uid] = options.user.split(':')
@@ -30,7 +30,7 @@ export default class PluginProfile extends BasePlugin {
           }
         } else {
           platform = session.platform
-          uid = session.author.userId
+          uid = session.userId
         }
         const isTargetEqualAuthor = `${platform}:${uid}` === authorUniqId
         console.info(platform, uid, authorUniqId, isTargetEqualAuthor)

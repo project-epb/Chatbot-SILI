@@ -48,11 +48,8 @@ export default class PluginDice extends BasePlugin {
     nCoins: '{{counts}}枚硬币',
   }
 
-  constructor(
-    public ctx: Context,
-    public options: any
-  ) {
-    super(ctx, options, 'dice')
+  constructor(ctx: Context, config: unknown) {
+    super(ctx, config, 'dice')
     this.initCommands()
   }
 

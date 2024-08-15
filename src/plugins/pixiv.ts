@@ -30,7 +30,7 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
       'pixiv'
     )
 
-    const { apiBaseURL = defaultConfigs.apiBaseURL } = this.options
+    const { apiBaseURL = defaultConfigs.apiBaseURL } = this.config
     this.request = new Fexios({
       baseURL: apiBaseURL,
       headers: {
@@ -118,7 +118,7 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
           `👍${info.likeCount} ❤️${info.bookmarkCount} 👀${info.viewCount}`,
           `发布时间: ${new Date(info.createDate).toLocaleString()}`,
           allTags.length ? allTags.join(' ') : null,
-          new URL(`/i/${id}`, this.options.webBaseURL).href,
+          new URL(`/i/${id}`, this.config.webBaseURL).href,
         ].map((i) =>
           typeof i === 'string' ? i.trim().replace(/\n+/g, '\n') : i
         )
@@ -182,16 +182,16 @@ export default class PluginPixiv extends BasePlugin<typeof defaultConfigs> {
 
   makePximgURL(url: string) {
     if (url.startsWith('http')) {
-      if (!this.options.pximgBaseURL) {
+      if (!this.config.pximgBaseURL) {
         return url
       }
       url = new URL(url).pathname
     }
     return new URL(
       url,
-      this.options.pximgBaseURL ||
-        this.options.apiBaseURL ||
-        this.options.webBaseURL
+      this.config.pximgBaseURL ||
+        this.config.apiBaseURL ||
+        this.config.webBaseURL
     ).href
   }
 }

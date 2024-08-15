@@ -2,14 +2,15 @@ import { Context, Logger, snakeCase } from 'koishi'
 
 export default class BasePlugin<T = any> {
   #name: string
+  readonly config: T
 
   constructor(
     public ctx: Context,
-    public options: T = undefined,
+    config: T = undefined,
     name = 'plugin'
   ) {
     this.name = name
-    this.options = options || ({} as T)
+    this.config = config || ({} as T)
   }
 
   set name(name: string) {

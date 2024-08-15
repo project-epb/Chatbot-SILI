@@ -11,7 +11,7 @@ import BasePlugin from '~/_boilerplate'
 import { resolveBrackets } from '$utils/resolveBrackets'
 
 export default class PluginSiliName extends BasePlugin {
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, {}, 'siliName')
 
     ctx = ctx.channel().platform('red', 'onebot', 'qq')

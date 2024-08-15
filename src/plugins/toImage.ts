@@ -22,7 +22,7 @@ export default class PluginToImage extends BasePlugin {
         }
         if (!src) return ''
         this.logger.info('src', `<${src}>`)
-        return h.image(src)
+        return [h.image(src), h.text(src)]
       })
   }
 

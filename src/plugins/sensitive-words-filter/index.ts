@@ -6,7 +6,7 @@ import MintFilterService from './MintFilterService'
 import SensitiveFilterMain from './main'
 
 export default class PluginSensitiveFilter extends BasePlugin {
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, {}, 'sensitive-filter')
     ctx.plugin(MintFilterService)
     ctx.plugin(SensitiveFilterMain)

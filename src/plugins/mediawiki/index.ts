@@ -57,13 +57,9 @@ export default class PluginMediawiki extends BasePlugin {
 
   readonly INFOBOX_DEFINITION = INFOBOX_DEFINITION
 
-  constructor(
-    public ctx: Context,
-    public config: Config = {}
-  ) {
-    super(ctx, {}, 'mediawiki')
+  constructor(ctx: Context, configs: Config = {}) {
+    super(ctx, { ...defaultConfig, ...configs }, 'mediawiki')
 
-    this.config = { ...defaultConfig, ...config }
     ctx.model.extend('channel', {
       mwApi: 'string',
     })

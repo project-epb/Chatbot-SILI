@@ -21,7 +21,7 @@ interface MentionLog {
 }
 
 export default class PluginWhoAsked extends BasePlugin {
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, {}, 'who_asked')
     this.initDatabase()
     ctx.on('message', this.onMessage.bind(this))
@@ -46,6 +46,19 @@ export default class PluginWhoAsked extends BasePlugin {
             </p>
           </>
         )
+      })
+
+    ctx
+      .command('whoasked.cleanup [time]', '清理过期的提及记录', {
+        authority: 3,
+        hidden: true,
+      })
+      .option('silent', '-s 静默模式')
+      .action(async ({ session, options }, time) => {
+        const msg = this.deleteOldLogs(time)
+          .then((res) => `已清理 ${res.removed || 0} 条记录`)
+          .catch((e) => '清理失败：' + e)
+        return options.silent ? '' : msg
       })
 
     ctx.middleware(async (session, next) => {
@@ -75,6 +88,22 @@ export default class PluginWhoAsked extends BasePlugin {
         autoInc: true,
       }
     )
+  }
+  private deleteOldLogs(beforeTime?: Date | string | number) {
+    beforeTime ||= Date.now() - 3 * 86400000
+    const time = new Date(beforeTime)
+    const ms = time.getTime()
+    if (isNaN(ms)) {
+      throw new Error('Invalid time')
+    }
+    if (ms > Date.now()) {
+      throw new Error('Time is in the future')
+    }
+    return this.ctx.database.remove('mention_logs', {
+      timestamp: {
+        $lt: ms,
+      },
+    })
   }
   private onMessage(session: Session) {
     const [at] = h.select(session.elements, 'at')

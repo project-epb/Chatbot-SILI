@@ -10,7 +10,7 @@ export default class 加油 extends BaseSticker {
         minInterval: Time.minute,
       })
       .alias('sticker.jiayou', '加油')
-      .shortcut(/^表情包 这两周$/, {
+      .alias('这两周', {
         args: ['这两周。'],
         options: {
           avatar: 'https://img.moegirl.org.cn/common/avatars/233835/128.png',

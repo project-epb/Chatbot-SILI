@@ -36,7 +36,7 @@ interface OpenAIConversationLog {
   time: number
 }
 
-export interface Configs {
+export interface Config {
   openaiOptions: ClientOptions
   model: string
   maxTokens: number
@@ -61,12 +61,12 @@ export default class PluginOpenAi extends BasePlugin {
   #chatRecords: Record<string, Session.Payload[]> = {}
 
   constructor(
-    public ctx: Context,
-    public options: Partial<Configs> = { recordsPerChannel: 100 }
+    ctx: Context,
+    config: Partial<Config> = { recordsPerChannel: 100 }
   ) {
-    super(ctx, options, 'openai')
+    super(ctx, config, 'openai')
 
-    this.openaiOptions = options.openaiOptions || {}
+    this.openaiOptions = config.openaiOptions || {}
     this.openai = new OpenAI({
       ...this.openaiOptions,
     })
@@ -164,6 +164,7 @@ export default class PluginOpenAi extends BasePlugin {
         args: ['$1'],
         prefix: true,
       })
+      .alias()
       .option('prompt', '-p <prompt:string>', {
         hidden: true,
         authority: 3,
@@ -194,7 +195,7 @@ export default class PluginOpenAi extends BasePlugin {
         return this.openai.chat.completions
           .create(
             {
-              model: options.model || this.options.model || 'gpt-3.5-turbo',
+              model: options.model || this.config.model || 'gpt-4o-mini',
               messages: [
                 // magic
                 // {
@@ -218,7 +219,7 @@ export default class PluginOpenAi extends BasePlugin {
                 // current user input
                 { role: 'user', content },
               ],
-              max_tokens: this.options.maxTokens ?? 1000,
+              max_tokens: this.config.maxTokens ?? 1000,
               temperature: 0.9,
               presence_penalty: 0.6,
               frequency_penalty: 0,
@@ -353,7 +354,7 @@ export default class PluginOpenAi extends BasePlugin {
     return this.openai.chat.completions
       .create(
         {
-          model: this.options.model || 'gpt-3.5-turbo',
+          model: this.config.model || 'gpt-4o-mini',
           messages: [
             {
               role: 'system',
@@ -437,7 +438,7 @@ export default class PluginOpenAi extends BasePlugin {
     return this.openai.chat.completions
       .create(
         {
-          model: this.options.model || 'gpt-3.5-turbo',
+          model: this.config.model || 'gpt-3.5-turbo',
           messages: [
             {
               role: 'system',
@@ -445,7 +446,7 @@ export default class PluginOpenAi extends BasePlugin {
             },
             { role: 'user', content: recordsText },
           ],
-          max_tokens: this.options.maxTokens ?? 500,
+          max_tokens: this.config.maxTokens ?? 500,
         },
         { timeout: 90 * 1000 }
       )
@@ -486,7 +487,7 @@ export default class PluginOpenAi extends BasePlugin {
     const records = this.getRecords(session.channelId)
     records.push({ ...session.toJSON(), content })
     this.#chatRecords[session.channelId] = records.slice(
-      records.length - this.options.recordsPerChannel
+      records.length - this.config.recordsPerChannel
     )
   }
   getRecords(channelId: string): Session.Payload[] {

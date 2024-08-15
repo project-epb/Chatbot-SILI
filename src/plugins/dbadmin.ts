@@ -1,4 +1,4 @@
-import { Context } from 'koishi'
+import { Context, h } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
@@ -12,7 +12,7 @@ enum FilePath {
 export default class PluginDatabaseAdmin extends BasePlugin {
   static inject = ['shell', 'html']
 
-  constructor(public ctx: Context) {
+  constructor(ctx: Context) {
     super(ctx, {}, 'dbadmin')
 
     ctx.command('admin/dbadmin', '数据库管理', { authority: 4 })
@@ -67,7 +67,7 @@ export default class PluginDatabaseAdmin extends BasePlugin {
           limit: 1,
         })
         const img = await ctx.html.hljs(JSON.stringify(res, null, 2), 'json')
-        return img ? img : '出现了一些问题'
+        return img ? h.img(img, 'image/jpg') : '出现了一些问题'
       })
 
     ctx
