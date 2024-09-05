@@ -3,7 +3,7 @@ import { Context, Time, h } from 'koishi'
 import BasePlugin from '~/_boilerplate'
 
 export default class PluginWebShot extends BasePlugin {
-  static inject = ['puppeteer']
+  static inject = ['html']
 
   constructor(ctx: Context) {
     super(ctx, null, 'webshot')
@@ -16,12 +16,15 @@ export default class PluginWebShot extends BasePlugin {
         fallback: 30 * Time.second,
       })
       .option('selector', '-s <selector> CSS选择器')
-      .action(async ({ options }, url) => {
-        return this.shot(url, options)
+      .action(async ({ session, options }, url) => {
+        return [
+          h.quote(session.messageId),
+          await this.handleShot(url, options),
+        ]
       })
   }
 
-  async shot(
+  async handleShot(
     url: string,
     options: {
       full?: boolean
@@ -32,10 +35,10 @@ export default class PluginWebShot extends BasePlugin {
     try {
       const urlURL = new URL(url)
       if (!urlURL.protocol.startsWith('http')) {
-        throw new URL('非法的 URL')
+        return '非法的 URL'
       }
     } catch (e) {
-      throw new URL('无效的 URL')
+      return '无效的 URL'
     }
 
     if (options.full) {
@@ -46,10 +49,10 @@ export default class PluginWebShot extends BasePlugin {
       const img = await this.ctx.html.shotByUrl(url, options.selector, {
         timeout: options.timeout || 30 * Time.second,
       })
-
-      return img ? h.image(img, 'image/jpeg') : '无法截取网页'
+      console.info('!shot', img)
+      return h.image(img, 'image/jpeg')
     } catch (e) {
-      return h.text(`网页截图时遇到问题: ${e.message || e}`)
+      return `截图时遇到问题：${e.message || e}`
     }
   }
 }

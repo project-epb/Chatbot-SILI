@@ -10,9 +10,11 @@ declare module 'koishi' {
 
 export default class HTMLService extends Service {
   static inject = ['puppeteer']
+  readonly log: ReturnType<Context['logger']>
 
   constructor(public ctx: Context) {
     super(ctx, 'html')
+    this.log = ctx.logger('HTML')
   }
 
   get ppt() {
@@ -234,8 +236,8 @@ code.hljs[class~='lang-wiki']:before {
   }
 
   async shotByUrl(
-    fileUrl: string | URL,
-    selector: string = 'body',
+    url: string | URL,
+    selector?: string,
     waitOptioins?: WaitForOptions,
     shotOptions?: BinaryScreenshotOptions
   ) {
@@ -256,23 +258,51 @@ code.hljs[class~='lang-wiki']:before {
     }
 
     const page = await this.ctx.puppeteer.page()
+
+    let isInitialized = false
+    page.on('load', () => {
+      isInitialized = true
+    })
+
+    page.on('dialog', async (dialog) => {
+      // console.log(`弹窗类型: ${dialog.type()}`)
+      // console.log(`弹窗信息: ${dialog.message()}`)
+      this.log.info(
+        '[shotByUrl]',
+        `dialog detected: ${dialog.type()}`,
+        dialog.message()
+      )
+      await dialog.dismiss().catch((e) => {
+        this.log.warn('[shotByUrl]', 'failed to dismiss dialog:', e)
+      })
+    })
+
     return page
-      .goto(fileUrl.toString(), waitOptioins)
+      .goto(url.toString(), waitOptioins)
       .then(async () => {
-        const target = await page.$(selector)
-        if (!target) {
-          throw new Error(`Missing target element: ${selector}`)
+        const target = selector ? await page.$(selector) : page
+        if (target) {
+          return target?.screenshot(shotOptions)
+        } else {
+          throw new Error(`Element not found: ${selector}`)
         }
-        return target?.screenshot(shotOptions)
       })
       .catch(async (e) => {
-        this.logger.warn('[SHOT] load error:', e)
-        const target = await page?.$(selector)
-        if (target) {
-          this.logger.warn('[SHOT] target found, take it anyway:', selector)
-          return target?.screenshot({ type: 'jpeg' })
+        this.log.warn('[shotByUrl]', `faild to load page: ${url}`, e)
+        if (isInitialized) {
+          const target = selector ? await page.$(selector) : page
+          if (target) {
+            this.log.warn(
+              '[shotByUrl]',
+              'but target found, take it anyway:',
+              target,
+              selector
+            )
+            return target?.screenshot(shotOptions)
+          }
+        } else {
+          throw e
         }
-        throw e
       })
       .finally(() => page.close())
   }

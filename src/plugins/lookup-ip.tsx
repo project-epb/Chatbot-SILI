@@ -6,6 +6,47 @@ export interface Config {
   ipgeoApiKey: string
 }
 
+declare module 'koishi' {
+  interface Context {
+    geoip: GeoIPService
+  }
+}
+
+export class GeoIPService extends Service {
+  constructor(
+    public ctx: Context,
+    public config: Config
+  ) {
+    super(ctx, 'geoip', {
+      immediate: true,
+    })
+  }
+
+  lookupIP(ip?: string) {
+    return this.ctx.http.get<IPGeoInfo>('https://api.ipgeolocation.io/ipgeo', {
+      params: {
+        apiKey: this.config.ipgeoApiKey,
+        ip,
+      },
+    })
+  }
+
+  validateIPV4(ip: string) {
+    return ip?.toString().match(
+      /^((25[0-5]|2[0-4]\d|[01]?\d{1,2})\.){3}(25[0-5]|2[0-4]\d|[01]?\d{1,2})$/
+    )
+  }
+  validateIPV6(ip: string) {
+    return ip?.toString().match(/^([0-9a-fA-F]{1,4}:){7}([0-9a-fA-F]{1,4}|:)$/)
+  }
+  validateIP(ip: string) {
+    if (typeof ip !== 'string') {
+      return false
+    }
+    return this.validateIPV4(ip) || this.validateIPV6(ip)
+  }
+}
+
 export class PluginLookupIP extends BasePlugin {
   constructor(ctx: Context, config: Config) {
     super(ctx, config, 'check-ip')
@@ -16,21 +57,21 @@ export class PluginLookupIP extends BasePlugin {
     // install service
     this.ctx.plugin(GeoIPService, this.config)
     // do init
-    this.ctx.inject(['ipgeo'], () => {
-      this.initCommands()
+    this.ctx.inject(['geoip'], (ctx) => {
+      this.initCommands(ctx)
     })
   }
-  private initCommands() {
-    this.ctx
+  private initCommands(ctx: Context) {
+    ctx
       .command('lookup-ip <ip>', '查询 IP 地址信息', { maxUsage: 30 })
       .check(({ session }, ip) => {
-        if (!this.ctx.geoip.validateIP(ip)) {
+        if (!ctx.geoip.validateIP(ip)) {
           return '请输入正确的 IP 地址。'
         }
       })
       .action(async ({ session }, ip) => {
         try {
-          const info = await this.ctx.geoip.lookupIP(ip)
+          const info = await ctx.geoip.lookupIP(ip)
           return (
             <>
               <p>IP 地址：{info.ip}</p>
@@ -109,42 +150,4 @@ export interface IPGeoTimeZone {
   current_time_unix: number
   is_dst: boolean
   dst_savings: number
-}
-
-declare module 'koishi' {
-  interface Context {
-    geoip: GeoIPService
-  }
-}
-
-export class GeoIPService extends Service {
-  constructor(
-    public ctx: Context,
-    public config: Config
-  ) {
-    super(ctx, 'geoip', {
-      immediate: true,
-    })
-  }
-
-  lookupIP(ip?: string) {
-    return this.ctx.http.get<IPGeoInfo>('https://api.ipgeolocation.io/ipgeo', {
-      params: {
-        apiKey: this.config.ipgeoApiKey,
-        ip,
-      },
-    })
-  }
-
-  validateIPV4(ip: string) {
-    return ip.match(
-      /^((25[0-5]|2[0-4]\d|[01]?\d{1,2})\.){3}(25[0-5]|2[0-4]\d|[01]?\d{1,2})$/
-    )
-  }
-  validateIPV6(ip: string) {
-    return ip.match(/^([0-9a-fA-F]{1,4}:){7}([0-9a-fA-F]{1,4}|:)$/)
-  }
-  validateIP(ip: string) {
-    return this.validateIPV4(ip) || this.validateIPV6(ip)
-  }
 }
