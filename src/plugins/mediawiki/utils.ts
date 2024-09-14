@@ -1,30 +1,43 @@
 import { MediaWikiApi } from 'wiki-saikou'
 
-const USE_MOCK_HEADER = [
-  {
-    match: (url: string) => url.includes('huijiwiki.com'),
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0',
-    },
-  },
-]
-const USE_AUTHORIZATION: {
-  match: (url: string) => boolean
-  username: string
-  password: string
-  cookies: { [key: string]: string } | null
-}[] = [
-  {
-    match: (url: string) => url.includes('.moegirl.org.cn'),
-    username: process.env.MW_BOTPASSWORD_MOEGIRL_USERNAME,
-    password: process.env.MW_BOTPASSWORD_MOEGIRL_PASSWORD,
-    cookies: null,
-  },
-]
+const MOCK_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function useApi(baseURL: string): Promise<MediaWikiApi> {
+  const USE_MOCK_HEADER = [
+    {
+      match: (url: string) => url.includes('huijiwiki.com'),
+      headers: {
+        'User-Agent': MOCK_UA,
+      },
+    },
+    {
+      match: (url: string) => url.includes('ngnl.wiki'),
+      headers: {
+        'User-Agent': MOCK_UA,
+      },
+    },
+    {
+      match: (url: string) => url.includes('.moegirl.org.cn'),
+      headers: {
+        'User-Agent': process.env.TOKEN_MOEGIRL_USER_AGENT,
+      },
+    },
+  ]
+  const USE_AUTHORIZATION: {
+    match: (url: string) => boolean
+    username: string
+    password: string
+    cookies: { [key: string]: string } | null
+  }[] = [
+    // {
+    //   match: (url: string) => url.includes('.moegirl.org.cn'),
+    //   username: process.env.MW_BOTPASSWORD_MOEGIRL_USERNAME,
+    //   password: process.env.MW_BOTPASSWORD_MOEGIRL_PASSWORD,
+    //   cookies: null,
+    // },
+  ]
+
   const api = new MediaWikiApi(baseURL)
 
   const mockHeaders = USE_MOCK_HEADER.find((i) => i.match(baseURL))

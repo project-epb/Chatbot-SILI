@@ -49,7 +49,7 @@ export default class PluginWhoAsked extends BasePlugin {
       })
 
     ctx
-      .command('whoasked.cleanup [time]', '清理过期的提及记录', {
+      .command('whoasked.prune [time]', '清理过期的提及记录', {
         authority: 3,
         hidden: true,
       })
