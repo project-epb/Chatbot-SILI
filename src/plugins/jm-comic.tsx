@@ -24,7 +24,7 @@ export default class PluginJMComic extends BasePlugin {
         const albumNum = this.getAlbumNumFromStrig(albumRaw || '')
 
         const reply = <quote id={session.messageId} />
-        if (!albumNum) {
+        if (albumNum === 0) {
           return options.quiet ? (
             ''
           ) : (
@@ -43,28 +43,31 @@ export default class PluginJMComic extends BasePlugin {
         )
       })
 
-    // ctx.middleware(async (session, next) => {
-    //   await next()
+    ctx.middleware(async (session, next) => {
+      await next()
 
-    //   const albumNum = this.getAlbumNumFromStrig(
-    //     h.select(session.elements, 'text').join('')
-    //   )
-    //   if (!albumNum) {
-    //     return
-    //   }
+      const albumNum = this.getAlbumNumFromStrig(
+        h.select(session.elements, 'text').join('')
+      )
+      if (albumNum === 0) {
+        return
+      }
 
-    //   return session.execute({
-    //     name: 'jm.decode',
-    //     args: [albumNum],
-    //     options: { quiet: true },
-    //   })
-    // })
+      return session.execute({
+        name: 'jm.decode',
+        args: [albumNum],
+        options: { quiet: true },
+      })
+    })
   }
 
   getAlbumNumFromStrig(str: string): number {
-    const num = parseInt(str.replace(/\D/g, ''), 10)
-    if (!isNaN(num) && num.toString().length === 6) {
-      return num
+    str = '' + str // make sure it's a string
+    const num = str.replace(/\D/g, '')
+    if (num.startsWith('0')) {
+      return 0
+    } else if (num.length === 6) {
+      return parseInt(num)
     } else {
       return 0
     }
