@@ -12,12 +12,13 @@ export default class PluginJMComic extends BasePlugin {
     'https://18comic-palworld.vip',
     'https://18comic-c.art',
   ]
+  static readonly inject = ['http', 'puppeteer']
 
   constructor(readonly ctx: Context) {
     super(ctx, {}, '18comic')
 
     ctx
-      .command('jm', '<album:posint> 18comic', { maxUsage: 10 })
+      .command('jm.decode', '<album:posint> 18comic')
       .option('quiet', '-q 静默模式', { hidden: true })
       .action(async ({ session, options }, albumRaw) => {
         const albumNum = this.getAlbumNumFromStrig(albumRaw || '')
@@ -29,52 +30,52 @@ export default class PluginJMComic extends BasePlugin {
           ) : (
             <>
               {reply}
-              未解析到作品编号
+              未解析到 JM 编号
             </>
           )
         }
-        const albumInfo = await this.fetchAlbum(albumNum)
-        this.logger.info(`JM${albumNum}`, albumInfo)
-
-        const jmLink = <a href={albumInfo.url}>JM{albumNum}</a>
+        const url = `${this.JM_SOURCE[0]}/album/${albumNum}`
         return (
           <>
             {reply}
-            <p>{albumInfo.title || options.quiet ? '' : '可能需要登录：'}</p>
-            <p>{jmLink}</p>
+            {url}
           </>
         )
       })
 
-    ctx.middleware(async (session, next) => {
-      const albumNum = this.getAlbumNumFromStrig(
-        h.select(session.elements, 'text').join('')
-      )
-      if (!albumNum) {
-        return next()
-      }
+    // ctx.middleware(async (session, next) => {
+    //   await next()
 
-      return session.execute({
-        name: 'jm',
-        args: [albumNum],
-        options: { quiet: true },
-      })
-    })
+    //   const albumNum = this.getAlbumNumFromStrig(
+    //     h.select(session.elements, 'text').join('')
+    //   )
+    //   if (!albumNum) {
+    //     return
+    //   }
+
+    //   return session.execute({
+    //     name: 'jm.decode',
+    //     args: [albumNum],
+    //     options: { quiet: true },
+    //   })
+    // })
   }
 
-  getAlbumNumFromStrig(str: string) {
-    const num = str.replace(/\D/g, '')
-    if (num.length >= 6 && num.length <= 8) {
+  getAlbumNumFromStrig(str: string): number {
+    const num = parseInt(str.replace(/\D/g, ''), 10)
+    if (!isNaN(num) && num.toString().length === 6) {
       return num
     } else {
-      return ''
+      return 0
     }
   }
 
   async fetchAlbum(album: string) {
     const url = `https://18comic.vip/album/${album}`
+    const page = await this.ctx.puppeteer.page()
     try {
-      const html = await fetch(url).then((res) => res.text())
+      await page.goto(url, { waitUntil: 'domcontentloaded' })
+      const html = await page.content()
       const $ = load(html)
       const title = $('h1#book-name, title')
         .text()
@@ -88,12 +89,19 @@ export default class PluginJMComic extends BasePlugin {
         title,
         url,
       }
-    } catch (e) {
-      this.logger.warn(`fetchAlbum(${album}) failed:`, e)
+    } catch (e: any) {
+      this.logger.warn(
+        `fetchAlbum(${album}) failed:`,
+        e?.message,
+        e?.response?.data,
+        e
+      )
       return {
         url,
         title: '',
       }
+    } finally {
+      await page.close()
     }
   }
 }
