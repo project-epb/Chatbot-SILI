@@ -10,7 +10,6 @@ import { App, Dict, Random, type Session, Time } from 'koishi'
 
 import { resolve } from 'node:path'
 
-import { MinecraftBot } from '@/adapters/adapter-minecraft'
 import FallbackHandler from '@/modules/FallbackHandler'
 import MessagesLogger from '@/modules/MessagesLogger'
 import { MinecraftConnect } from '@/modules/MinecraftConnect'
@@ -25,6 +24,7 @@ import PluginDatabaseAdmin from '~/dbadmin'
 import { PluginDebug } from '~/debug'
 import PluginDice from '~/dice'
 import PluginHljs from '~/hljs'
+import PluginJMComic from '~/jm-comic'
 import { PluginLookupIP } from '~/lookup-ip'
 import PluginMediawiki from '~/mediawiki'
 import PluginMinecraft from '~/minecraft'
@@ -32,19 +32,19 @@ import PluginMute from '~/mute'
 import PluginOpenAi from '~/openai'
 import PluginPing from '~/ping'
 import PluginPixiv from '~/pixiv'
-import PluginPowerUser from '~/powerUser'
+import PluginPowerUser from '~/power-user'
 import PluginProfile from '~/profile'
 import PluginQueue from '~/queue'
 import PluginReboot from '~/reboot'
 import PluginSensitiveFilter from '~/sensitive-words-filter'
-import PluginSiliName from '~/siliName'
+import PluginSiliName from '~/sili-name'
 import PluginSpawn from '~/spawn'
 import PluginSticker from '~/sticker'
-import PluginToImage from '~/toImage'
-import PluginVerifyFandomUser from '~/verifyFandomUser'
+import PluginToImage from '~/to-image'
+import PluginVerifyFandomUser from '~/verify-fandom-user'
 import PluginVersion from '~/version'
 import PluginWebShot from '~/webshot'
-import PluginWhoAsked from '~/whoAsked'
+import PluginWhoAsked from '~/who-asked'
 import PluginYoudao from '~/youdao'
 
 import AdapterDingtalk from '@koishijs/plugin-adapter-dingtalk'
@@ -133,17 +133,6 @@ app.plugin(function PluginCollectionAdapters(ctx) {
     selfId: env.ONEBOT_SELFID?.trim(),
     endpoint: env.ONEBOT_ENDPOINT,
   })
-  // ctx.plugin(AdapterRed, {
-  //   endpoint: env.CHRONOCAT_RED_ENDPOINT,
-  //   token: env.CHRONOCAT_TOKEN,
-  //   selfId: env.ONEBOT_SELFID?.trim(),
-  //   path: '/assets/red',
-  //   selfUrl: env.KOISHI_SELF_URL,
-  // })
-  // ctx.plugin(AdapterSatori, {
-  //   endpoint: env.CHRONOCAT_SATORI_ENDPOINT,
-  //   token: env.CHRONOCAT_TOKEN,
-  // })
 
   // Discord
   // ctx.plugin(AdapterDiscord, {
@@ -305,6 +294,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginAbout)
   ctx.plugin(PluginDice)
   ctx.plugin(PluginHljs)
+  ctx.plugin(PluginJMComic)
   if (process.env.TOKEN_IPGEOLOCATION) {
     ctx.plugin(PluginLookupIP, {
       ipgeoApiKey: process.env.TOKEN_IPGEOLOCATION,
