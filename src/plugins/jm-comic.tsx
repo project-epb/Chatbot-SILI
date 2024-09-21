@@ -19,17 +19,31 @@ export default class PluginJMComic extends BasePlugin {
     ctx
       .command('jm', '<album:posint> 18comic', { maxUsage: 10 })
       .option('quiet', '-q 静默模式', { hidden: true })
-      .action(async ({ options }, album) => {
-        const albumNum = this.getAlbumNumFromStrig(album || '')
+      .action(async ({ session, options }, albumRaw) => {
+        const albumNum = this.getAlbumNumFromStrig(albumRaw || '')
+
+        const reply = <quote id={session.messageId} />
         if (!albumNum) {
-          return options.quiet ? '' : '未找到作品编号'
+          return options.quiet ? (
+            ''
+          ) : (
+            <>
+              {reply}
+              未解析到作品编号
+            </>
+          )
         }
         const albumInfo = await this.fetchAlbum(albumNum)
-        if (!albumInfo.title) {
-          return options.quiet ? '' : `可能需要登录查看：\n${albumInfo.url}`
-        } else {
-          return `${albumInfo.title}\n${albumInfo.url}`
-        }
+        this.logger.info(`JM${albumNum}`, albumInfo)
+
+        const jmLink = <a href={albumInfo.url}>JM{albumNum}</a>
+        return (
+          <>
+            {reply}
+            <p>{albumInfo.title || options.quiet ? '' : '可能需要登录：'}</p>
+            <p>{jmLink}</p>
+          </>
+        )
       })
 
     ctx.middleware(async (session, next) => {
