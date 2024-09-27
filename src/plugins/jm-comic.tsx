@@ -46,9 +46,11 @@ export default class PluginJMComic extends BasePlugin {
     ctx.middleware(async (session, next) => {
       await next()
 
-      const albumNum = this.getAlbumNumFromStrig(
-        h.select(session.elements, 'text').join('')
-      )
+      const plainText = h.select(session.elements, 'text').join('')
+      if (!/^jm/i.test(plainText)) {
+        return
+      }
+      const albumNum = this.getAlbumNumFromStrig(plainText)
       if (albumNum === 0) {
         return
       }

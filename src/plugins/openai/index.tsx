@@ -47,7 +47,7 @@ export default class PluginOpenAi extends BasePlugin {
   static inject = ['html']
   openai: OpenAI
   openaiOptions: ClientOptions
-  SILI_PROMPT = PluginOpenAi.readPromptFile('SILI.txt')
+  SILI_PROMPT = PluginOpenAi.readPromptFile('SILI-v2.md')
   CHAT_SUMMARY_PROMPT = PluginOpenAi.readPromptFile('chat-summary.txt')
   CENSOR_PROMPT = PluginOpenAi.readPromptFile('censor.txt')
   RANDOM_ERROR_MSG = (
