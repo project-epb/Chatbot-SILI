@@ -36,6 +36,7 @@ import PluginPowerUser from '~/power-user'
 import PluginProfile from '~/profile'
 import PluginQueue from '~/queue'
 import PluginReboot from '~/reboot'
+import PluginRepeater, { RepeatState } from '~/repeater'
 import PluginSensitiveFilter from '~/sensitive-words-filter'
 import PluginSiliName from '~/sili-name'
 import PluginSpawn from '~/spawn'
@@ -84,7 +85,6 @@ import * as PluginNovelAi from 'koishi-plugin-novelai'
 import PluginPuppeteer from 'koishi-plugin-puppeteer'
 import * as PluginRateLimit from 'koishi-plugin-rate-limit'
 import * as PluginRecall from 'koishi-plugin-recall'
-import * as PluginRepeater from 'koishi-plugin-repeater'
 import * as PluginSchedule from 'koishi-plugin-schedule'
 import PluginSilk from 'koishi-plugin-silk'
 import * as PluginSwitch from 'koishi-plugin-switch'
@@ -191,42 +191,6 @@ app.plugin(function PluginCollectionLegacy(ctx) {
     ctx.command('echo', { authority: 3 })
     ctx.plugin(PluginRateLimit)
     ctx.plugin(PluginRecall)
-    const randomHit = (probability: number) => Math.random() < probability
-    ctx.plugin(PluginRepeater, {
-      onRepeat(state: RepeatState, session: Session) {
-        if (!state.repeated && state.times > 3) {
-          const hit = randomHit(0.125 * state.times)
-          logger.info('[尝试参与复读]', hit)
-          return hit ? state.content : ''
-        }
-
-        const noRepeatText = [
-          'No，不要再复读了！',
-          '🤚我说婷婷，你们搞复读，不讲武德。',
-          '那么就到此为止吧，再复读就不礼貌了。',
-          '🤚很抱歉打扰大家的复读，水群不要忘记多喝热水哟~',
-        ]
-        if (
-          state.repeated &&
-          state.times > 5 &&
-          !noRepeatText.includes(state.content)
-        ) {
-          const hit = randomHit(0.1 * (state.times - 5))
-          logger.info('[尝试打断复读]', hit)
-          return hit ? Random.pick(noRepeatText) : ''
-        }
-      },
-      // onInterrupt(state: RepeatState, session: Session) {
-      //   if (!state.repeated) return
-      //   const hit = randomHit(0.1 * (state.times - 5))
-      //   logger.info('[尝试质询打断]', hit)
-      //   return hit
-      //     ? session.send(
-      //         `${segment.at(session.userId as string)}在？为什么打断复读？`
-      //       )
-      //     : false
-      // },
-    })
   })
   // [tools]
   ctx.plugin(function PluginCollectionLegacyTools(ctx) {
@@ -381,6 +345,42 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(PluginDatabaseAdmin)
   ctx.plugin(PluginDebug)
   ctx.plugin(PluginReboot)
+  const randomHit = (probability: number) => Math.random() < probability
+  ctx.plugin(PluginRepeater, {
+    onRepeat(state: RepeatState, session: Session) {
+      if (!state.repeated && state.times > 3) {
+        const hit = randomHit(0.125 * state.times)
+        logger.info('[尝试参与复读]', hit)
+        return hit ? state.content : ''
+      }
+
+      const noRepeatText = [
+        'No，不要再复读了！',
+        '🤚我说婷婷，你们搞复读，不讲武德。',
+        '那么就到此为止吧，再复读就不礼貌了。',
+        '🤚很抱歉打扰大家的复读，水群不要忘记多喝热水哟~',
+      ]
+      if (
+        state.repeated &&
+        state.times > 5 &&
+        !noRepeatText.includes(state.content)
+      ) {
+        const hit = randomHit(0.1 * (state.times - 5))
+        logger.info('[尝试打断复读]', hit)
+        return hit ? Random.pick(noRepeatText) : ''
+      }
+    },
+    // onInterrupt(state: RepeatState, session: Session) {
+    //   if (!state.repeated) return
+    //   const hit = randomHit(0.1 * (state.times - 5))
+    //   logger.info('[尝试质询打断]', hit)
+    //   return hit
+    //     ? session.send(
+    //         `${segment.at(session.userId as string)}在？为什么打断复读？`
+    //       )
+    //     : false
+    // },
+  })
   ctx.plugin(PluginSensitiveFilter)
   ctx.plugin(PluginSpawn, { shell: 'pwsh' })
   ctx.plugin(MinecraftConnect)
@@ -390,11 +390,3 @@ app.plugin(function PluginCollectionInternal(ctx) {
 app.start().then(() => {
   logger.info('🌈', 'SILI启动成功~')
 })
-
-// Types
-interface RepeatState {
-  content: string
-  repeated: boolean
-  times: number
-  users: Dict<number>
-}

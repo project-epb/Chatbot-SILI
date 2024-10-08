@@ -6,18 +6,18 @@ export class PluginDebug extends BasePlugin {
   constructor(ctx: Context) {
     super(ctx, {}, 'plugin-debug')
 
+    ctx.command('debug', 'SILI debug commands', { authority: 3, hidden: true })
+
     ctx.inject(['piggyback'], (ctx) => {
       ctx
-        .command(
-          'debug.piggyback <command:text>',
-          'Piggyback to another user',
-          {
-            authority: 4,
-          }
-        )
+        .command('debug.piggyback <command:text>', 'Run as another user', {
+          authority: 4,
+        })
+        .alias('debug.runas')
         .option('user', '-u <user:user>')
         .action(({ session, options }, command) => {
-          if (!command) return 'No command specified.'
+          if (!command) return session.execute('help debug.piggyback')
+
           const { user } = options
           if (!user) return 'No user specified.'
           const index = user.indexOf(':')
@@ -28,5 +28,14 @@ export class PluginDebug extends BasePlugin {
           session.executeAsUser(uin, command)
         })
     })
+
+    ctx
+      .platform('onebot')
+      .command('debug.face', '<faceId:posint> Send QQ face', {})
+      .action((_, faceId) => {
+        const numId = parseInt(faceId)
+        if (isNaN(numId) || numId < 1) return 'Invalid face ID.'
+        return <face id={numId} />
+      })
   }
 }

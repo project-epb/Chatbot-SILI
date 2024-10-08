@@ -47,16 +47,33 @@ export default class PluginReboot extends BasePlugin {
     const ctx = this.ctx
 
     ctx
-      .command('admin/reboot', '重启机器人', { authority: 4 })
+      .command('admin/reboot', '[tags:text] 重启机器人', { authority: 4 })
       .option('sync', '-s 从 Git 同步并处理依赖')
       .option('dumpdb', '-d 备份数据库')
       .option('yes', '-y 跳过确认', { hidden: true })
-      .action(async ({ session, options }) => {
+      .action(async ({ session, options }, tags) => {
+        tags ||= ''
+        tags = tags.trim().toLowerCase()
+        if (tags.includes('s')) {
+          options.sync = true
+        }
+        if (tags.includes('d')) {
+          options.dumpdb = true
+        }
+        if (tags.includes('y')) {
+          options.yes = true
+        }
+        if (tags === 'sodayo' || tags === '硕大友') {
+          options.sync = true
+          options.dumpdb = true
+          options.yes = true
+        }
+
         if (!options.yes) {
           await session.send('请在 10 秒内发送句号以确认重启……')
           const ensure = await (session as Session).prompt(10 * 1000)
-          if (!['.', '。'].includes(ensure)) {
-            return '重启申请被 SILI 驳回。'
+          if (!['.', '。', 'y'].includes(ensure)) {
+            return 'SILI 驳回了重启申请。'
           }
         }
 
@@ -82,7 +99,9 @@ export default class PluginReboot extends BasePlugin {
           ),
         ])
 
-        await session.send('SILI 正在重启...')
+        await session.send(
+          `SILI 即将重新连接到智库...\nGitSync=${!!options.sync}; DumpDB=${!!options.dumpdb}`
+        )
         process.exit(0)
       })
   }
@@ -135,9 +154,10 @@ export default class PluginReboot extends BasePlugin {
       console.info(session)
       bot.sendMessage(
         getChannelIdFromSession(session),
-        `SILI 重启完毕 (SIGNAL-${(+kSignal).toString(2).padStart(6, '0')})
+        `SILI 已重新连接到智库
+SIGNAL: ${(+kSignal).toString(2).padStart(6, '0')}
 共耗时: ${((now - lastSession.time) / 1000).toFixed(2)}s
-请求者: ${h.at(getUserIdFromSession(session), {
+执行人: ${h.at(getUserIdFromSession(session), {
           name: getUserNickFromSession(session),
         })}
 ${cmdLogsImg ? h.image(cmdLogsImg, 'image/jpeg') : '(没有详细日志)'}`,
