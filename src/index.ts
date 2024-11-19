@@ -246,6 +246,11 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
 app.plugin(function PluginCollectionDialogue(ctx) {
   ctx.plugin(PluginDialogue, {
     prefix: env.KOISHI_ENV === 'prod' ? '?!' : '#',
+  })
+  ctx.plugin(PluginDialogueAuthor)
+  ctx.plugin(PluginDialogueContext)
+  // ctx.plugin(PluginDialogueFlow)
+  ctx.plugin(PluginDialogueRateLimit, {
     throttle: {
       responses: 10,
       interval: 1 * Time.minute,
@@ -256,10 +261,17 @@ app.plugin(function PluginCollectionDialogue(ctx) {
       debounce: 3 * Time.minute,
     },
   })
-  ctx.plugin(PluginDialogueAuthor)
-  ctx.plugin(PluginDialogueContext)
-  // ctx.plugin(PluginDialogueFlow)
-  ctx.plugin(PluginDialogueRateLimit)
+
+  // FIXME: 禁止一般用户使用问答查询
+  ctx.on(
+    'dialogue/before-action',
+    (session: PluginDialogue.Dialogue.Session) => {
+      const userAuth = session.user?.authority || 0
+      if (userAuth <= 2) {
+        return '你没有权限执行此操作。'
+      }
+    }
+  )
 })
 
 // SILI Core
