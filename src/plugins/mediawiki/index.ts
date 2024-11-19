@@ -11,7 +11,9 @@ import BasePlugin from '~/_boilerplate'
 
 import { BulkMessageBuilder } from '$utils/BulkMessageBuilder'
 
-import { INFOBOX_DEFINITION } from './infoboxDefinition'
+import { INFOBOX_DEFINITION } from './infoboxes'
+import type { Config } from './types/Config'
+import type { InfoboxDefinition } from './types/Infobox'
 import type {
   MWInterwikiLinks,
   MWNamespaceAliases,
@@ -19,7 +21,7 @@ import type {
   MWPages,
   MWRedirects,
   MWSpecialPageAliases,
-} from './types'
+} from './types/MediaWiki'
 import {
   getUrl,
   getWikiDisplayTitle,
@@ -34,22 +36,15 @@ declare module 'koishi' {
   }
 }
 
-type ConfigInit = {
-  /** wikilink 到不存在的页面时是否自动进行搜索 */
-  searchIfNotExist: boolean
-  showDetailsByDefault: boolean
-  cmdAuthWiki: number
-  cmdAuthConnect: number
-  cmdAuthSearch: number
-}
-const defaultConfig = {
-  searchIfNotExist: false,
-  showDetailsByDefault: false,
+const DEFAULT_CONFIGS: Config = {
   cmdAuthWiki: 1,
   cmdAuthConnect: 2,
   cmdAuthSearch: 1,
+  searchIfNotExist: false,
+  showDetailsByDefault: false,
+  customInfoboxes: [],
 }
-export type Config = Partial<ConfigInit>
+export { Config }
 
 export const name = 'mediawiki'
 export default class PluginMediawiki extends BasePlugin {
@@ -57,16 +52,16 @@ export default class PluginMediawiki extends BasePlugin {
 
   readonly INFOBOX_DEFINITION = INFOBOX_DEFINITION
 
-  constructor(ctx: Context, configs: Config = {}) {
-    super(ctx, { ...defaultConfig, ...configs }, 'mediawiki')
+  constructor(ctx: Context, configs: Partial<Config> = {}) {
+    super(ctx, { ...DEFAULT_CONFIGS, ...configs }, 'mediawiki')
 
     ctx.model.extend('channel', {
       mwApi: 'string',
     })
-    this.init()
+    this.initCommands()
   }
 
-  init(): void {
+  private initCommands(): void {
     // @command wiki
     this.ctx
       .command('wiki [titles:text]', 'MediaWiki 相关功能', {
@@ -495,10 +490,12 @@ ${getUrl(session.channel!.mwApi!, { curid: item.pageid })}`
       }
     }
 
-    if (matched.injectStyles) {
-      await page.addStyleTag({ content: matched.injectStyles }).catch((e) => {
-        this.logger.warn('SHOT_INFOBOX', 'Inject styles error', e)
+    try {
+      await page.addStyleTag({
+        content: this.createInjectStylesFromDefinition(matched),
       })
+    } catch (e) {
+      this.logger.warn('SHOT_INFOBOX', 'Inject styles error', e)
     }
 
     try {
@@ -522,5 +519,23 @@ ${getUrl(session.channel!.mwApi!, { curid: item.pageid })}`
       await page?.close()
       return ''
     }
+  }
+
+  createInjectStylesFromDefinition({
+    selector,
+    injectStyles,
+  }: InfoboxDefinition): string {
+    return `
+      /* 隐藏妨碍截图的元素 */
+      ${Array.isArray(selector) ? selector.join(', ') : selector} {
+        visibility: visible;
+        :not(&, & *) {
+          visibility: hidden;
+        }
+      }
+  
+      /* 配置定义 */
+      ${injectStyles}
+    `
   }
 }

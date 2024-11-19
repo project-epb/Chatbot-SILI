@@ -1,20 +1,10 @@
-/**
- * @example Extend your sites
- * ```ts
- * PluginMediawiki.prototype.INFOBOX_MAP.push({
- *   match: (url: URL) => {},
- *   cssClasses: '',
- * })
- * ```
- */
-export const INFOBOX_DEFINITION: {
-  match: (url: URL) => boolean
-  selector: string | string[]
-  injectStyles?: string
-}[] = [
+import { InfoboxDefinition } from './types/Infobox'
+
+export const INFOBOX_DEFINITION: InfoboxDefinition[] = [
   // 萌娘百科
-  (() => {
-    const selectors = [
+  {
+    match: (url) => url.host.endsWith('moegirl.org.cn'),
+    selector: [
       // 标准信息框
       '.mw-parser-output .infotemplatebox',
       '.mw-parser-output table.infobox2',
@@ -22,41 +12,32 @@ export const INFOBOX_DEFINITION: {
       '.mw-parser-output table.infoboxSpecial',
       // 旧版兼容
       '.mw-parser-output table.infobox',
-    ]
-    return {
-      match: (url) => url.host.endsWith('moegirl.org.cn'),
-      selector: selectors,
-      injectStyles: `
-        /* 隐藏妨碍截图的元素 */
-        ${selectors.join(', ')} {
-          visibility: visible;
-          :not(&, & *) {
-            visibility: hidden;
-          }
-        }
-
-        /* 调整信息框外观 */
-        .mw-parser-output .infotemplatebox {
-          margin: 1rem !important;
-        }
-        `,
-    }
-  })(),
+    ],
+    injectStyles: `
+      /* 调整信息框外观 */
+      .mw-parser-output .infotemplatebox {
+        margin: 1rem !important;
+      }
+    `,
+    skin: 'apioutput',
+  },
   // Minecraft Wiki
   {
     match: (url) => url.host === 'minecraft.fandom.com',
     selector: ['.mw-parser-output .notaninfobox'],
+    skin: 'apioutput',
   },
   // Fandom (basic)
   {
     match: (url) => url.host.endsWith('fandom.com'),
     selector: ['.mw-parser-output aside.portable-infobox'],
-    injectStyles: `.notifications-placeholder { display: none !important }`,
+    skin: 'apioutput',
   },
   // 万界规划局
   {
     match: (url) => url.host.endsWith('wjghj.cn'),
     selector: ['.mw-parser-output .portable-infobox:not(.pi-theme-顶部提示小)'],
+    skin: 'apioutput',
   },
   // 最终幻想XIV中文维基
   {
