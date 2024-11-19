@@ -101,7 +101,7 @@ export default class MoegirlGroupUtils extends BasePlugin {
 
       const count = mgpGroupSpamLogs.length
       const duration = this.MUTE_DURATION[count]
-        ? this.MUTE_DURATION[count] / 1000
+        ? this.MUTE_DURATION[count]
         : Infinity
 
       const log = [
@@ -114,7 +114,7 @@ export default class MoegirlGroupUtils extends BasePlugin {
         `该用户第【${count}】次触发关键词，本次将【${
           duration === Infinity
             ? '踢出群聊'
-            : '禁言 ' + Time.format(duration * 1000)
+            : '禁言 ' + Time.format(duration)
         }】`,
       ].join('\n')
 

@@ -30,12 +30,12 @@ export async function useApi(baseURL: string): Promise<MediaWikiApi> {
     password: string
     cookies: { [key: string]: string } | null
   }[] = [
-    // {
-    //   match: (url: string) => url.includes('.moegirl.org.cn'),
-    //   username: process.env.MW_BOTPASSWORD_MOEGIRL_USERNAME,
-    //   password: process.env.MW_BOTPASSWORD_MOEGIRL_PASSWORD,
-    //   cookies: null,
-    // },
+    {
+      match: (url: string) => url.includes('.moegirl.org.cn'),
+      username: process.env.MW_BOTPASSWORD_MOEGIRL_USERNAME,
+      password: process.env.MW_BOTPASSWORD_MOEGIRL_PASSWORD,
+      cookies: null,
+    },
   ]
 
   const api = new MediaWikiApi(baseURL)

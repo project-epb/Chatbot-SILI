@@ -27,7 +27,7 @@ export default class MessagesLogger extends BasePlugin {
       ctx
         .logger('SEND')
         .info(
-          `${session.platform} ▸ ${session.event.channel.name} (${session.event.channel.id})`,
+          `${session.platform} ▸ ${session.event?.channel?.name} (${session.event?.channel?.id})`,
           `⫸ ${content}`
         )
     })

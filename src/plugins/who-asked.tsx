@@ -21,6 +21,8 @@ interface MentionLog {
 }
 
 export default class PluginWhoAsked extends BasePlugin {
+  static inject = ['database']
+
   constructor(ctx: Context) {
     super(ctx, {}, 'who_asked')
     this.initDatabase()

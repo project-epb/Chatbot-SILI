@@ -50,6 +50,7 @@ import PluginYoudao from '~/youdao'
 
 import AdapterDingtalk from '@koishijs/plugin-adapter-dingtalk'
 import AdapterDiscord from '@koishijs/plugin-adapter-discord'
+import AdapterKook from '@koishijs/plugin-adapter-kook'
 import * as PluginAdmin from '@koishijs/plugin-admin'
 import PluginAnalytics from '@koishijs/plugin-analytics'
 import PluginAuth from '@koishijs/plugin-auth'
@@ -70,8 +71,6 @@ import PluginServer from '@koishijs/plugin-server'
 import * as PluginStatus from '@koishijs/plugin-status'
 
 import AdapterOnebot from 'koishi-plugin-adapter-onebot'
-import AdapterRed from 'koishi-plugin-adapter-red'
-import AdapterVilla from 'koishi-plugin-adapter-villa'
 import PluginAssetsS3 from 'koishi-plugin-assets-s3'
 import * as PluginBaidu from 'koishi-plugin-baidu'
 import * as PluginDialogue from 'koishi-plugin-dialogue'
@@ -88,6 +87,8 @@ import * as PluginRecall from 'koishi-plugin-recall'
 import * as PluginSchedule from 'koishi-plugin-schedule'
 import PluginSilk from 'koishi-plugin-silk'
 import * as PluginSwitch from 'koishi-plugin-switch'
+
+import PluginHTTP from '@cordisjs/plugin-http'
 
 const PROD = process.env.NODE_ENV === 'production'
 
@@ -135,24 +136,31 @@ app.plugin(function PluginCollectionAdapters(ctx) {
   })
 
   // Discord
-  // ctx.plugin(AdapterDiscord, {
-  //   token: env.TOKEN_DISCORD_BOT,
-  // })
+  if (env.TOKEN_DISCORD_BOT) {
+    ctx.plugin(AdapterDiscord, {
+      token: env.TOKEN_DISCORD_BOT,
+    })
+  }
 
   // DingTalk
-  // const dingTokens = process.env.DINGTALK_TOKENS?.split('|')
-  // if (dingTokens && dingTokens.length) {
-  //   dingTokens.forEach((token) => {
-  //     const [agentId, appkey, secret] = token?.split('/')
-  //     if (!agentId || !appkey || !secret) return
-  //     ctx.plugin(AdapterDingtalk, {
-  //       protocol: 'ws',
-  //       agentId: +agentId,
-  //       appkey,
-  //       secret,
-  //     })
-  //   })
-  // }
+  const DINGTALK_AGENTID = process.env.DINGTALK_AGENTID
+  const DINGTALK_APPKEY = process.env.DINGTALK_APPKEY
+  const DINGTALK_SECRET = process.env.DINGTALK_SECRET
+  if (DINGTALK_AGENTID && DINGTALK_APPKEY && DINGTALK_SECRET) {
+    ctx.plugin(AdapterDingtalk, {
+      protocol: 'ws',
+      agentId: +DINGTALK_AGENTID,
+      appkey: DINGTALK_APPKEY,
+      secret: DINGTALK_SECRET,
+    })
+  }
+
+  if (env.KOOK_TOKEN) {
+    ctx.plugin(AdapterKook, {
+      protocol: 'ws',
+      token: env.KOOK_TOKEN,
+    })
+  }
 
   // Repl
   // ctx.plugin('adapter-repl')
@@ -180,6 +188,7 @@ app.plugin(function PluginCollectionLegacy(ctx) {
       region: env.TOKEN_S3_REGION,
       endpoint: env.TOKEN_S3_ENDPOINT,
     })
+    ctx.plugin(PluginHTTP)
   })
   // [common]
   ctx.plugin(function PluginCollectionLegacyCommon(ctx) {
