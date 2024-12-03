@@ -14,9 +14,11 @@ export default class PiggybackService extends Service {
 
   constructor(public ctx: Context) {
     super(ctx, 'piggyback')
-    Session.prototype.executeAsUser = function (userId, content) {
-      return ctx.piggyback.executeAsUser(this, userId, content)
-    }
+    ctx.bots.forEach((bot) => {
+      bot.session.prototype.executeAsUser = function (userId, content) {
+        return ctx.piggyback.executeAsUser(this, userId, content)
+      }
+    })
   }
 
   async executeAsUser(
@@ -25,7 +27,7 @@ export default class PiggybackService extends Service {
     content: Argv | string
   ) {
     const mockSess = session.bot.session(session.event)
-    mockSess[Session.shadow] = session
+    // mockSess[Session.shadow] = session
     mockSess.userId = userId
     mockSess.user = await mockSess.observeUser(['authority'])
     Object.assign(

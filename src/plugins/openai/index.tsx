@@ -44,7 +44,8 @@ export interface Config {
 }
 
 export default class PluginOpenAi extends BasePlugin {
-  static inject = ['html']
+  static inject = ['html', 'database']
+
   openai: OpenAI
   openaiOptions: ClientOptions
   SILI_PROMPT = PluginOpenAi.readPromptFile('SILI-v2.md')
