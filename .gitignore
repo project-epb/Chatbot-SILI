@@ -138,3 +138,5 @@ badwords.ini
 .flaskenv*
 
 .koishi_signal*
+
+/.debug
