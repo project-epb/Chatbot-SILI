@@ -1,4 +1,4 @@
-import { Context } from 'koishi'
+import { Context, h } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
@@ -37,5 +37,20 @@ export class PluginDebug extends BasePlugin {
         if (isNaN(numId) || numId < 1) return 'Invalid face ID.'
         return <face id={numId} />
       })
+
+    ctx.inject(['html'], (ctx) => {
+      ctx
+        .command('debug.inspect', 'Inspect session data', {
+          authority: 3,
+        })
+        .action(async ({ session }) => {
+          if (!session.quote) return 'No quote found.'
+          const img = await ctx.html.shiki(
+            JSON.stringify(session.quote, null, 2),
+            'json'
+          )
+          return img ? h.img(img, 'image/jpeg') : 'Failed to render.'
+        })
+    })
   }
 }

@@ -1,6 +1,12 @@
 import { Context, Service, h } from 'koishi'
 
-import type { BinaryScreenshotOptions, WaitForOptions } from 'puppeteer-core'
+import type { ScreenshotOptions, WaitForOptions } from 'puppeteer-core'
+import {
+  BundledLanguage,
+  bundledLanguages,
+  bundledLanguagesInfo,
+  codeToHtml,
+} from 'shiki'
 
 declare module 'koishi' {
   export interface Context {
@@ -24,7 +30,7 @@ export default class HTMLService extends Service {
   async rawHtml(
     html: string,
     selector: string = 'body',
-    shotOptions?: BinaryScreenshotOptions
+    shotOptions?: ScreenshotOptions
   ): Promise<Buffer | undefined> {
     shotOptions = {
       encoding: 'binary',
@@ -53,7 +59,7 @@ export default class HTMLService extends Service {
   async html(
     body: string,
     selector: string = 'body',
-    options?: BinaryScreenshotOptions
+    options?: ScreenshotOptions
   ) {
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -235,11 +241,42 @@ code.hljs[class~='lang-wiki']:before {
     return this.html(html, `pre[screenshot-target]`)
   }
 
+  async shiki(code: string, lang: BundledLanguage) {
+    if (!this.checkIfShikiSupportLang(lang)) {
+      throw new Error(`Language not supported: ${lang}`)
+    }
+
+    const langInfo = bundledLanguagesInfo.find((i) => i.aliases?.includes(lang))
+    const langLabel = langInfo?.aliases?.[0] || langInfo.name || lang
+    const html = await codeToHtml(code, {
+      lang: langInfo.id || '',
+      theme: 'one-dark-pro',
+      transformers: [
+        {
+          pre(node) {
+            node.properties.style += ';'
+            node.properties.style += `position: relative; font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace; font-size: 16px; display: inline-block; padding: 1em; padding-right: ${(10 * langLabel.length + 12).toFixed()}px; border-radius: 0.5em; white-space: pre;`
+          },
+          postprocess(html) {
+            return html.replace(
+              /<\/pre>/,
+              `<code style="position: absolute; right: 0.5em; top: 0.5em; font-size: 10px; border-radius: 99vw; background: #000; padding: 0.2em 0.5em;">${langLabel}</code></pre>`
+            )
+          },
+        },
+      ],
+    })
+    return this.html(html, 'pre.shiki')
+  }
+  checkIfShikiSupportLang(lang: string) {
+    return lang in bundledLanguages || lang === ''
+  }
+
   async shotByUrl(
     url: string | URL,
     selector?: string,
     waitOptioins?: WaitForOptions,
-    shotOptions?: BinaryScreenshotOptions
+    shotOptions?: ScreenshotOptions
   ) {
     // handle options
     waitOptioins = {

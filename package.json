@@ -3,6 +3,7 @@
   "version": "4.13.2",
   "private": true,
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx --watch ./src",
     "start": "cross-env NODE_ENV=production tsx ./src",
@@ -72,6 +73,7 @@
     "koishi-plugin-switch": "^1.9.0",
     "mint-filter": "^4.0.3",
     "openai": "^4.70.2",
+    "shiki": "^1.24.0",
     "wiki-saikou": "^3.4.0"
   }
 }
