@@ -236,7 +236,11 @@ code.hljs[class~='lang-wiki']:before {
     return this.html(html, `pre[screenshot-target]`)
   }
 
-  async shiki(code: string, lang: BundledLanguage) {
+  async shiki(
+    code: string,
+    lang: BundledLanguage,
+    startFrom: number | false = 1
+  ) {
     const { bundledLanguages, bundledLanguagesInfo, codeToHtml } = await import(
       'shiki'
     )
@@ -254,18 +258,61 @@ code.hljs[class~='lang-wiki']:before {
         {
           pre(node) {
             node.properties.style += ';'
-            node.properties.style += `position: relative; font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace; font-size: 16px; display: inline-block; padding: 1em; padding-right: ${(10 * langLabel.length + 12).toFixed()}px; border-radius: 0.5em; white-space: pre;`
+            node.properties.style += `padding-right: ${(10 * langLabel.length + 12).toFixed()}px;`
+          },
+          code(node) {
+            node.properties.style += ';'
+            node.properties.style += `--start: ${typeof startFrom === 'number' ? startFrom : 1};`
           },
           postprocess(html) {
             return html.replace(
               /<\/pre>/,
-              `<code style="position: absolute; right: 0.5em; top: 0.5em; font-size: 10px; border-radius: 99vw; background: #000; padding: 0.2em 0.5em;">${langLabel}</code></pre>`
+              `<code class="lang-badge">${langLabel}</code></pre>`
             )
           },
         },
       ],
     })
-    return this.html(html, 'pre.shiki')
+    const css = `
+<style>
+pre.shiki {
+  position: relative;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+  font-size: 16px;
+  display: inline-block;
+  padding: 1em;
+  border-radius: 0.5em;
+  white-space: pre;
+}
+pre.shiki code.lang-badge {
+  position: absolute;
+  right: 0.5em;
+  top: 0.5em;
+  font-size: 10px;
+  border-radius: 99vw;
+  background: #000;
+  padding: 0.2em 0.5em;
+}
+/* line number */
+pre.shiki code {
+  counter-reset: step;
+  counter-increment: step calc(var(--start, 1) - 1);
+}
+pre.shiki code .line::before {
+  content: counter(step);
+  counter-increment: step;
+  width: 1rem;
+  margin-right: 1.5rem;
+  display: inline-block;
+  text-align: right;
+  color: rgba(115,138,148,.4)
+}
+</style>
+`
+    return this.html(html + css, 'pre.shiki', {
+      type: 'png',
+      omitBackground: true,
+    })
   }
 
   async shotByUrl(
