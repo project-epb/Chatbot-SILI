@@ -17,9 +17,7 @@ export class GeoIPService extends Service {
     public ctx: Context,
     public config: Config
   ) {
-    super(ctx, 'geoip', {
-      immediate: true,
-    })
+    super(ctx, 'geoip', true)
   }
 
   lookupIP(ip?: string) {

@@ -3,7 +3,6 @@
   "version": "4.13.2",
   "private": true,
   "license": "MIT",
-  "type": "module",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx --watch ./src",
     "start": "cross-env NODE_ENV=production tsx ./src",

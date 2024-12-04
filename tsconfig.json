@@ -3,10 +3,9 @@
     "baseUrl": ".",
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "strict": false,
-    // "strictNullChecks": false,
-    // "noImplicitAny": true,
+    "noEmit": true,
     "sourceMap": true,
     "declaration": true,
     "resolveJsonModule": true,
@@ -22,5 +21,5 @@
       "$utils/*": ["src/utils/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx"]
+  "include": ["src", ".debug", "scripts"]
 }

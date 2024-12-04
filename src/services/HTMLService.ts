@@ -1,12 +1,7 @@
 import { Context, Service, h } from 'koishi'
 
 import type { ScreenshotOptions, WaitForOptions } from 'puppeteer-core'
-import {
-  BundledLanguage,
-  bundledLanguages,
-  bundledLanguagesInfo,
-  codeToHtml,
-} from 'shiki'
+import type { BundledLanguage } from 'shiki'
 
 declare module 'koishi' {
   export interface Context {
@@ -242,7 +237,11 @@ code.hljs[class~='lang-wiki']:before {
   }
 
   async shiki(code: string, lang: BundledLanguage) {
-    if (!this.checkIfShikiSupportLang(lang)) {
+    const { bundledLanguages, bundledLanguagesInfo, codeToHtml } = await import(
+      'shiki'
+    )
+
+    if ((lang as any) !== '' && !(lang in bundledLanguages)) {
       throw new Error(`Language not supported: ${lang}`)
     }
 
@@ -267,9 +266,6 @@ code.hljs[class~='lang-wiki']:before {
       ],
     })
     return this.html(html, 'pre.shiki')
-  }
-  checkIfShikiSupportLang(lang: string) {
-    return lang in bundledLanguages || lang === ''
   }
 
   async shotByUrl(
