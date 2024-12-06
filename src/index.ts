@@ -51,6 +51,7 @@ import PluginYoudao from '~/youdao'
 import AdapterDingtalk from '@koishijs/plugin-adapter-dingtalk'
 import AdapterDiscord from '@koishijs/plugin-adapter-discord'
 import AdapterKook from '@koishijs/plugin-adapter-kook'
+import AdapterQQ, { QQ } from '@koishijs/plugin-adapter-qq'
 import * as PluginAdmin from '@koishijs/plugin-admin'
 import PluginAnalytics from '@koishijs/plugin-analytics'
 import PluginAuth from '@koishijs/plugin-auth'
@@ -105,8 +106,13 @@ const { env } = process
 const app = new App({
   nickname: env.KOISHI_NICKNAME?.split('|'),
   prefix: (ctx) => {
+    if (['qq', 'qqguild'].includes(ctx.platform)) {
+      return ''
+    }
     const items = env.KOISHI_PREFIX?.split('|') || []
-    if (ctx.platform === 'villa') items.unshift('/')
+    if (['villa', 'discord'].includes(ctx.platform)) {
+      items.unshift('/')
+    }
     return items
   },
 })
@@ -129,11 +135,29 @@ app.plugin(PluginMongo, {
 /** 安装适配器 */
 app.plugin(function PluginCollectionAdapters(ctx) {
   // QQ
-  ctx.plugin(AdapterOnebot, {
-    protocol: env.ONEBOT_PROTOCOL,
-    selfId: env.ONEBOT_SELFID?.trim(),
-    endpoint: env.ONEBOT_ENDPOINT,
-  })
+  if (process.env.ONEBOT_SELFID) {
+    ctx.plugin(AdapterOnebot, {
+      protocol: env.ONEBOT_PROTOCOL,
+      selfId: env.ONEBOT_SELFID?.trim(),
+      endpoint: env.ONEBOT_ENDPOINT,
+    })
+  }
+  if (process.env.QQBOT_APPID) {
+    ctx.plugin(AdapterQQ, {
+      sandbox: true,
+      id: env.QQBOT_APPID,
+      token: env.QQBOT_TOKEN,
+      secret: env.QQBOT_SECRET,
+      type: env.QQBOT_TYPE,
+      intents:
+        QQ.Intents.GUILDS |
+        QQ.Intents.GUILD_MEMBERS |
+        QQ.Intents.PUBLIC_GUILD_MESSAGES |
+        QQ.Intents.OPEN_FORUMS_EVENT |
+        QQ.Intents.INTERACTIONS |
+        QQ.Intents.MESSAGE_AUDIT,
+    })
+  }
 
   // Discord
   if (env.TOKEN_DISCORD_BOT) {

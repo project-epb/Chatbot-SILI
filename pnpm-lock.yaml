@@ -20,6 +20,9 @@ importers:
       '@koishijs/plugin-adapter-kook':
         specifier: ^4.6.4
         version: 4.6.4(@satorijs/core@4.2.10(cordis@3.18.1))(koishi@4.18.0(@cordisjs/plugin-http@0.6.3(cordis@3.18.1))(cordis@3.18.1))
+      '@koishijs/plugin-adapter-qq':
+        specifier: ^4.8.6
+        version: 4.8.6(@satorijs/core@4.2.10(cordis@3.18.1))(koishi@4.18.0(@cordisjs/plugin-http@0.6.3(cordis@3.18.1))(cordis@3.18.1))
       '@koishijs/plugin-adapter-satori':
         specifier: ^1.3.1
         version: 1.3.1(@satorijs/core@4.2.10(cordis@3.18.1))(koishi@4.18.0(@cordisjs/plugin-http@0.6.3(cordis@3.18.1))(cordis@3.18.1))
@@ -682,6 +685,11 @@ packages:
     peerDependencies:
       koishi: ^4.17.7
 
+  '@koishijs/plugin-adapter-qq@4.8.6':
+    resolution: {integrity: sha512-q3Gvkm1h9pEIwaUBdc6CdYk6Rs1Lvpb+nDvEIQixFziE5GrYlTXx9g76ej5hKLlqKI6ynLTkab9PcQKSv5FDtg==}
+    peerDependencies:
+      koishi: ^4.18.1
+
   '@koishijs/plugin-adapter-satori@1.3.1':
     resolution: {integrity: sha512-Z77qz1YBWoh/oxB9aF/vvuwYScUGzznhdzFhyOZQ2ArCeAFIG+C4LF+sJ5vpJVgUDAQ4X0aaPeTU0yKpe4Ik6g==}
     peerDependencies:
@@ -883,6 +891,11 @@ packages:
     resolution: {integrity: sha512-bPD8x8uZCUuL/uRHpqVvEkIMex0A3zRJlfXq9tpuhnzlNHJccoR0YC9W970gAp8Rn3ouU11dZKw6xs7oZzoIBw==}
     peerDependencies:
       '@satorijs/core': ^4.1.1
+
+  '@satorijs/adapter-qq@4.8.6':
+    resolution: {integrity: sha512-d5dRU8fOu+lJ0PSdHiMLyClCSLVfIcYV6sZLFQspRh2sfQP+v+VFSc55YzJ1f1hC7q9+68Jo2wfi26sGuhO0tg==}
+    peerDependencies:
+      '@satorijs/core': ^4.2.11
 
   '@satorijs/adapter-satori@1.3.1':
     resolution: {integrity: sha512-wlqxSyrdI0N2z3fPd5Eb54h80LB/qXTJRegpDtvrrp+PfMHGjlDTId6EWWwDdxQO+gHdVid74BlOBwgv8nOtGA==}
@@ -3864,6 +3877,13 @@ snapshots:
     transitivePeerDependencies:
       - '@satorijs/core'
 
+  '@koishijs/plugin-adapter-qq@4.8.6(@satorijs/core@4.2.10(cordis@3.18.1))(koishi@4.18.0(@cordisjs/plugin-http@0.6.3(cordis@3.18.1))(cordis@3.18.1))':
+    dependencies:
+      '@satorijs/adapter-qq': 4.8.6(@satorijs/core@4.2.10(cordis@3.18.1))
+      koishi: 4.18.0(@cordisjs/plugin-http@0.6.3(cordis@3.18.1))(cordis@3.18.1)
+    transitivePeerDependencies:
+      - '@satorijs/core'
+
   '@koishijs/plugin-adapter-satori@1.3.1(@satorijs/core@4.2.10(cordis@3.18.1))(koishi@4.18.0(@cordisjs/plugin-http@0.6.3(cordis@3.18.1))(cordis@3.18.1))':
     dependencies:
       '@satorijs/adapter-satori': 1.3.1(@satorijs/core@4.2.10(cordis@3.18.1))
@@ -4196,6 +4216,10 @@ snapshots:
       '@satorijs/core': 4.2.10(cordis@3.18.1)
 
   '@satorijs/adapter-kook@4.6.4(@satorijs/core@4.2.10(cordis@3.18.1))':
+    dependencies:
+      '@satorijs/core': 4.2.10(cordis@3.18.1)
+
+  '@satorijs/adapter-qq@4.8.6(@satorijs/core@4.2.10(cordis@3.18.1))':
     dependencies:
       '@satorijs/core': 4.2.10(cordis@3.18.1)
 
