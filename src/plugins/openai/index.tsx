@@ -15,7 +15,7 @@ import BasePlugin from '~/_boilerplate'
 import { getUserNickFromSession } from '$utils/formatSession'
 import { safelyStringify } from '$utils/safelyStringify'
 import { ClientOptions, OpenAI } from 'openai'
-import { CompletionUsage } from 'openai/resources'
+import { CompletionUsage } from 'openai/resources/completions'
 
 declare module 'koishi' {
   export interface Tables {
@@ -274,7 +274,7 @@ export default class PluginOpenAi extends BasePlugin {
               return text
             }
 
-            const img = await this.ctx.html.hljs(
+            const img = await this.ctx.html.shiki(
               JSON.stringify(data, null, 2),
               'json'
             )
