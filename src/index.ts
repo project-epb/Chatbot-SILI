@@ -119,6 +119,7 @@ const app = new App({
 })
 // core services, init immediately
 app.plugin(PluginServer, {
+  host: '0.0.0.0',
   port: env.KOISHI_PROT ? +env.KOISHI_PROT : undefined,
   selfUrl: env.KOISHI_SELF_URL,
 })

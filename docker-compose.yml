@@ -75,6 +75,7 @@ services:
       - '6788:7081'
     volumes:
       - ./data/LiteLoader/data:/LiteLoader/data
+      - ./data/QQ:/data/.config/QQ
     networks:
       sili-network:
         ipv4_address: 172.233.0.5

@@ -3,5 +3,5 @@ https://sili.wjghj.cn {
 	@redirect {
 		not path /api* /dash* /assets*
 	}
-	redir @redirect /dash
+	redir @redirect /dash/
 }
