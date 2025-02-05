@@ -5,11 +5,14 @@ FROM ubuntu:22.04
 
 WORKDIR /app
 
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Ubuntu 22.04
 RUN sed -i 's/archive.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list \
     && sed -i 's/security.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list
+# Ubuntu 24.04
 # RUN set -i 's/archive.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list.d/ubuntu.sources
 #     && sed -i 's/security.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list.d/ubuntu.sources
-ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update
 
 # 安装常用工具和软件包
@@ -40,15 +43,29 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x -o nodesource_setup.sh \
     && apt install -y nodejs \
     && npm install -g pnpm
 
-# 安装 Chromium 浏览器
-RUN apt install -y \
-    chromium-browser \
-    chromium-codecs-ffmpeg-extra \
-    --fix-missing
+# 安装 Chromium
+# RUN apt install -y snapd
+# RUN snap install chromium
+# https://askubuntu.com/questions/1204571/how-to-install-chromium-without-snap
+# COPY ./data/core/debian.list /etc/apt/sources.list.d/debian.list
+# COPY ./data/core/chromium.pref /etc/apt/preferences.d/chromium.pref
+# RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys DCC9EFBF77E11517 \
+#     && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 648ACFD622F3D138 \
+#     && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 112695A0E562B32A \
+#     && apt-key export 77E11517 | gpg --dearmour -o /usr/share/keyrings/debian-buster.gpg \
+#     && apt-key export 22F3D138 | gpg --dearmour -o /usr/share/keyrings/debian-buster-updates.gpg \
+#     && apt-key export E562B32A | gpg --dearmour -o /usr/share/keyrings/debian-security-buster.gpg
+# RUN apt update
+# RUN apt install -y chromium
 
-# 安装 core 依赖
+# 安装 Node.js 依赖
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+# 安装 Chromium
+# FIXME: 这样安装 Chromium 有点傻逼，但暂时没找到更好的办法，TMD服了
+RUN node node_modules/puppeteer/install.mjs
+RUN apt install -y libnss3 libatk-bridge2.0-0 libxkbcommon0 libgtk-3-0 libxcomposite1 libxrandr2 libgbm1 libasound2 libpulse0 libxss1 libxtst6
 
 # SILI，启动！
 CMD ["pnpm", "start"]

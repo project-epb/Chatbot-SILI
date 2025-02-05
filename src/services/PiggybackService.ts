@@ -4,9 +4,9 @@ declare module 'koishi' {
   interface Context {
     piggyback: PiggybackService
   }
-  interface Session {
-    executeAsUser(userId: string, content: Argv | string): Promise<any>
-  }
+  // interface Session {
+  //   executeAsUser(userId: string, content: Argv | string): Promise<any>
+  // }
 }
 
 export default class PiggybackService extends Service {
@@ -14,11 +14,11 @@ export default class PiggybackService extends Service {
 
   constructor(public ctx: Context) {
     super(ctx, 'piggyback')
-    ctx.bots.forEach((bot) => {
-      bot.session.prototype.executeAsUser = function (userId, content) {
-        return ctx.piggyback.executeAsUser(this, userId, content)
-      }
-    })
+    // ctx.bots.forEach((bot) => {
+    //   bot.session.prototype.executeAsUser = function (userId, content) {
+    //     return ctx.piggyback.executeAsUser(this, userId, content)
+    //   }
+    // })
   }
 
   async executeAsUser(

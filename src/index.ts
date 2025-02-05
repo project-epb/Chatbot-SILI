@@ -90,6 +90,7 @@ import PluginSilk from 'koishi-plugin-silk'
 import * as PluginSwitch from 'koishi-plugin-switch'
 
 import PluginHTTP from '@cordisjs/plugin-http'
+import { executablePath } from 'puppeteer'
 
 const PROD = process.env.NODE_ENV === 'production'
 
@@ -262,6 +263,7 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   })
   ctx.plugin(PluginPuppeteer, {
     // headless: 'new',
+    executablePath: executablePath(),
   })
   ctx.plugin(PluginSchedule)
   ctx.plugin(PluginSilk)
