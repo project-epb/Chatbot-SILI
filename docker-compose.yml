@@ -71,8 +71,8 @@ services:
       VNC_PASSWD: ${VNC_PASSWD}
     privileged: true
     ports:
-      - "6100:3000"
-      - "7081:7081"
+      - '6700:6700'
+      - '6788:7081'
     volumes:
       - ./data/LiteLoader/data:/LiteLoader/data
     networks:
