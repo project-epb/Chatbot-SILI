@@ -1,0 +1,90 @@
+version: '3.7'
+
+services:
+  sili-core:
+    container_name: sili-core
+    build:
+      context: .
+      dockerfile: ./docker/sili-core.dockerfile
+    restart: always
+    networks:
+      sili-network:
+        ipv4_address: 172.233.0.2
+        aliases:
+          - core.sili.local
+    # ports:
+    #   - '3100:3100'
+    volumes:
+      - ./public:/data/public
+      # 主要的 Node.js 项目文件
+      - ./src/:/app/src
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./.npmrc:/app/.npmrc
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ./.env:/app/.env
+      # koishi自带的data文件夹
+      - ./data/core:/app/data
+    depends_on:
+      - mongo
+
+  caddy:
+    image: caddy:2.9-alpine
+    container_name: sili-caddy
+    restart: always
+    networks:
+      sili-network:
+        ipv4_address: 172.233.0.3
+        aliases:
+          - caddy.sili.local
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./data/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./public:/data/public
+
+  mongo:
+    image: mongo:8.0-noble
+    container_name: sili-mongo
+    networks:
+      sili-network:
+        ipv4_address: 172.233.0.4
+        aliases:
+          - mongo.sili.local
+    restart: always
+    ports:
+      - '27017:27017'
+    # 我们暂时不需要用户名密码
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: '123456!'
+    volumes:
+      - ./data/mongo:/data/db
+      - ./public:/data/public
+
+  llonebot:
+    container_name: sili-llonebot
+    image: initialencounter/llonebot:latest
+    environment:
+      VNC_PASSWD: ${VNC_PASSWD}
+    privileged: true
+    ports:
+      - '6700:6700'
+      - '6788:7081'
+    volumes:
+      - ./data/LiteLoader/data:/LiteLoader/data
+      - ./data/QQ:/data/.config/QQ
+    networks:
+      sili-network:
+        ipv4_address: 172.233.0.5
+        aliases:
+          - llonebot.sili.local
+
+networks:
+  sili-network:
+    name: sili-network
+    ipam:
+      config:
+        - subnet: 172.233.0.0/24
