@@ -94,18 +94,13 @@ Fandom 的全域跨语言链接同样适用，例如 `[[w:c:zh.ngnl:初濑伊纲
 
 ## 开发指南
 
+**快速启动**
+
 ```sh
-# clone the project
-git clone <remote-url>
-# init dependencies
-pnpm i
-# sync env configs
-pnpm env:pull
-# SILI，启动！
-pnpm start
+docker-compose -p sili up -d
 ```
 
-\* 确保 MongoDB 服务正在运行中
+详见 [开发文档](docs/README.md)。
 
 ---
 

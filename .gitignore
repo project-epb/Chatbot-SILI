@@ -129,14 +129,26 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-.cqhttp
+# pnpm
+.pnpm-store
+
+# dotenv files
 .env*
 !.env.project
 !.env.vault
 
+# badwords list
 badwords.ini
-.flaskenv*
 
 .koishi_signal*
 
+# local test data
 /.debug
+
+# runtime data
+/data/mongo
+/data/LiteLoader
+
+# backup data
+/.backups
+/.backup
