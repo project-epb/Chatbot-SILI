@@ -24,8 +24,8 @@ export default class 黑橙网站 extends BaseSticker {
   }
 
   async shot(leftText: string, rightText: string) {
-    leftText = this.ctx.html.preformattedText(leftText)
-    rightText = this.ctx.html.preformattedText(rightText)
+    leftText = this.ctx.html.escapeHtmlTags(leftText)
+    rightText = this.ctx.html.escapeHtmlTags(rightText)
 
     const html = `
 <logo style="

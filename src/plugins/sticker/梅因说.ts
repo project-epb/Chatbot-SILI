@@ -13,7 +13,7 @@ export default class 梅因说 extends BaseSticker {
       .action(async ({ session }, content) => {
         if (!session) return
 
-        content = this.ctx.html.preformattedText(content) || '······'
+        content = this.ctx.html.escapeHtmlTags(content) || '······'
 
         const html = `
 <div id="sticker" style="position: relative;width: 500px;height: 500px;">

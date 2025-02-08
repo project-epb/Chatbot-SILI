@@ -89,7 +89,7 @@ ${body}
   }
 
   async text(text: string) {
-    return this.html(`<pre>${this.preformattedText(text)}</pre>`, 'pre')
+    return this.html(`<pre>${this.escapeHtmlTags(text)}</pre>`, 'pre')
   }
 
   async svg(svg: string) {
@@ -342,7 +342,7 @@ pre.shiki.line-number code .line::before {
     // handle options
     waitOptioins = {
       waitUntil: 'networkidle0',
-      timeout: 21 * 1000,
+      timeout: 20 * 1000,
       ...waitOptioins,
     }
     shotOptions = {
@@ -386,31 +386,35 @@ pre.shiki.line-number code .line::before {
         }
       })
       .catch(async (e) => {
-        this.log.warn('[shotByUrl]', `faild to load page: ${url}`, e)
-        if (isInitialized) {
-          const target = selector ? await page.$(selector) : page
-          if (target) {
-            this.log.warn(
-              '[shotByUrl]',
-              'but target found, take it anyway:',
-              target,
-              selector
-            )
-            return target?.screenshot(shotOptions)
-          }
+        this.log.warn(
+          '[shotByUrl]',
+          'Navigation timeout:',
+          `(page HAS ${isInitialized ? '' : 'NOT'} loaded)`,
+          e
+        )
+        const target = selector ? await page.$(selector) : page
+        if (target) {
+          this.log.warn(
+            '[shotByUrl]',
+            'but target found, take it anyway:',
+            target,
+            selector
+          )
+          return target?.screenshot(shotOptions)
         } else {
+          this.log.warn('[shotByUrl]', 'and no target found, throw error')
           throw e
         }
       })
       .finally(() => page.close())
   }
 
-  preformattedText(text: string) {
+  escapeHtmlTags(text: string) {
     return text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   }
-  dropXSS = this.preformattedText
   propsToText(props: Record<string, string>) {
     return Object.entries(props)
+      .filter(([key, value]) => typeof value !== 'undefined' && value !== null)
       .map(([key, value]) => `${key}="${this.propValueToText(value)}"`)
       .join(' ')
   }

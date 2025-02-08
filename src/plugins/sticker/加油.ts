@@ -33,9 +33,9 @@ export default class 加油 extends BaseSticker {
         options.username = options.username || session.username
 
         // XSS
-        content = this.ctx.html.preformattedText(content)
+        content = this.ctx.html.escapeHtmlTags(content)
         options.avatar = this.ctx.html.propValueToText(options.avatar)
-        options.username = this.ctx.html.preformattedText(options.username)
+        options.username = this.ctx.html.escapeHtmlTags(options.username)
 
         const html = `
 <span id="sticker" style="
