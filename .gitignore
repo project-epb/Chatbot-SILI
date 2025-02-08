@@ -153,3 +153,5 @@ badwords.ini
 # backup data
 /.backups
 /.backup
+
+.flaskenv*

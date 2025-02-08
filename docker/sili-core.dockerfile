@@ -8,15 +8,14 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Ubuntu 22.04
-RUN sed -i 's/archive.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list \
-    && sed -i 's/security.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list
+RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list \
+    && sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
 # Ubuntu 24.04
 # RUN set -i 's/archive.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list.d/ubuntu.sources
 #     && sed -i 's/security.ubuntu.com/mirrors.cloud.tencent.com/g' /etc/apt/sources.list.d/ubuntu.sources
 RUN apt update
 
 # 安装常用工具和软件包
-# 有一说一，我也不清楚哪些是必要的，索性先全装上再说 =v=
 RUN apt install -y \
     wget \
     curl \
@@ -25,47 +24,38 @@ RUN apt install -y \
     unzip \
     p7zip-full \
     git \
-    cmake \
-    libpng-dev libjpeg-dev libtiff-dev libwebp-dev libopenjp2-7-dev \
+    fontconfig \
     --fix-missing
 
 # 安装中文字体
-RUN apt install -y \
-    fonts-noto-cjk fonts-wqy-zenhei fonts-wqy-microhei \
-    # language-pack-zh-hans language-pack-zh-hans-base \
-    # locales \
-    --fix-missing
+# 汉仪文黑
+RUN wget https://r2.epb.wiki/fonts/HYWenHei.7z \
+    && 7z x HYWenHei.7z -oHYWenHei \
+    && mv HYWenHei/*.ttf /usr/share/fonts/truetype/ \
+    && rm HYWenHei.7z
+# Segoe UI Emoji
+RUN wget https://r2.epb.wiki/fonts/seguiemj.ttf \
+    && mv seguiemj.ttf /usr/share/fonts/truetype/
+RUN fc-cache -fv
 
 # 安装 Node.js LTS 以及 pnpm
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x -o nodesource_setup.sh \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh \
     && chmod +x nodesource_setup.sh \
     && bash nodesource_setup.sh \
     && apt install -y nodejs \
     && npm install -g pnpm
 
-# 安装 Chromium
-# RUN apt install -y snapd
-# RUN snap install chromium
-# https://askubuntu.com/questions/1204571/how-to-install-chromium-without-snap
-# COPY ./data/core/debian.list /etc/apt/sources.list.d/debian.list
-# COPY ./data/core/chromium.pref /etc/apt/preferences.d/chromium.pref
-# RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys DCC9EFBF77E11517 \
-#     && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 648ACFD622F3D138 \
-#     && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 112695A0E562B32A \
-#     && apt-key export 77E11517 | gpg --dearmour -o /usr/share/keyrings/debian-buster.gpg \
-#     && apt-key export 22F3D138 | gpg --dearmour -o /usr/share/keyrings/debian-buster-updates.gpg \
-#     && apt-key export E562B32A | gpg --dearmour -o /usr/share/keyrings/debian-security-buster.gpg
-# RUN apt update
-# RUN apt install -y chromium
-
 # 安装 Node.js 依赖
 COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-# 安装 Chromium
-# FIXME: 这样安装 Chromium 有点傻逼，但暂时没找到更好的办法，TMD服了
-RUN node node_modules/puppeteer/install.mjs
-RUN apt install -y libnss3 libatk-bridge2.0-0 libxkbcommon0 libgtk-3-0 libxcomposite1 libxrandr2 libgbm1 libasound2 libpulse0 libxss1 libxtst6
+# 安装 Chrome
+# https://pptr.nodejs.cn/guides/configuration
+# RUN pnpm dlx puppeteer browsers install
+# 我们的项目依赖本身就包含了 puppeteer，所以我们不需要 dlx 浪费时间
+RUN pnpm puppeteer browsers install
+# https://source.chromium.org/chromium/chromium/src/+/main:chrome/installer/linux/debian/dist_package_versions.json
+RUN apt install -y libasound2 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libdrm2 libexpat1 libgbm1 libglib2.0-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libudev1 libuuid1 libx11-6 libx11-xcb1 libxcb-dri3-0 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxkbcommon0 libxrandr2 libxrender1 libxshmfence1 libxss1 libxtst6
 
 # SILI，启动！
 CMD ["pnpm", "start"]

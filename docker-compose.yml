@@ -25,6 +25,8 @@ services:
       - ./.env:/app/.env
       # koishi自带的data文件夹
       - ./data/core:/app/data
+      # 缓存文件夹
+      - /root/.cache/puppeteer
     depends_on:
       - mongo
 
@@ -55,13 +57,14 @@ services:
           - mongo.sili.local
     restart: always
     ports:
+      # 我们暴露此端口到宿主机，这样就能通过 MongoDB Compase 等应用连接它
       - '27017:27017'
-    # 我们暂时不需要用户名密码
+    # 暂时不设密码，注意配置防火墙，不能将此端口暴露到公网
     # environment:
-    #   MONGO_INITDB_ROOT_USERNAME: root
-    #   MONGO_INITDB_ROOT_PASSWORD: '123456!'
+    #   MONGO_INITDB_ROOT_USERNAME: ${DB_MONGO_USER}
+    #   MONGO_INITDB_ROOT_PASSWORD: ${DB_MONGO_PASSWORD}
     volumes:
-      - ./data/mongo:/data/db
+      - mongo_data:/data/db
       - ./public:/data/public
 
   llonebot:
@@ -70,12 +73,12 @@ services:
     environment:
       VNC_PASSWD: ${VNC_PASSWD}
     privileged: true
+    restart: always
     ports:
-      - '6700:6700'
-      - '6788:7081'
+      - '6788:7081' # VNC
     volumes:
-      - ./data/LiteLoader/data:/LiteLoader/data
-      - ./data/QQ:/data/.config/QQ
+      - liteloader_data:/LiteLoader/data
+      - qqnt_data:/data/.config/QQ
     networks:
       sili-network:
         ipv4_address: 172.233.0.5
@@ -88,3 +91,11 @@ networks:
     ipam:
       config:
         - subnet: 172.233.0.0/24
+
+volumes:
+  mongo_data:
+    name: sili_mongo_data
+  qqnt_data:
+    name: sili_qqnt_data
+  liteloader_data:
+    name: sili_liteloader_data
