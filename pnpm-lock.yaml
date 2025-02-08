@@ -80,6 +80,9 @@ importers:
       '@koishijs/plugin-status':
         specifier: ^7.4.10
         version: 7.4.10(@koishijs/plugin-console@5.30.1(koishi@4.18.0(@cordisjs/plugin-http@0.6.3(cordis@3.18.1))(cordis@3.18.1)))(koishi@4.18.0(@cordisjs/plugin-http@0.6.3(cordis@3.18.1))(cordis@3.18.1))
+      dice-roller-parser:
+        specifier: ^0.1.8
+        version: 0.1.8
       fexios:
         specifier: ^1.7.1
         version: 1.7.1
@@ -1659,6 +1662,9 @@ packages:
 
   dezalgo@1.0.4:
     resolution: {integrity: sha512-rXSP0bf+5n0Qonsb+SVVfNfIsimO4HEtmnIpPHY8Q1UCzKlQrDMfdobr8nJOOsRgWCyMRqeSBQzmWUMq7zvVig==}
+
+  dice-roller-parser@0.1.8:
+    resolution: {integrity: sha512-/UYDWMX1FHU6RR3iZGfexKlqyBJXSPuHPkvvpZ8k3QVjaXVc56W5GeLc/0bf9qLZTn1YdVFrIBLzvBt/9UHoNw==}
 
   diff@4.0.2:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
@@ -5165,6 +5171,8 @@ snapshots:
     dependencies:
       asap: 2.0.6
       wrappy: 1.0.2
+
+  dice-roller-parser@0.1.8: {}
 
   diff@4.0.2: {}
 
