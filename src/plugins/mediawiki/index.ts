@@ -151,7 +151,7 @@ export default class PluginMediawiki extends BasePlugin {
             throw e
           })
 
-        this.logger.info('QUERY DATA', data.query)
+        this.logger.debug('QUERY DATA', data.query)
 
         // Cache variables
         const { pages, redirects, interwiki, specialpagealiases, namespaces } =
@@ -401,7 +401,7 @@ export default class PluginMediawiki extends BasePlugin {
           gsrlimit: '5',
         })
 
-        this.logger.info('Search DATA', data)
+        this.logger.debug('Search DATA', data)
         const { searchinfo, search, pages } = data.query
 
         const bulk = new BulkMessageBuilder(session)
@@ -505,7 +505,7 @@ ${getUrl(session.channel!.mwApi!, { curid: item.pageid })}`
           : matched.selector
       )
       if (!target) {
-        this.logger.info('SHOT_INFOBOX', 'Canceled', 'Missing target')
+        this.logger.warn('SHOT_INFOBOX', 'Canceled', 'Missing target')
         await page.close()
         return ''
       }

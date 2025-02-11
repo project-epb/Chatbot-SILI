@@ -3,6 +3,8 @@ import { MediaWikiApi } from 'wiki-saikou'
 const MOCK_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'
 
+const COOKIE_STORE = new Map<string, any>()
+
 export async function useApi(baseURL: string): Promise<MediaWikiApi> {
   const USE_MOCK_HEADER = [
     {
@@ -28,13 +30,11 @@ export async function useApi(baseURL: string): Promise<MediaWikiApi> {
     match: (url: string) => boolean
     username: string
     password: string
-    cookies: { [key: string]: string } | null
   }[] = [
     {
       match: (url: string) => url.includes('.moegirl.org.cn'),
       username: process.env.MW_BOTPASSWORD_MOEGIRL_USERNAME,
       password: process.env.MW_BOTPASSWORD_MOEGIRL_PASSWORD,
-      cookies: null,
     },
   ]
 
@@ -42,20 +42,33 @@ export async function useApi(baseURL: string): Promise<MediaWikiApi> {
 
   const mockHeaders = USE_MOCK_HEADER.find((i) => i.match(baseURL))
   if (mockHeaders) {
-    console.info('Use mock headers:', baseURL, mockHeaders.headers)
+    console.info('[MWAPI]', 'Use mock headers:', baseURL, mockHeaders.headers)
     api.defaultOptions = { headers: mockHeaders.headers }
   }
 
   const auth = USE_AUTHORIZATION.find((i) => i.match(baseURL))
   if (auth && auth.username && auth.password) {
-    console.info('Use authorization:', baseURL, auth.username)
-    if (auth.cookies) {
-      console.info('Use cookies:', baseURL, auth.cookies)
-      api.cookies = auth.cookies
+    console.info('[MWAPI]', 'Authorization:', baseURL, auth.username)
+    const cookies = COOKIE_STORE.get(`${baseURL}#${auth.username}`)
+    if (cookies) {
+      console.info('[MWAPI]', 'By cookies:', baseURL, auth.username)
+      api.cookies = cookies
     } else {
-      await api.login(auth.username, auth.password)
-      console.info('Logged in:', baseURL, auth.username, api.cookies)
-      auth.cookies = api.cookies
+      console.info('[MWAPI]', 'By login:', baseURL, auth.username)
+      await api
+        .login(auth.username, auth.password)
+        .then(() => {
+          return api.getUserInfo()
+        })
+        .then((userinfo) => {
+          if (userinfo.id > 0) {
+            console.info('[MWAPI]', 'Logged in:', baseURL, userinfo)
+            COOKIE_STORE.set(`${baseURL}#${auth.username}`, api.cookies)
+          }
+        })
+        .catch((e) => {
+          console.error('[MWAPI]', 'Login failed:', baseURL, auth.username, e)
+        })
     }
   }
   return api
