@@ -259,6 +259,7 @@ export default class PluginOpenAi extends BasePlugin {
         // 如果没有开启调试模式，每思考 10 秒发送一个状态指示器
         let sendStatusIndicator = -1
         const indicators = ['181', '285', '267', '312', '284', '37']
+        const stopSendStatusIndicator = () => clearInterval(interval)
         const interval = setInterval(() => {
           if (
             sendContentFromIndex ||
@@ -276,53 +277,71 @@ export default class PluginOpenAi extends BasePlugin {
         }, 10 * 1000)
 
         // #region chat-stream
-        for await (const chunk of stream) {
-          if (chunk.usage) {
-            usage = chunk.usage
-          }
-          const thinking: string =
-            (chunk as any).choices?.[0]?.delta?.reasoning_content?.trim() || ''
-          const content = chunk.choices?.[0]?.delta?.content?.trim() || ''
+        try {
+          for await (const chunk of stream) {
+            if (chunk.usage) {
+              usage = chunk.usage
+            }
+            const thinking: string =
+              (chunk as any).choices?.[0]?.delta?.reasoning_content?.trim() ||
+              ''
+            const content = chunk.choices?.[0]?.delta?.content?.trim() || ''
 
-          // 内心独白
-          if (thinking) {
-            fullThinking += thinking
-            if (shouldSendThinking) {
+            // 内心独白
+            if (thinking) {
+              fullThinking += thinking
+              if (shouldSendThinking) {
+                const { text, nextIndex } = this.splitContent(
+                  fullThinking,
+                  sendThinkingFromIndex
+                )
+                sendThinkingFromIndex = nextIndex
+                if (text) {
+                  this.logger.info('[chat] thinking:', text)
+                  stopSendStatusIndicator()
+                  await session.sendQueued('[内心独白] ' + text)
+                }
+              }
+            }
+            // 内心独白结束
+            if (content && !thinkingEnd) {
+              thinkingEnd = true
+              this.logger.info('[chat] think end:', fullThinking)
+              if (
+                fullThinking &&
+                sendThinkingFromIndex < fullThinking.length &&
+                shouldSendThinking
+              ) {
+                stopSendStatusIndicator()
+                await session.sendQueued(
+                  '[内心独白] ' + fullThinking.slice(sendThinkingFromIndex)
+                )
+              }
+            }
+            // 正文内容
+            if (content) {
+              fullContent += content
               const { text, nextIndex } = this.splitContent(
-                fullThinking,
-                sendThinkingFromIndex
+                fullContent,
+                sendContentFromIndex
               )
-              sendThinkingFromIndex = nextIndex
-              text && (await session.sendQueued('[内心独白] ' + text))
+              sendContentFromIndex = nextIndex
+              if (text) {
+                this.logger.info('[chat] sending:', text)
+                stopSendStatusIndicator()
+                await session.sendQueued(text)
+              }
             }
           }
-          // 内心独白结束
-          if (content && !thinkingEnd) {
-            thinkingEnd = true
-            this.logger.info('[chat] think end:', fullThinking)
-            if (
-              fullThinking &&
-              sendThinkingFromIndex < fullThinking.length &&
-              shouldSendThinking
-            ) {
-              await session.sendQueued(
-                '[内心独白] ' + fullThinking.slice(sendThinkingFromIndex)
-              )
-            }
-          }
-          // 正文内容
-          if (content) {
-            fullContent += content
-            const { text, nextIndex } = this.splitContent(
-              fullContent,
-              sendContentFromIndex
-            )
-            sendContentFromIndex = nextIndex
-            if (text) {
-              this.logger.info('[chat] sending:', text)
-              await session.sendQueued(text)
-            }
-          }
+        } catch (e) {
+          this.logger.error('[chat] stream error:', e)
+          stopSendStatusIndicator()
+          return (
+            <>
+              <quote id={session.messageId}></quote>
+              {this.RANDOM_ERROR_MSG}
+            </>
+          )
         }
         //#endregion
 
