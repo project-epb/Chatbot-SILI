@@ -33,6 +33,7 @@ interface OpenAIConversationLog {
   role: 'system' | 'user' | 'assistant'
   content: string
   usage?: CompletionUsage
+  model?: string
   time: number
 }
 
@@ -96,6 +97,7 @@ export default class PluginOpenAi extends BasePlugin {
         role: 'string',
         content: 'string',
         usage: 'json',
+        model: 'string',
         time: 'integer',
       },
       {
@@ -206,9 +208,10 @@ export default class PluginOpenAi extends BasePlugin {
           historiesLenth: histories.length,
         })
 
+        const model = options.model || this.config.model || 'gpt-4o-mini'
         const stream = await this.openai.chat.completions.create(
           {
-            model: options.model || this.config.model || 'gpt-4o-mini',
+            model,
             messages: [
               // magic
               // {
@@ -253,6 +256,25 @@ export default class PluginOpenAi extends BasePlugin {
         let thinkingEnd = false
         const shouldSendThinking = options.debug
 
+        // 如果没有开启调试模式，每思考 10 秒发送一个状态指示器
+        let sendStatusIndicator = -1
+        const indicators = ['181', '285', '267', '312', '284', '37']
+        const interval = setInterval(() => {
+          if (
+            sendContentFromIndex ||
+            sendThinkingFromIndex ||
+            Date.now() - startTime > 60 * 1000
+          ) {
+            clearInterval(interval)
+          } else {
+            sendStatusIndicator = (sendStatusIndicator + 1) % indicators.length
+            session.onebot?._request('set_msg_emoji_like', {
+              message_id: session.messageId,
+              emoji_id: indicators[sendStatusIndicator],
+            })
+          }
+        }, 10 * 1000)
+
         // #region chat-stream
         for await (const chunk of stream) {
           if (chunk.usage) {
@@ -262,21 +284,22 @@ export default class PluginOpenAi extends BasePlugin {
             (chunk as any).choices?.[0]?.delta?.reasoning_content?.trim() || ''
           const content = chunk.choices?.[0]?.delta?.content?.trim() || ''
 
-          let textToBeSent = ''
           // 内心独白
           if (thinking) {
             fullThinking += thinking
-            const { text, nextIndex } = this.splitContent(
-              fullThinking,
-              sendThinkingFromIndex,
-            )
-            textToBeSent = text
-            sendThinkingFromIndex = nextIndex
+            if (shouldSendThinking) {
+              const { text, nextIndex } = this.splitContent(
+                fullThinking,
+                sendThinkingFromIndex
+              )
+              sendThinkingFromIndex = nextIndex
+              text && (await session.sendQueued('[内心独白] ' + text))
+            }
           }
           // 内心独白结束
           if (content && !thinkingEnd) {
             thinkingEnd = true
-            console.info('[chat] thinking end:', fullThinking)
+            this.logger.info('[chat] think end:', fullThinking)
             if (
               fullThinking &&
               sendThinkingFromIndex < fullThinking.length &&
@@ -287,34 +310,32 @@ export default class PluginOpenAi extends BasePlugin {
               )
             }
           }
-          // 对话内容
+          // 正文内容
           if (content) {
             fullContent += content
             const { text, nextIndex } = this.splitContent(
               fullContent,
-              sendContentFromIndex,
+              sendContentFromIndex
             )
-            textToBeSent = text
             sendContentFromIndex = nextIndex
-          }
-
-          if (textToBeSent) {
-            if (thinking && shouldSendThinking) {
-              textToBeSent = '[内心独白] ' + textToBeSent
+            if (text) {
+              this.logger.info('[chat] sending:', text)
+              await session.sendQueued(text)
             }
-            await session.sendQueued(textToBeSent)
           }
         }
         //#endregion
 
         // 处理剩余的文本
         if (sendContentFromIndex < fullContent.length) {
-          await session.sendQueued(fullContent.slice(sendContentFromIndex))
+          const text = fullContent.slice(sendContentFromIndex)
+          this.logger.info('[chat] send remaining:', text)
+          await session.sendQueued(text)
         }
 
-        console.info('[chat] stream end:', {
-          fullContent,
+        this.logger.success('[chat] stream end:', {
           fullThinking,
+          fullContent,
           usage,
         })
 
@@ -327,6 +348,7 @@ export default class PluginOpenAi extends BasePlugin {
               content: fullContent,
               time: Date.now(),
               usage,
+              model,
             },
           ].forEach((item) =>
             // @ts-ignore

@@ -38,6 +38,24 @@ export class PluginDebug extends BasePlugin {
         return <face id={numId} />
       })
 
+    ctx
+      .platform('onebot')
+      .command('debug.reaction', '<faceId:posint> Set reaction', {})
+      .action(({ session }, faceId) => {
+        const numId = parseInt(faceId)
+        const msgId = session.quote?.id || session.messageId
+        if (isNaN(numId) || numId < 1) return 'Invalid face ID.'
+        return session.onebot
+          ?._request('set_msg_emoji_like', {
+            message_id: msgId,
+            emoji_id: faceId,
+          })
+          .then(() => '')
+          .catch((e) => {
+            return '失败：' + e.message
+          })
+      })
+
     ctx.inject(['html'], (ctx) => {
       ctx
         .command('debug.inspect', 'Inspect session data', {
