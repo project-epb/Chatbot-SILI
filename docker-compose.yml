@@ -1,4 +1,4 @@
-version: '3.7'
+name: sili
 
 services:
   sili-core:
@@ -39,6 +39,8 @@ services:
         ipv4_address: 172.233.0.3
         aliases:
           - caddy.sili.local
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     ports:
       - '80:80'
       - '443:443'

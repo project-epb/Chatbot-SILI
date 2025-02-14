@@ -16,6 +16,7 @@ export default class PluginProfile extends BasePlugin {
 
     ctx
       .command('admin/profile', '个人资料', {})
+      .alias('admin/whoami')
       .option('user', '-u <user:string> platform:uid', { authority: 2 })
       .action(async ({ session, options }) => {
         if (!session) return
