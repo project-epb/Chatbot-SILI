@@ -41,6 +41,7 @@ export interface Config {
   model: string
   maxTokens: number
   recordsPerChannel: number
+  modelAliases?: Record<string, string>
 }
 
 export default class PluginOpenAi extends BasePlugin {
@@ -48,7 +49,7 @@ export default class PluginOpenAi extends BasePlugin {
 
   openai: OpenAI
   openaiOptions: ClientOptions
-  SILI_PROMPT = PluginOpenAi.readPromptFile('SILI-v2.md')
+  SILI_PROMPT = PluginOpenAi.readPromptFile('SILI-v3.md')
   CHAT_SUMMARY_PROMPT = PluginOpenAi.readPromptFile('chat-summary.txt')
   CENSOR_PROMPT = PluginOpenAi.readPromptFile('censor.txt')
   RANDOM_ERROR_MSG = (
@@ -60,6 +61,7 @@ export default class PluginOpenAi extends BasePlugin {
     </random>
   )
   #chatRecords: Record<string, Session.Payload[]> = {}
+  readonly modelAliases: Record<string, string> = {}
 
   constructor(
     ctx: Context,
@@ -76,6 +78,9 @@ export default class PluginOpenAi extends BasePlugin {
       this.#initListeners()
       this.#initCommands()
     })
+    if (config.modelAliases) {
+      this.modelAliases = config.modelAliases
+    }
   }
 
   async #initDatabase() {
@@ -176,6 +181,14 @@ export default class PluginOpenAi extends BasePlugin {
       })
       .option('debug', '-d', { hidden: true, authority: 3 })
       .userFields(['id', 'name', 'openai_last_conversation_id', 'authority'])
+      .check(({ options }) => {
+        if (options.model) {
+          const maybeRealModel = this.modelAliases[options.model]
+          if (maybeRealModel) {
+            options.model = maybeRealModel
+          }
+        }
+      })
       .action(async ({ session, options }, content) => {
         this.logger.info('[chat] input', options, content)
 
@@ -193,102 +206,137 @@ export default class PluginOpenAi extends BasePlugin {
           historiesLenth: histories.length,
         })
 
-        return this.openai.chat.completions
-          .create(
-            {
-              model: options.model || this.config.model || 'gpt-4o-mini',
-              messages: [
-                // magic
-                // {
-                //   role: 'system',
-                //   content: `You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2021-09\nCurrent model: ${
-                //     options.model || 'gpt-3.5-turbo'
-                //   }\nCurrent time: ${new Date().toLocaleString()}`,
-                // },
-                // base prompt
-                {
-                  role: 'system',
-                  content: options.prompt || this.SILI_PROMPT,
-                },
-                // provide user info
-                {
-                  role: 'system',
-                  content: `The person talking to you: ${userName}\nCurrent time: ${new Date().toLocaleString()}\n`,
-                },
-                // chat history
-                ...histories,
-                // current user input
-                { role: 'user', content },
-              ],
-              max_tokens: this.config.maxTokens ?? 1000,
-              temperature: 0.9,
-              presence_penalty: 0.6,
-              frequency_penalty: 0,
+        const stream = await this.openai.chat.completions.create(
+          {
+            model: options.model || this.config.model || 'gpt-4o-mini',
+            messages: [
+              // magic
+              // {
+              //   role: 'system',
+              //   content: `You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2021-09\nCurrent model: ${
+              //     options.model || 'gpt-3.5-turbo'
+              //   }\nCurrent time: ${new Date().toLocaleString()}`,
+              // },
+              // base prompt
+              {
+                role: 'system',
+                content: options.prompt || this.SILI_PROMPT,
+              },
+              // provide user info
+              {
+                role: 'system',
+                content: `The person talking to you: ${userName}\nCurrent time: ${new Date().toLocaleString()}\n`,
+              },
+              // chat history
+              ...histories,
+              // current user input
+              { role: 'user', content },
+            ],
+            max_tokens: this.config.maxTokens ?? 1024,
+            temperature: 0.9,
+            presence_penalty: 0.6,
+            frequency_penalty: 0,
+            stream: true,
+            stream_options: {
+              include_usage: true,
             },
-            { timeout: 30 * 1000 }
-          )
-          .then(async (data) => {
-            this.logger.info('[chat] output', data)
-            const text = data.choices?.[0]?.message?.content?.trim()
-            if (!text) {
-              return (
-                <>
-                  <quote id={session.messageId}></quote>
-                  {options.debug
-                    ? '💩 Error 返回结果为空'
-                    : this.RANDOM_ERROR_MSG}
-                </>
+          },
+          { timeout: 60 * 1000 }
+        )
+
+        // 读取流式数据
+        let fullThinking = ''
+        let fullContent = ''
+        let sendContentFromIndex = 0
+        let sendThinkingFromIndex = 0
+        let usage: CompletionUsage | undefined
+        let thinkingEnd = false
+        const shouldSendThinking = options.debug
+
+        // #region chat-stream
+        for await (const chunk of stream) {
+          if (chunk.usage) {
+            usage = chunk.usage
+          }
+          const thinking: string =
+            (chunk as any).choices?.[0]?.delta?.reasoning_content?.trim() || ''
+          const content = chunk.choices?.[0]?.delta?.content?.trim() || ''
+
+          let textToBeSent = ''
+          // 内心独白
+          if (thinking) {
+            fullThinking += thinking
+            const { text, nextIndex } = this.splitContent(
+              fullThinking,
+              sendThinkingFromIndex,
+            )
+            textToBeSent = text
+            sendThinkingFromIndex = nextIndex
+          }
+          // 内心独白结束
+          if (content && !thinkingEnd) {
+            thinkingEnd = true
+            console.info('[chat] thinking end:', fullThinking)
+            if (
+              fullThinking &&
+              sendThinkingFromIndex < fullThinking.length &&
+              shouldSendThinking
+            ) {
+              await session.sendQueued(
+                '[内心独白] ' + fullThinking.slice(sendThinkingFromIndex)
               )
             }
-
-            // if (session.user.authority < 2) {
-            //   const good = await this.reviewConversation(
-            //     options.prompt || this.SILI_PROMPT,
-            //     content,
-            //     text
-            //   )
-            //   if (!good) {
-            //     return '呜……SILI不喜欢这个话题，我们可以聊点别的吗？'
-            //   }
-            // }
-
-            // save conversations to database
-            ;[
-              { role: 'user', content, time: startTime },
-              {
-                role: 'assistant',
-                content: text,
-                time: Date.now(),
-                usage: data.usage,
-              },
-            ].forEach((item) =>
-              // @ts-ignore
-              this.ctx.database.create('openai_chat', {
-                ...item,
-                conversation_owner,
-                conversation_id,
-              })
+          }
+          // 对话内容
+          if (content) {
+            fullContent += content
+            const { text, nextIndex } = this.splitContent(
+              fullContent,
+              sendContentFromIndex,
             )
+            textToBeSent = text
+            sendContentFromIndex = nextIndex
+          }
 
-            if (!options.debug) {
-              return text
+          if (textToBeSent) {
+            if (thinking && shouldSendThinking) {
+              textToBeSent = '[内心独白] ' + textToBeSent
             }
+            await session.sendQueued(textToBeSent)
+          }
+        }
+        //#endregion
 
-            const img = await this.ctx.html.shiki(
-              JSON.stringify(data, null, 2),
-              'json'
-            )
-            return img
-          })
-          .catch((e) => {
-            this.logger.error('[chat] error', e)
-            return (
-              <>
-                <quote id={session.messageId}></quote>
-                {options.debug ? <>💩 {e}</> : this.RANDOM_ERROR_MSG}
-              </>
-            )
-          })
+        // 处理剩余的文本
+        if (sendContentFromIndex < fullContent.length) {
+          await session.sendQueued(fullContent.slice(sendContentFromIndex))
+        }
+
+        console.info('[chat] stream end:', {
+          fullContent,
+          fullThinking,
+          usage,
+        })
+
+        if (fullContent) {
+          // save conversations to database
+          ;[
+            { role: 'user', content, time: startTime },
+            {
+              role: 'assistant',
+              content: fullContent,
+              time: Date.now(),
+              usage,
+            },
+          ].forEach((item) =>
+            // @ts-ignore
+            this.ctx.database.create('openai_chat', {
+              ...item,
+              conversation_owner,
+              conversation_id,
+            })
+          )
+        }
       })
 
     this.ctx
@@ -345,6 +393,67 @@ export default class PluginOpenAi extends BasePlugin {
         const base64 = arrayBufferToBase64(buffer)
         return <audio src={`data:audio/mp3;base64,${base64}`}></audio>
       })
+  }
+
+  /**
+   * 提升对话连贯性，将对话内容分割成多个部分
+   *
+   * 首先抛弃 fromIndex 之前的内容，剩下的称为 rest
+   * 将 rest 按照 splitChars 中的字符进行分割，得到分割点的索引
+   * 如果分割点的数量大于 expectParts，返回前 expectParts 个分割点之间的内容，nextIndex 为第 expectParts 个分割点的索引（注意是基于 fullText 的索引）
+   * 如果分割点的数量小于 expectParts，什么也不做：返回 text 为空字符串，nextIndex 为 fromIndex
+   * 如果剩余的内容长度大于 maxLength，尝试减少 expectParts 的数量，直到剩余长度小于 maxLength
+   * 如果 expectParts 为 0，意味着剩余的内容没有合适的分割点，作为保底机制，把剩余内容直接返回，nextIndex 设置到末尾
+   * 注意：返回的 nextIndex 都是基于 fullText 的索引，如果基于 rest 计算要加上 fromIndex
+   *
+   * @param fullText
+   * @param fromIndex
+   * @param splitChars
+   * @param expectParts
+   * @param maxLength
+   */
+  splitContent(
+    fullText: string,
+    fromIndex: number = 0,
+    splitChars: string[] = ['。', '？', '！', '\n'],
+    expectParts: number = 5,
+    maxLength: number = 300
+  ): {
+    text: string
+    nextIndex: number
+  } {
+    // 似乎出现了一些问题，fromIndex 大于等于 fullText 的长度，直接返回空字符串，修复 nextIndex 为 fullText 的长度
+    if (fromIndex >= fullText.length) {
+      return { text: '', nextIndex: fullText.length }
+    }
+    if (expectParts === 0) {
+      return { text: fullText.slice(fromIndex), nextIndex: fullText.length }
+    }
+    const rest = fullText.slice(fromIndex)
+    if (rest.length > maxLength) {
+      return this.splitContent(
+        fullText,
+        fromIndex,
+        splitChars,
+        expectParts - 1,
+        maxLength
+      )
+    }
+    const splitIndexes = rest
+      .split('')
+      .reduce(
+        (acc, char, index) =>
+          splitChars.includes(char) ? [...acc, index] : acc,
+        [] as number[]
+      )
+    if (splitIndexes.length >= expectParts) {
+      const nextIndex = splitIndexes[expectParts - 1] + fromIndex + 1
+      return {
+        text: fullText.slice(fromIndex, nextIndex),
+        nextIndex,
+      }
+    }
+    return { text: '', nextIndex: fromIndex }
   }
 
   async reviewConversation(
