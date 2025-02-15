@@ -14,6 +14,7 @@ import BasePlugin from '~/_boilerplate'
 
 import { getUserNickFromSession } from '$utils/formatSession'
 import { safelyStringify } from '$utils/safelyStringify'
+import { Memory, MemoryClient } from 'mem0ai'
 import { ClientOptions, OpenAI } from 'openai'
 import { CompletionUsage } from 'openai/resources/completions'
 
@@ -49,6 +50,7 @@ export default class PluginOpenAi extends BasePlugin {
   static inject = ['html', 'database']
 
   openai: OpenAI
+  memory: MemoryClient
   openaiOptions: ClientOptions
   SILI_PROMPT = PluginOpenAi.readPromptFile('SILI-v3.md')
   CHAT_SUMMARY_PROMPT = PluginOpenAi.readPromptFile('chat-summary.txt')
@@ -81,6 +83,19 @@ export default class PluginOpenAi extends BasePlugin {
     })
     if (config.modelAliases) {
       this.modelAliases = config.modelAliases
+    }
+
+    if (process.env.MEM0_BASE_URL) {
+      this.memory = new MemoryClient({
+        apiKey: '',
+        host: process.env.MEM0_BASE_URL,
+      })
+    } else if (process.env.MEM0_API_KEY) {
+      this.memory = new MemoryClient({
+        apiKey: process.env.MEM0_API_KEY,
+        organizationId: process.env.MEM0_ORGANIZATION_ID,
+        projectId: process.env.MEM0_PROJECT_ID,
+      })
     }
   }
 
@@ -208,18 +223,26 @@ export default class PluginOpenAi extends BasePlugin {
           historiesLenth: histories.length,
         })
 
+        let memories: Memory[] = []
+        if (this.memory && session.user.authority > 1) {
+          memories = await this.memory
+            .search(content, {
+              user_id: conversation_id,
+              agent_id: 'sili',
+              limit: 5,
+            })
+            .catch((e) => {
+              this.logger.error('[chat] memory search error:', e)
+              return [] as Memory[]
+            })
+          this.logger.info('[chat] memories:', memories)
+        }
+
         const model = options.model || this.config.model || 'gpt-4o-mini'
         const stream = await this.openai.chat.completions.create(
           {
             model,
             messages: [
-              // magic
-              // {
-              //   role: 'system',
-              //   content: `You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2021-09\nCurrent model: ${
-              //     options.model || 'gpt-3.5-turbo'
-              //   }\nCurrent time: ${new Date().toLocaleString()}`,
-              // },
               // base prompt
               {
                 role: 'system',
@@ -228,7 +251,20 @@ export default class PluginOpenAi extends BasePlugin {
               // provide user info
               {
                 role: 'system',
-                content: `The person talking to you: ${userName}\nCurrent time: ${new Date().toLocaleString()}\n`,
+                // The user talking to you: ${userName}
+                // Current time: ${new Date().toLocaleString()}
+                // Memories between you and the user:
+                // ${memories.map((m) => m.memory).join('\n') || 'No memories yet'}
+                // `.trim(),
+                content: [
+                  `The user talking to you: ${userName}`,
+                  `Current time in ISO: ${new Date().toISOString()}, user is in UTC+8`,
+                  memories.length ? 'Memories between you and the user:' : '',
+                  ...memories.map((m) => m.memory).filter(Boolean),
+                ]
+                  .map((i) => i.trim())
+                  .filter(Boolean)
+                  .join('\n'),
               },
               // chat history
               ...histories,
@@ -377,6 +413,26 @@ export default class PluginOpenAi extends BasePlugin {
               conversation_id,
             })
           )
+
+          // update memories
+          if (this.memory && session.user.authority > 1) {
+            const updates = await this.memory
+              .add(
+                [
+                  { role: 'user', content },
+                  { role: 'assistant', content: fullContent },
+                ],
+                {
+                  user_id: conversation_id,
+                  agent_id: 'sili',
+                }
+              )
+              .catch((e) => {
+                this.logger.error('[chat] failed to update memory:', e)
+                return [] as Memory[]
+              })
+            this.logger.info('[chat] memory updates:', updates)
+          }
         }
       })
 

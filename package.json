@@ -71,6 +71,7 @@
     "koishi-plugin-schedule": "^5.0.1",
     "koishi-plugin-silk": "^1.5.2",
     "koishi-plugin-switch": "^1.9.0",
+    "mem0ai": "^1.0.33",
     "mint-filter": "^4.0.3",
     "openai": "^4.70.2",
     "puppeteer": "^24.2.0",
