@@ -4,11 +4,11 @@
  */
 import { Fragment, Session } from 'koishi'
 
-export function getUserIdFromSession(session: Session): string {
+export function getUserIdFromSession(session: any): string {
   // @ts-ignore
   return session.userId || session.member?.id || session.user?.id
 }
-export function getUserNickFromSession(session: Session): string {
+export function getUserNickFromSession(session: any): string {
   // @ts-ignore
   return (
     session.username ||
@@ -18,11 +18,11 @@ export function getUserNickFromSession(session: Session): string {
   )
 }
 
-export function getChannelIdFromSession(session: Session): string {
+export function getChannelIdFromSession(session: any): string {
   // @ts-ignore
   return session.channelId || session.channel?.id
 }
-export function getChannelNameFromSession(session: Session): string {
+export function getChannelNameFromSession(session: any): string {
   // @ts-ignore
   return (
     session.channel?.name ||
@@ -31,11 +31,11 @@ export function getChannelNameFromSession(session: Session): string {
   )
 }
 
-export function getGuildIdFromSession(session: Session): string {
+export function getGuildIdFromSession(session: any): string {
   // @ts-ignore
   return session.guildId || session.guild?.id
 }
-export function getGuildNameFromSession(session: Session): string {
+export function getGuildNameFromSession(session: any): string {
   // @ts-ignore
   return session.guild?.name || getChannelNameFromSession(session)
 }

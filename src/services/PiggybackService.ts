@@ -14,11 +14,15 @@ export default class PiggybackService extends Service {
 
   constructor(public ctx: Context) {
     super(ctx, 'piggyback')
-    // ctx.bots.forEach((bot) => {
-    //   bot.session.prototype.executeAsUser = function (userId, content) {
-    //     return ctx.piggyback.executeAsUser(this, userId, content)
-    //   }
-    // })
+    // FIXME: KoishiSession was not exported by koishi yet
+    // const thisPlugin = this
+    // KoishiSession.prototype.executeAsUser = function (
+    //   this: Session,
+    //   userId: string,
+    //   content: Argv | string
+    // ) {
+    //   return thisPlugin.executeAsUser.call(thisPlugin, this, userId, content)
+    // }
   }
 
   async executeAsUser(

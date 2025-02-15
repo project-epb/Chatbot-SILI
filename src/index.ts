@@ -100,6 +100,10 @@ setupDotEnv({
   path: resolve(__dirname, '..', PROD ? '.env.production' : '.env.development'),
   override: true,
 })
+setupDotEnv({
+  path: resolve(__dirname, '..', '.env.local'),
+  override: true,
+})
 
 const { env } = process
 
@@ -115,6 +119,12 @@ const app = new App({
       items.unshift('/')
     }
     return items
+  },
+  minSimilarity: 0.6,
+  delay: {
+    message: 1000,
+    broadcast: 1000,
+    prompt: 60 * 1000,
   },
 })
 // core services, init immediately
@@ -349,9 +359,10 @@ app.plugin(function PluginCollectionSILICore(ctx) {
       baseURL: env.OPENAI_BASE_RUL,
       apiKey: env.OPENAI_API_KEY,
     },
-    maxTokens: 500,
+    maxTokens: 4096,
     recordsPerChannel: 50,
     model: env.OPENAI_MODEL || 'gpt-4o',
+    reasoningModel: env.OPENAI_REASONING_MODEL || 'deepseek-r1',
   })
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv, {

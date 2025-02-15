@@ -39,15 +39,12 @@ RUN wget https://r2.epb.wiki/fonts/seguiemj.ttf \
 RUN fc-cache -fv
 
 # 安装 Node.js LTS 以及 pnpm
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x -o setup_nodejs.sh \
-    && chmod +x setup_nodejs.sh \
-    && bash setup_nodejs.sh \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt install -y nodejs \
-    && npm install -g pnpm \
-    && rm -f setup_nodejs.sh
+    && npm install -g pnpm
 
 # 安装 Node.js 依赖
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 # 安装 Chrome
@@ -56,7 +53,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # 我们的项目依赖本身就包含了 puppeteer，所以我们不需要 dlx 浪费时间
 RUN pnpm puppeteer browsers install chrome
 # https://source.chromium.org/chromium/chromium/src/+/main:chrome/installer/linux/debian/dist_package_versions.json
-RUN apt install -y libasound2 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libdrm2 libexpat1 libgbm1 libglib2.0-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libudev1 libuuid1 libx11-6 libx11-xcb1 libxcb-dri3-0 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxkbcommon0 libxrandr2 libxrender1 libxshmfence1 libxss1 libxtst6
+RUN apt install -y libasound2 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libdrm2 libexpat1 libgbm1 libglib2.0-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libudev1 libuuid1 libx11-6 libx11-xcb1 libxcb-dri3-0 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxkbcommon0 libxrandr2 libxrender1 libxshmfence1 libxss1 libxtst6 --no-install-recommends
 
 # 清理
 RUN apt clean \

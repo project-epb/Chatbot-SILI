@@ -1,22 +1,25 @@
 /**
- * 看看群友们都聊了什么勾八.jpg
+ * AI Chat Plugin - make chat bot great again!
  * @author dragon-fish
  * @license MIT
  */
 import { Context, Session, Time, arrayBufferToBase64 } from 'koishi'
 
 import crypto from 'node:crypto'
-import { readFileSync, writeFileSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+
+import { cancellableInterval } from '@/utils/cancellableDefferred'
 
 import BasePlugin from '~/_boilerplate'
 
 import { getUserNickFromSession } from '$utils/formatSession'
-import { safelyStringify } from '$utils/safelyStringify'
 import { Memory, MemoryClient } from 'mem0ai'
 import { ClientOptions, OpenAI } from 'openai'
 import { CompletionUsage } from 'openai/resources/completions'
+
+import ChatCensorService from './plugins/ChatCensorService'
+import PluginChannelSummary from './plugins/PluginChannelSummary'
 
 declare module 'koishi' {
   export interface Tables {
@@ -24,6 +27,10 @@ declare module 'koishi' {
   }
   export interface User {
     openai_last_conversation_id: string
+  }
+  interface Context {
+    openai: OpenAI
+    mem0?: MemoryClient
   }
 }
 
@@ -39,22 +46,36 @@ interface OpenAIConversationLog {
 }
 
 export interface Config {
+  /** OpenAI 配置 */
   openaiOptions: ClientOptions
-  model: string
-  maxTokens: number
-  recordsPerChannel: number
+  /** 普通聊天(chat)时使用的模型 */
+  model?: string
+  /** 推理模式时使用的模型（例如 gpt-o1, deepseek-r1） */
+  reasoningModel?: string
+  /** 最大 token 限额 */
+  maxTokens?: number
+  /** 系统提示词 */
+  systemPrompt?: Partial<{
+    /** 普通聊天，也就是和 bot 直接聊天时的提示词，一般是角色扮演的要求 */
+    basic: string
+    /** 群聊总结时的提示词，一般是要求总结的格式 */
+    chatSummary: string
+    /** 审查敏感内容时的提示词，一般是要求审核哪些内容 */
+    censor: string
+  }>
+  /** 用于总结群聊消息，每个群保留的消息数量 */
+  recordsPerChannel?: number
+  /** 模型别名（主要用于火山引擎） */
   modelAliases?: Record<string, string>
 }
+export declare const Config: Config
 
-export default class PluginOpenAi extends BasePlugin {
+export default class PluginOpenAi extends BasePlugin<Config> {
   static inject = ['html', 'database']
 
-  openai: OpenAI
-  memory: MemoryClient
-  openaiOptions: ClientOptions
-  SILI_PROMPT = PluginOpenAi.readPromptFile('SILI-v3.md')
-  CHAT_SUMMARY_PROMPT = PluginOpenAi.readPromptFile('chat-summary.txt')
-  CENSOR_PROMPT = PluginOpenAi.readPromptFile('censor.txt')
+  readonly openai: OpenAI
+  readonly memory?: MemoryClient
+  readonly openaiOptions: ClientOptions
   RANDOM_ERROR_MSG = (
     <random>
       <template>SILI不知道喔。</template>
@@ -63,27 +84,46 @@ export default class PluginOpenAi extends BasePlugin {
       <template>锟斤拷锟斤拷锟斤拷</template>
     </random>
   )
-  #chatRecords: Record<string, Session.Payload[]> = {}
-  readonly modelAliases: Record<string, string> = {}
+  readonly MODEL_ALIASES: Record<string, string> = {}
+  // 用户同时只能进行一个对话，防止在一次对话结束前发起新的对话
+  readonly CONVERSATION_LOCKS = new Set<string | number>()
 
-  constructor(
-    ctx: Context,
-    config: Partial<Config> = { recordsPerChannel: 100 }
-  ) {
+  constructor(ctx: Context, config: Config) {
+    const defaultConfigs = {
+      model: 'gpt-4o-mini',
+      reasoningModel: 'gpt-o1-mini',
+      maxTokens: 4096,
+      recordsPerChannel: 100,
+      systemPrompt: {
+        basic: PluginOpenAi.readPromptFile('SILI-v3.md'),
+        chatSummary: PluginOpenAi.readPromptFile('chat-summary.txt'),
+        censor: PluginOpenAi.readPromptFile('censor.txt'),
+      },
+    }
+    config = {
+      ...defaultConfigs,
+      ...config,
+      systemPrompt: {
+        ...defaultConfigs.systemPrompt,
+        ...config.systemPrompt,
+      },
+    }
+    if (!config.openaiOptions) {
+      throw new Error('Required payloads: openaiOptions')
+    }
     super(ctx, config, 'openai')
 
-    this.openaiOptions = config.openaiOptions || {}
+    this.openaiOptions = this.config.openaiOptions || {}
     this.openai = new OpenAI({
       ...this.openaiOptions,
     })
     this.#initDatabase()
-    this.#handleRecordsLog().then(() => {
-      this.#initListeners()
-      this.#initCommands()
-    })
+    this.#initCommands()
     if (config.modelAliases) {
-      this.modelAliases = config.modelAliases
+      this.MODEL_ALIASES = config.modelAliases
     }
+
+    this.ctx.set('openai', this.openai)
 
     if (process.env.MEM0_BASE_URL) {
       this.memory = new MemoryClient({
@@ -97,6 +137,11 @@ export default class PluginOpenAi extends BasePlugin {
         projectId: process.env.MEM0_PROJECT_ID,
       })
     }
+    if (this.memory) {
+      this.ctx.set('mem0', this.memory)
+    }
+
+    this.#installSubPlugins()
   }
 
   async #initDatabase() {
@@ -121,60 +166,38 @@ export default class PluginOpenAi extends BasePlugin {
       }
     )
   }
-  async #handleRecordsLog() {
-    const logFile = resolve(__dirname, 'records.log')
-    try {
-      const text = (await readFile(logFile)).toString()
-      const obj = JSON.parse(text)
-      this.#chatRecords = obj
-    } catch (_) {}
-
-    process.on('exit', () => {
-      try {
-        writeFileSync(logFile, safelyStringify(this.#chatRecords))
-      } catch (e) {
-        console.info('save logs error', e)
-      }
-    })
-  }
-
-  #initListeners() {
-    this.ctx.channel().on('message', this.addRecord.bind(this))
-    this.ctx.channel().on('send', this.addRecord.bind(this))
+  #installSubPlugins() {
+    this.ctx.plugin(PluginChannelSummary, this.config)
+    this.ctx.plugin(ChatCensorService, this.config)
   }
 
   #initCommands() {
     this.ctx.command('openai', 'Make ChatBot Great Again')
 
     this.ctx
-      .channel()
-      .command('openai/chat-summary', '群里刚刚都聊了些什么', {
-        authority: 2,
-      })
-      .alias('总结聊天', '群里刚刚聊了什么')
-      .option('number', '-n <number:posint>', { hidden: true })
-      .option('channel', '-c <channel:string>', { hidden: true })
-      .action(async ({ session, options }) => {
-        await session.send(
-          <>
-            <quote id={session.messageId}></quote>稍等，让我看看聊天记录……
-          </>
-        )
-        const msg = await this.summarize(options.channel || session.channelId)
-        return msg
-      })
-
-    this.ctx
-      .command('openai.models', 'List models', { authority: 3 })
+      .command('openai.models', 'List all models', { authority: 3 })
       .action(async () => {
         const { data } = await this.openai.models.list()
         this.logger.info('openai.models', data)
-        return (
-          <>
-            <p>Currently available models:</p>
-            <p>{data.map((i) => i.id).join('\n')}</p>
-          </>
-        )
+        if (data.length >= 10) {
+          return (
+            <html>
+              <p>Currently available models:</p>
+              <ul>
+                {data.map((i) => (
+                  <li>{i.id}</li>
+                ))}
+              </ul>
+            </html>
+          )
+        } else {
+          return (
+            <>
+              <p>Currently available models:</p>
+              <p>{data.map((i) => i.id).join('\n')}</p>
+            </>
+          )
+        }
       })
 
     this.ctx
@@ -187,7 +210,13 @@ export default class PluginOpenAi extends BasePlugin {
         args: ['$1'],
         prefix: true,
       })
-      .alias()
+      .shortcut(/(.+)[\?？][!！]$/, {
+        args: ['$1'],
+        prefix: true,
+        options: {
+          thinking: true,
+        },
+      })
       .option('prompt', '-p <prompt:string>', {
         hidden: true,
         authority: 3,
@@ -196,14 +225,30 @@ export default class PluginOpenAi extends BasePlugin {
         hidden: true,
         authority: 3,
       })
+      .option('thinking', '-t Enable reasoning mode', {
+        type: 'boolean',
+        hidden: true,
+      })
       .option('debug', '-d', { hidden: true, authority: 3 })
       .userFields(['id', 'name', 'openai_last_conversation_id', 'authority'])
       .check(({ options }) => {
         if (options.model) {
-          const maybeRealModel = this.modelAliases[options.model]
+          const maybeRealModel = this.MODEL_ALIASES[options.model]
           if (maybeRealModel) {
             options.model = maybeRealModel
           }
+        }
+      })
+      .check(({ session }) => {
+        const userId = session.user.id
+        if (this.CONVERSATION_LOCKS.has(userId)) {
+          session.onebot
+            ?._request?.('set_msg_emoji_like', {
+              message_id: session.messageId,
+              emoji_id: '33',
+            })
+            .catch(() => {})
+          return ''
         }
       })
       .action(async ({ session, options }, content) => {
@@ -212,6 +257,8 @@ export default class PluginOpenAi extends BasePlugin {
         const startTime = Date.now()
         const conversation_owner = session.user.id
         const userName = getUserNickFromSession(session)
+
+        this.CONVERSATION_LOCKS.add(conversation_owner)
 
         const conversation_id: string =
           (session.user.openai_last_conversation_id ||= crypto.randomUUID())
@@ -238,50 +285,56 @@ export default class PluginOpenAi extends BasePlugin {
           this.logger.info('[chat] memories:', memories)
         }
 
-        const model = options.model || this.config.model || 'gpt-4o-mini'
-        const stream = await this.openai.chat.completions.create(
-          {
-            model,
-            messages: [
-              // base prompt
-              {
-                role: 'system',
-                content: options.prompt || this.SILI_PROMPT,
+        const model =
+          options.model || options.thinking
+            ? this.config.reasoningModel || 'deepseek-r1'
+            : this.config.model || 'gpt-4o-mini'
+        const stream = await this.openai.chat.completions
+          .create(
+            {
+              model,
+              messages: [
+                // base prompt
+                {
+                  role: 'system',
+                  content: options.prompt || this.config.systemPrompt.basic,
+                },
+                // provide user info
+                {
+                  role: 'system',
+                  content: [
+                    `The user you are talking to: ${userName}`,
+                    `Current time in ISO: ${new Date().toISOString()} (user is in UTC+8)`,
+                    memories.length ? 'Memories of conversation:' : '',
+                    ...memories
+                      .map((m) => m.memory)
+                      .filter(Boolean)
+                      .map((m) => `- ${m}`),
+                  ]
+                    .map((i) => i.trim())
+                    .filter(Boolean)
+                    .join('\n'),
+                },
+                // chat history
+                ...histories,
+                // current user input
+                { role: 'user', content },
+              ],
+              max_tokens: this.config.maxTokens ?? 1024,
+              temperature: 1.2,
+              presence_penalty: 0.8,
+              frequency_penalty: 0,
+              stream: true,
+              stream_options: {
+                include_usage: true,
               },
-              // provide user info
-              {
-                role: 'system',
-                // The user talking to you: ${userName}
-                // Current time: ${new Date().toLocaleString()}
-                // Memories between you and the user:
-                // ${memories.map((m) => m.memory).join('\n') || 'No memories yet'}
-                // `.trim(),
-                content: [
-                  `The user talking to you: ${userName}`,
-                  `Current time in ISO: ${new Date().toISOString()}, user is in UTC+8`,
-                  memories.length ? 'Memories between you and the user:' : '',
-                  ...memories.map((m) => m.memory).filter(Boolean),
-                ]
-                  .map((i) => i.trim())
-                  .filter(Boolean)
-                  .join('\n'),
-              },
-              // chat history
-              ...histories,
-              // current user input
-              { role: 'user', content },
-            ],
-            max_tokens: this.config.maxTokens ?? 1024,
-            temperature: 0.9,
-            presence_penalty: 0.6,
-            frequency_penalty: 0,
-            stream: true,
-            stream_options: {
-              include_usage: true,
             },
-          },
-          { timeout: 60 * 1000 }
-        )
+            { timeout: 90 * 1000 }
+          )
+          .catch((e) => {
+            this.CONVERSATION_LOCKS.delete(conversation_owner)
+            throw e
+          })
 
         // 读取流式数据
         let fullThinking = ''
@@ -293,24 +346,27 @@ export default class PluginOpenAi extends BasePlugin {
         const shouldSendThinking = options.debug
 
         // 如果没有开启调试模式，每思考 10 秒发送一个状态指示器
-        let sendStatusIndicator = -1
-        const indicators = ['181', '285', '267', '312', '284', '37']
-        const stopSendStatusIndicator = () => clearInterval(interval)
-        const interval = setInterval(() => {
-          if (
-            sendContentFromIndex ||
-            sendThinkingFromIndex ||
-            Date.now() - startTime > 60 * 1000
-          ) {
-            clearInterval(interval)
-          } else {
-            sendStatusIndicator = (sendStatusIndicator + 1) % indicators.length
-            session.onebot?._request('set_msg_emoji_like', {
-              message_id: session.messageId,
-              emoji_id: indicators[sendStatusIndicator],
-            })
-          }
-        }, 10 * 1000)
+        const emojiCodes = ['181', '285', '267', '312', '284', '37']
+        let currentEmojiIndex = -1
+        const stopEmojiReaction = cancellableInterval(
+          () => {
+            if (
+              sendContentFromIndex ||
+              sendThinkingFromIndex ||
+              Date.now() - startTime > 60 * 1000
+            ) {
+              stopEmojiReaction()
+            } else {
+              currentEmojiIndex = (currentEmojiIndex + 1) % emojiCodes.length
+              session.onebot?._request('set_msg_emoji_like', {
+                message_id: session.messageId,
+                emoji_id: emojiCodes[currentEmojiIndex],
+              })
+            }
+          },
+          15 * 1000,
+          90 * 1000
+        )
 
         // #region chat-stream
         try {
@@ -334,7 +390,7 @@ export default class PluginOpenAi extends BasePlugin {
                 sendThinkingFromIndex = nextIndex
                 if (text) {
                   this.logger.info('[chat] thinking:', text)
-                  stopSendStatusIndicator()
+                  stopEmojiReaction()
                   await session.sendQueued('[内心独白] ' + text)
                 }
               }
@@ -348,7 +404,7 @@ export default class PluginOpenAi extends BasePlugin {
                 sendThinkingFromIndex < fullThinking.length &&
                 shouldSendThinking
               ) {
-                stopSendStatusIndicator()
+                stopEmojiReaction()
                 await session.sendQueued(
                   '[内心独白] ' + fullThinking.slice(sendThinkingFromIndex)
                 )
@@ -364,20 +420,22 @@ export default class PluginOpenAi extends BasePlugin {
               sendContentFromIndex = nextIndex
               if (text) {
                 this.logger.info('[chat] sending:', text)
-                stopSendStatusIndicator()
+                stopEmojiReaction()
                 await session.sendQueued(text)
               }
             }
           }
         } catch (e) {
           this.logger.error('[chat] stream error:', e)
-          stopSendStatusIndicator()
           return (
             <>
               <quote id={session.messageId}></quote>
               {this.RANDOM_ERROR_MSG}
             </>
           )
+        } finally {
+          this.CONVERSATION_LOCKS.delete(conversation_owner)
+          stopEmojiReaction()
         }
         //#endregion
 
@@ -431,7 +489,8 @@ export default class PluginOpenAi extends BasePlugin {
                 this.logger.error('[chat] failed to update memory:', e)
                 return [] as Memory[]
               })
-            this.logger.info('[chat] memory updates:', updates)
+            updates.length &&
+              this.logger.info('[chat] memory updates:', updates)
           }
         }
       })
@@ -553,41 +612,6 @@ export default class PluginOpenAi extends BasePlugin {
     return { text: '', nextIndex: fromIndex }
   }
 
-  async reviewConversation(
-    base_prompt: string,
-    user: string,
-    assistant: string
-  ) {
-    return this.openai.chat.completions
-      .create(
-        {
-          model: this.config.model || 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: this.CENSOR_PROMPT,
-            },
-            {
-              role: 'user',
-              content: JSON.stringify({ base_prompt, user, assistant }),
-            },
-          ],
-        },
-        {
-          timeout: 30 * 1000,
-        }
-      )
-      .then((data) => {
-        const text = data.choices?.[0]?.message?.content?.trim()
-        console.info('[review]', text, data)
-        return text === 'Y'
-      })
-      .catch((e) => {
-        console.error('[review] ERROR', e)
-        return true
-      })
-  }
-
   async createTTS(
     input: string,
     options?: Partial<OpenAI.Audio.Speech.SpeechCreateParams>
@@ -631,84 +655,6 @@ export default class PluginOpenAi extends BasePlugin {
           }
         )
       ).reverse() as OpenAIConversationLog[]) || []
-    )
-  }
-
-  async summarize(channelId: string) {
-    const records = this.getRecords(channelId)
-    if (records.length < 10) {
-      return <>🥀啊哦——保存的聊天记录太少了，难以进行总结……</>
-    }
-
-    const recordsText = this.formatRecords(records)
-
-    return this.openai.chat.completions
-      .create(
-        {
-          model: this.config.model || 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: this.CHAT_SUMMARY_PROMPT,
-            },
-            { role: 'user', content: recordsText },
-          ],
-          max_tokens: this.config.maxTokens ?? 500,
-        },
-        { timeout: 90 * 1000 }
-      )
-      .then((data) => {
-        this.logger.info('chat-summary', data)
-        const text = data.choices?.[0]?.message?.content?.trim()
-        if (!text) {
-          return (
-            <>
-              <p>💩噗通——进行总结时出现了一些问题：</p>
-              <p>Error 返回结果为空</p>
-            </>
-          )
-        }
-        return (
-          <>
-            <p>[chat-summary] 下面是对最后{records.length}条聊天记录的总结：</p>
-            <p></p>
-            <p>{text}</p>
-          </>
-        )
-      })
-      .catch((e) => {
-        return (
-          <>
-            <p>💩噗通——SILI猪脑过载！</p>
-            <p>{'' + e}</p>
-          </>
-        )
-      })
-  }
-
-  addRecord(session: Session) {
-    const content = session.elements?.join('') || ''
-    if (content.includes('[chat-summary]')) {
-      return
-    }
-    const records = this.getRecords(session.channelId)
-    records.push({ ...session.toJSON(), content })
-    this.#chatRecords[session.channelId] = records.slice(
-      records.length - this.config.recordsPerChannel
-    )
-  }
-  getRecords(channelId: string): Session.Payload[] {
-    this.#chatRecords[channelId] = this.#chatRecords[channelId] || []
-    return this.#chatRecords[channelId]
-  }
-  formatRecords(records: Session.Payload[]) {
-    return JSON.stringify(
-      records.map((session) => {
-        return {
-          user: getUserNickFromSession(session),
-          msg: session.content,
-        }
-      })
     )
   }
 }
