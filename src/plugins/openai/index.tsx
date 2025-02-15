@@ -98,7 +98,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       recordsPerChannel: 100,
       systemPrompt: {
         basic: PluginOpenAi.readPromptFile('SILI-v3.md'),
-        channelSummary: PluginOpenAi.readPromptFile('channel-summary.txt'),
+        channelSummary: PluginOpenAi.readPromptFile('channel-summary.md'),
         censor: PluginOpenAi.readPromptFile('censor.txt'),
       },
     }
