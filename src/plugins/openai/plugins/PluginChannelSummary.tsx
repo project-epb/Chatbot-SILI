@@ -9,6 +9,8 @@ import { writeFileSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
+import { cancellableInterval } from '@/utils/cancellableDefferred'
+
 import BasePlugin from '~/_boilerplate'
 
 import { getUserNickFromSession } from '$utils/formatSession'
@@ -26,6 +28,7 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
   readonly LOG_FILE = resolve(__dirname, '..', 'channel-messages.log')
   private messageRecords: Record<string, Session['event'][]> = {}
   private readonly NO_RECORD_MAGIC_WORD = '[summary]'
+  private stopRecording?: () => void
 
   constructor(ctx: Context, config: BaseConfig) {
     if (!config.systemPrompt?.channelSummary) {
@@ -47,6 +50,10 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
     })
   }
 
+  stop() {
+    this.stopRecording?.()
+  }
+
   async #handleRecordsLog() {
     try {
       const text = (await readFile(this.LOG_FILE)).toString()
@@ -55,6 +62,16 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
     } catch (_) {
       writeFile(this.LOG_FILE, '{}', 'utf-8').catch(() => {})
     }
+
+    this.stopRecording = cancellableInterval(() => {
+      writeFile(
+        this.LOG_FILE,
+        safelyStringify(this.messageRecords),
+        'utf-8'
+      ).catch((e) => {
+        this.logger.error('Failed to write log file:', e)
+      })
+    }, 5 * Time.minute)
 
     process.on('exit', () => {
       try {
