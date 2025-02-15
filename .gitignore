@@ -147,8 +147,7 @@ badwords.ini
 
 # runtime data
 /data/mongo
-/data/LiteLoader
-/data/QQ
+/data/private
 
 # backup data
 /.backups

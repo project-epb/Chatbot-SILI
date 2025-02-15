@@ -28,11 +28,14 @@ export default class ProcessErrorHandler extends BasePlugin {
     this.logger.error(`\n${today} ${eventId} > `, event)
     const bot = this.ctx.bots.find((i) => i.platform === 'onebot')
     bot &&
-      bot?.sendPrivateMessage(
-        process.env.ACCOUNT_QQ_XIAOYUJUN as string,
-        `[PROCESS_ERROR]\n${event.name}: ${
-          event?.message || 'UNKNOWN'
-        }\nEvent ID: ${today} ${eventId}`
-      )
+      bot.status === 1 &&
+      bot
+        ?.sendPrivateMessage(
+          process.env.ACCOUNT_QQ_XIAOYUJUN as string,
+          `[PROCESS_ERROR]\n${event.name}: ${
+            event?.message || 'UNKNOWN'
+          }\nEvent ID: ${today} ${eventId}`
+        )
+        .catch((e) => this.logger.error('Failed to send crash report', e))
   }
 }
