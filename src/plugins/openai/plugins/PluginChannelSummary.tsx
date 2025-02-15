@@ -6,7 +6,7 @@
 import { Context, Session, Time } from 'koishi'
 
 import { writeFileSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 import BasePlugin from '~/_boilerplate'
@@ -22,18 +22,25 @@ export declare const Config: BaseConfig
 export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
   static readonly inject = ['openai']
   readonly openai: OpenAI
-  #chatRecords: Record<string, Session['event'][]> = {}
+  readonly SYSTEM_PROMPT: string
+  readonly LOG_FILE = resolve(__dirname, '..', 'channel-messages.log')
+  private messageRecords: Record<string, Session['event'][]> = {}
+  private readonly NO_RECORD_MAGIC_WORD = '[summary]'
 
   constructor(ctx: Context, config: BaseConfig) {
-    if (!config.systemPrompt?.chatSummary) {
-      throw new Error('Required payloads: openai, systemPrompt.chatSummary', {
-        cause: config,
-      })
+    if (!config.systemPrompt?.channelSummary) {
+      throw new Error(
+        'Required payloads: openai, systemPrompt.channelSummary',
+        {
+          cause: config,
+        }
+      )
     }
 
     super(ctx, config, 'channel-summary')
 
     this.openai = this.ctx.openai
+    this.SYSTEM_PROMPT = this.config.systemPrompt.channelSummary
     this.#handleRecordsLog().then(() => {
       this.#initListeners()
       this.#initCommands()
@@ -41,25 +48,30 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
   }
 
   async #handleRecordsLog() {
-    const logFile = resolve(__dirname, '..', 'records.log')
     try {
-      const text = (await readFile(logFile)).toString()
+      const text = (await readFile(this.LOG_FILE)).toString()
       const obj = JSON.parse(text)
-      this.#chatRecords = obj
-    } catch (_) {}
+      this.messageRecords = obj
+    } catch (_) {
+      writeFile(this.LOG_FILE, '{}', 'utf-8').catch(() => {})
+    }
 
     process.on('exit', () => {
       try {
-        writeFileSync(logFile, safelyStringify(this.#chatRecords))
+        writeFileSync(
+          this.LOG_FILE,
+          safelyStringify(this.messageRecords),
+          'utf-8'
+        )
       } catch (e) {
-        console.info('save logs error', e)
+        console.error('[channel-summary] Failed to write log file:', e)
       }
     })
   }
 
   #initListeners() {
-    this.ctx.channel().on('message', this.addRecord.bind(this))
-    this.ctx.channel().on('send', this.addRecord.bind(this))
+    this.ctx.channel().on('message', this.logSessionData.bind(this))
+    this.ctx.channel().on('send', this.logSessionData.bind(this))
   }
 
   #initCommands() {
@@ -85,7 +97,7 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
   }
 
   async summarize(channelId: string) {
-    const records = this.getRecords(channelId)
+    const records = this.getRecordsByChannelId(channelId)
     if (records.length < 10) {
       return <>🥀啊哦——保存的聊天记录太少了，难以进行总结……</>
     }
@@ -99,7 +111,7 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
           messages: [
             {
               role: 'system',
-              content: this.config.systemPrompt.chatSummary,
+              content: this.SYSTEM_PROMPT,
             },
             { role: 'user', content: recordsText },
           ],
@@ -120,8 +132,10 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
         }
         return (
           <>
-            <p>[chat-summary] 下面是对最后{records.length}条聊天记录的总结：</p>
-            <p></p>
+            <p>
+              {this.NO_RECORD_MAGIC_WORD} 下面是对最后{records.length}
+              条聊天记录的总结：
+            </p>
             <p>{text}</p>
           </>
         )
@@ -136,25 +150,25 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
       })
   }
 
-  addRecord(session: Session) {
+  logSessionData(session: Session) {
     const content = session.elements?.join('') || ''
-    if (content.includes('[chat-summary]')) {
+    if (content.includes(this.NO_RECORD_MAGIC_WORD)) {
       return
     }
-    const records = this.getRecords(session.channelId)
+    const records = this.getRecordsByChannelId(session.channelId)
     const dump = session.toJSON()
     if (!dump?.message || !dump?.message?.content) {
       dump.message ||= {}
       dump.message.content = session.content
     }
     records.push(dump)
-    this.#chatRecords[session.channelId] = records.slice(
+    this.messageRecords[session.channelId] = records.slice(
       records.length - this.config.recordsPerChannel
     )
   }
-  getRecords(channelId: string): Session['event'][] {
-    this.#chatRecords[channelId] = this.#chatRecords[channelId] || []
-    return this.#chatRecords[channelId]
+  getRecordsByChannelId(channelId: string): Session['event'][] {
+    this.messageRecords[channelId] = this.messageRecords[channelId] || []
+    return this.messageRecords[channelId]
   }
   formatRecords(records: Session['event'][]) {
     return JSON.stringify(

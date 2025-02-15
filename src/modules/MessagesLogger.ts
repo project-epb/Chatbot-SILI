@@ -2,7 +2,7 @@
  * @name MessagesLogger
  * @desc 内部插件，收发消息记录日志
  */
-import { Context } from 'koishi'
+import { Context, Session } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
@@ -15,25 +15,22 @@ export default class MessagesLogger extends BasePlugin {
       this.logger.info(
         `${session.platform}${
           session.event.guild
-            ? ` ▸ ${session.event.guild.name} (${session.event.guild.id})`
+            ? `/${session.event.guild.name}(#${session.event.guild.id})`
             : ''
         } ▸ ${session.username} (${session.userId})`,
         `⫸ ${content}`
       )
     })
 
-    ctx.on('send', (session) => {
-      const content = this.toSlimContent(session.content) || '[UNKNOWN]'
+    ctx.on('send', (session: Session) => {
+      const content =
+        this.toSlimContent(session.elements?.join('') || '') || '[UNKNOWN]'
       ctx
         .logger('SEND')
         .info(
-          `${session.platform} ▸ ${session.event?.channel?.name} (${session.event?.channel?.id})`,
+          `${session.platform}/${session.event?.channel?.name}(#${session.event?.channel?.id})`,
           `⫸ ${content}`
         )
-    })
-
-    ctx.on('poke', (session) => {
-      session.send('不许戳')
     })
   }
 
