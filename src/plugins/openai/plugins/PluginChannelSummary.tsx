@@ -71,7 +71,7 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
 
   #initListeners() {
     this.ctx.channel().on('message', this.logSessionData.bind(this))
-    this.ctx.channel().on('send', this.logSessionData.bind(this))
+    this.ctx.channel().on('before-send', this.logSessionData.bind(this))
   }
 
   #initCommands() {
@@ -113,7 +113,12 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
               role: 'system',
               content: this.SYSTEM_PROMPT,
             },
-            { role: 'user', content: recordsText },
+            {
+              role: 'user',
+              content:
+                'Here are the chat logs exported in JSON format, please summarize them:\n' +
+                recordsText,
+            },
           ],
           max_tokens: this.config.maxTokens ?? 500,
         },
@@ -174,8 +179,10 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
     return JSON.stringify(
       records.map((session) => {
         return {
-          username: getUserNickFromSession(session),
+          user_name: getUserNickFromSession(session),
+          user_id: session.user.id,
           content: (session as any)?.content || session?.message?.content,
+          timestamp: session.timestamp,
         }
       })
     )

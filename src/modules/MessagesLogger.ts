@@ -22,9 +22,10 @@ export default class MessagesLogger extends BasePlugin {
       )
     })
 
-    ctx.on('send', (session: Session) => {
-      const content =
-        this.toSlimContent(session.elements?.join('') || '') || '[UNKNOWN]'
+    ctx.on('before-send', (session) => {
+      const content = this.toSlimContent(
+        session.content || session.elements?.join('') || '[UNKNOWN]'
+      )
       ctx
         .logger('SEND')
         .info(
