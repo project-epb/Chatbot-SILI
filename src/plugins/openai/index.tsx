@@ -59,9 +59,11 @@ export interface Config {
     /** 普通聊天，也就是和 bot 直接聊天时的提示词，一般是角色扮演的要求 */
     basic: string
     /** 群聊总结时的提示词，一般是要求总结的格式 */
-    chatSummary: string
+    channelSummary: string
     /** 审查敏感内容时的提示词，一般是要求审核哪些内容 */
     censor: string
+    /** 其他自定义提示词 */
+    [key: string]: string
   }>
   /** 用于总结群聊消息，每个群保留的消息数量 */
   recordsPerChannel?: number
@@ -96,7 +98,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       recordsPerChannel: 100,
       systemPrompt: {
         basic: PluginOpenAi.readPromptFile('SILI-v3.md'),
-        chatSummary: PluginOpenAi.readPromptFile('chat-summary.txt'),
+        channelSummary: PluginOpenAi.readPromptFile('channel-summary.txt'),
         censor: PluginOpenAi.readPromptFile('censor.txt'),
       },
     }
@@ -203,14 +205,14 @@ export default class PluginOpenAi extends BasePlugin<Config> {
     this.ctx
       .command('openai/chat <content:text>', 'ChatGPT', {
         minInterval: 1 * Time.minute,
-        bypassAuthority: 3,
         maxUsage: 10,
+        bypassAuthority: 3,
       })
       .shortcut(/(.+)[\?？]$/, {
         args: ['$1'],
         prefix: true,
       })
-      .shortcut(/(.+)[\?？][!！]$/, {
+      .shortcut(/(.+)[\?？][\!！]$/, {
         args: ['$1'],
         prefix: true,
         options: {

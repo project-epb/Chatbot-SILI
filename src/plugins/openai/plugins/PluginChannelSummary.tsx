@@ -3,7 +3,7 @@
  * @author dragon-fish
  * @license MIT
  */
-import { Context, Session } from 'koishi'
+import { Context, Session, Time } from 'koishi'
 
 import { writeFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -65,10 +65,12 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
   #initCommands() {
     this.ctx
       .channel()
-      .command('openai/chat-summary', '群里刚刚都聊了些什么', {
-        authority: 2,
+      .command('openai/channel-summary', '群里刚刚都聊了些什么', {
+        minInterval: 5 * Time.minute,
+        maxUsage: 5,
+        bypassAuthority: 2,
       })
-      .alias('总结聊天', '总结群聊')
+      .alias('summary', '总结聊天', '总结群聊')
       .option('number', '-n <number:posint>', { hidden: true })
       .option('channel', '-c <channel:string>', { hidden: true })
       .action(async ({ session, options }) => {
