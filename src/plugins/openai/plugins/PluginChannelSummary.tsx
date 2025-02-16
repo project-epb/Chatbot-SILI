@@ -173,7 +173,7 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
   }
 
   logSessionData(session: Session) {
-    const content = session.elements?.join('') || ''
+    const content = session?.content || session.elements?.join('') || ''
     if (content.includes(this.NO_RECORD_MAGIC_WORD)) {
       return
     }
@@ -181,7 +181,7 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
     const dump = session.toJSON()
     if (!dump?.message || !dump?.message?.content) {
       dump.message ||= {}
-      dump.message.content = session.content
+      dump.message.content = content
     }
     records.push(dump)
     this.messageRecords[session.channelId] = records.slice(
@@ -197,7 +197,7 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
       records.map((session) => {
         return {
           user_name: getUserNickFromSession(session),
-          user_id: session.user.id,
+          user_id: session.user?.id || session._data?.user_id,
           content: (session as any)?.content || session?.message?.content,
           timestamp: session.timestamp,
         }
