@@ -9,7 +9,6 @@ services:
     restart: always
     networks:
       sili-network:
-        ipv4_address: 172.233.0.2
         aliases:
           - core.sili.local
     # ports:
@@ -36,7 +35,6 @@ services:
     restart: always
     networks:
       sili-network:
-        ipv4_address: 172.233.0.3
         aliases:
           - caddy.sili.local
     extra_hosts:
@@ -54,7 +52,6 @@ services:
     container_name: sili-mongo
     networks:
       sili-network:
-        ipv4_address: 172.233.0.4
         aliases:
           - mongo.sili.local
     restart: always
@@ -79,25 +76,53 @@ services:
     ports:
       - '6788:7081' # VNC
     volumes:
-      - liteloader_data:/LiteLoader/data
+      - ./data/private/LiteLoader:/LiteLoader/data
       - qqnt_data:/data/.config/QQ
     networks:
       sili-network:
-        ipv4_address: 172.233.0.5
         aliases:
           - llonebot.sili.local
+
+  redis:
+    container_name: sili-redis
+    image: redis/redis-stack:latest
+    restart: always
+    networks:
+      sili-network:
+        aliases:
+          - redis.sili.local
+    ports:
+      - '6379:6379'
+      - '8001:8001'
+    volumes:
+      - ./data/private/qdrant_storage:/qdrant/storage
+
+  mem0:
+    container_name: sili-mem0
+    build:
+      context: ./docker/mem0
+      dockerfile: Dockerfile
+    restart: always
+    networks:
+      sili-network:
+        aliases:
+          - mem0.sili.local
+    volumes:
+      - ./docker/mem0/app.py:/app/app.py
+      - ./.env:/app/.env
+    ports:
+      - '5000:5000'
+    environment:
+      REDIS_URL: 'redis://redis.sili.local:6379'
+    depends_on:
+      - redis
 
 networks:
   sili-network:
     name: sili-network
-    ipam:
-      config:
-        - subnet: 172.233.0.0/24
 
 volumes:
   mongo_data:
     name: sili_mongo_data
   qqnt_data:
     name: sili_qqnt_data
-  liteloader_data:
-    name: sili_liteloader_data
