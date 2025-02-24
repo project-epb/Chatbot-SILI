@@ -11,6 +11,7 @@ import { App, Dict, Random, type Session, Time } from 'koishi'
 import { resolve } from 'node:path'
 
 import FallbackHandler from '@/modules/FallbackHandler'
+import { GuildRequestFirewall } from '@/modules/GuildRequestFirewall'
 import MessagesLogger from '@/modules/MessagesLogger'
 import { MinecraftConnect } from '@/modules/MinecraftConnect'
 import MgpGroupUtils from '@/modules/MoegirlGroupUtils'
@@ -396,6 +397,7 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.command('tools', '实用工具集')
   ctx.plugin(HTMLService)
   ctx.plugin(FallbackHandler)
+  ctx.plugin(GuildRequestFirewall)
   ctx.plugin(MessagesLogger)
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)
