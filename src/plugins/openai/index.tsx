@@ -219,6 +219,10 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           thinking: true,
         },
       })
+      .option('no-prompt', '-P Disable system prompts', {
+        type: 'boolean',
+        hidden: true,
+      })
       .option('prompt', '-p <prompt:string>', {
         hidden: true,
         authority: 3,
@@ -231,8 +235,13 @@ export default class PluginOpenAi extends BasePlugin<Config> {
         type: 'boolean',
         hidden: true,
       })
-      .option('debug', '-d', { hidden: true, authority: 3 })
+      .option('debug', '-d', { type: 'boolean', hidden: true, authority: 3 })
       .userFields(['id', 'name', 'openai_last_conversation_id', 'authority'])
+      .check((_, content) => {
+        if (!content?.trim()) {
+          return ''
+        }
+      })
       .check(({ options }) => {
         if (options.model) {
           const maybeRealModel = this.MODEL_ALIASES[options.model]
@@ -287,6 +296,10 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           this.logger.info('[chat] memories:', memories)
         }
 
+        if (options['no-prompt']) {
+          options.prompt = 'You are an useful AI assistant.'
+        }
+
         const model =
           options.model || options.thinking
             ? this.config.reasoningModel || 'deepseek-r1'
@@ -305,13 +318,17 @@ export default class PluginOpenAi extends BasePlugin<Config> {
                 {
                   role: 'system',
                   content: [
-                    `The user you are talking to: ${userName}`,
-                    `Current time in ISO: ${new Date().toISOString()} (user is in UTC+8)`,
-                    memories.length ? 'Memories of conversation:' : '',
-                    ...memories
-                      .map((m) => m.memory)
-                      .filter(Boolean)
-                      .map((m) => `- ${m}`),
+                    `- You are talking with: ${userName}`,
+                    `- Current time: ${new Date().toISOString()} (user is in UTC+8)`,
+                    `- Focus on the user's most recent questions or topics while intelligently determining whether to incorporate contextual or memory-related information. Your cognitive processing mimics human short-term memory mechanisms, automatically filtering irrelevant context by default. Long-term memory retrieval is activated only when significant contextual relevance is detected.`,
+                    memories.length
+                      ? 'Below is your memory, use it at your discretion:\n' +
+                        memories
+                          .map((m) => m.memory)
+                          .filter(Boolean)
+                          .map((m, index) => `${index + 1}. ${m}`)
+                          .join('\n')
+                      : '',
                   ]
                     .map((i) => i.trim())
                     .filter(Boolean)
@@ -352,11 +369,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
         let currentEmojiIndex = -1
         const stopEmojiReaction = cancellableInterval(
           () => {
-            if (
-              sendContentFromIndex ||
-              sendThinkingFromIndex ||
-              Date.now() - startTime > 60 * 1000
-            ) {
+            if (sendContentFromIndex || sendThinkingFromIndex) {
               stopEmojiReaction()
             } else {
               currentEmojiIndex = (currentEmojiIndex + 1) % emojiCodes.length
@@ -366,8 +379,8 @@ export default class PluginOpenAi extends BasePlugin<Config> {
               })
             }
           },
-          15 * 1000,
-          90 * 1000
+          10 * 1000,
+          60 * 1000
         )
 
         // #region chat-stream
@@ -446,6 +459,10 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           const text = fullContent.slice(sendContentFromIndex)
           this.logger.info('[chat] send remaining:', text)
           await session.sendQueued(text)
+        }
+
+        if (usage && options.debug) {
+          await session.sendQueued(JSON.stringify(usage, null, 2))
         }
 
         this.logger.success('[chat] stream end:', {
