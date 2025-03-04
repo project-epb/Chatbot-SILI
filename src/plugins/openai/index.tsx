@@ -206,7 +206,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       .command('openai/chat <content:text>', 'ChatGPT', {
         minInterval: 1 * Time.minute,
         maxUsage: 10,
-        bypassAuthority: 3,
+        bypassAuthority: 2,
       })
       .shortcut(/(.+)[\?？]$/, {
         args: ['$1'],
@@ -225,17 +225,17 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       })
       .option('prompt', '-p <prompt:string>', {
         hidden: true,
-        authority: 3,
+        authority: 2,
       })
       .option('model', '-m <model:string>', {
         hidden: true,
-        authority: 3,
+        authority: 2,
       })
       .option('thinking', '-t Enable reasoning mode', {
         type: 'boolean',
         hidden: true,
       })
-      .option('debug', '-d', { type: 'boolean', hidden: true, authority: 3 })
+      .option('debug', '-d', { type: 'boolean', hidden: true, authority: 2 })
       .userFields(['id', 'name', 'openai_last_conversation_id', 'authority'])
       .check((_, content) => {
         if (!content?.trim()) {
@@ -355,15 +355,6 @@ export default class PluginOpenAi extends BasePlugin<Config> {
             throw e
           })
 
-        // 读取流式数据
-        let fullThinking = ''
-        let fullContent = ''
-        let sendContentFromIndex = 0
-        let sendThinkingFromIndex = 0
-        let usage: CompletionUsage | undefined
-        let thinkingEnd = false
-        const shouldSendThinking = options.debug
-
         // 如果没有开启调试模式，每思考 10 秒发送一个状态指示器
         const emojiCodes = ['181', '285', '267', '312', '284', '37']
         let currentEmojiIndex = -1
@@ -382,6 +373,16 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           10 * 1000,
           60 * 1000
         )
+
+        // 读取流式数据
+        let fullThinking = ''
+        let fullContent = ''
+        let sendContentFromIndex = 0
+        let sendThinkingFromIndex = 0
+        let usage: CompletionUsage | undefined
+        let thinkingEnd = false
+        let lastMessageId: string
+        const shouldSendThinking = options.debug
 
         // #region chat-stream
         try {
@@ -406,7 +407,12 @@ export default class PluginOpenAi extends BasePlugin<Config> {
                 if (text) {
                   this.logger.info('[chat] thinking:', text)
                   stopEmojiReaction()
-                  await session.sendQueued('[内心独白] ' + text)
+                  ;[lastMessageId = lastMessageId] = await session.sendQueued(
+                    <>
+                      {lastMessageId && <quote id={lastMessageId}></quote>}
+                      [内心独白] {text}
+                    </>
+                  )
                 }
               }
             }
@@ -420,8 +426,11 @@ export default class PluginOpenAi extends BasePlugin<Config> {
                 shouldSendThinking
               ) {
                 stopEmojiReaction()
-                await session.sendQueued(
-                  '[内心独白] ' + fullThinking.slice(sendThinkingFromIndex)
+                ;[lastMessageId = lastMessageId] = await session.sendQueued(
+                  <>
+                    {lastMessageId && <quote id={lastMessageId}></quote>}
+                    [内心独白] {fullThinking.slice(sendThinkingFromIndex)}
+                  </>
                 )
               }
             }
@@ -436,7 +445,13 @@ export default class PluginOpenAi extends BasePlugin<Config> {
               if (text) {
                 this.logger.info('[chat] sending:', text)
                 stopEmojiReaction()
-                await session.sendQueued(text)
+                // await session.sendQueued(text)
+                ;[lastMessageId = lastMessageId] = await session.sendQueued(
+                  <>
+                    {lastMessageId && <quote id={lastMessageId}></quote>}
+                    {text}
+                  </>
+                )
               }
             }
           }
@@ -458,11 +473,21 @@ export default class PluginOpenAi extends BasePlugin<Config> {
         if (sendContentFromIndex < fullContent.length) {
           const text = fullContent.slice(sendContentFromIndex)
           this.logger.info('[chat] send remaining:', text)
-          await session.sendQueued(text)
+          ;[lastMessageId = lastMessageId] = await session.sendQueued(
+            <>
+              {lastMessageId && <quote id={lastMessageId}></quote>}
+              {text}
+            </>
+          )
         }
 
         if (usage && options.debug) {
-          await session.sendQueued(JSON.stringify(usage, null, 2))
+          await session.sendQueued(
+            <>
+              {lastMessageId && <quote id={lastMessageId}></quote>}
+              {JSON.stringify(usage, null, 2)}
+            </>
+          )
         }
 
         this.logger.success('[chat] stream end:', {

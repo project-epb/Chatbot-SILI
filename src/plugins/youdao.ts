@@ -17,12 +17,12 @@ export default class PluginYoudao extends BasePlugin {
     ctx
       .command('tools/youdao <text:text>', '使用无道词典进行翻译')
       .shortcut('翻译', { fuzzy: true })
-      .shortcut(/(.+)用((.+)[语文])怎么说/, {
+      .shortcut(/^(.+)用((.+)[语文])怎么说$/, {
         args: ['$1'],
         options: { from: 'auto', to: '$2' },
         prefix: true,
       })
-      .shortcut(/(?:(.+)[语文])?(.+)(?:是什么意思|的意思是什么)/, {
+      .shortcut(/(?:(.+)[语文])?(.+)(?:是什么意思|的意思是什么)$/, {
         args: ['$2'],
         options: { from: '$1', to: 'zh-CHS' },
         prefix: true,
