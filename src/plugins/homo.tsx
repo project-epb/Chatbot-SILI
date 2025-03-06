@@ -14,8 +14,8 @@ export class PluginHomo extends BasePlugin {
 
     ctx.set('homo', homo)
 
-    ctx.command('tools.homo', '<input> 恶臭数字论证器').action(({}, input) => {
-      const output = homo(input)
+    ctx.command('tools/homo', '<input> 恶臭数字论证器').action(({}, input) => {
+      const output = homo(Number(input))
       return output ? `${input} = ${output}` : ''
     })
   }
