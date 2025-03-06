@@ -25,6 +25,7 @@ import PluginDatabaseAdmin from '~/dbadmin'
 import { PluginDebug } from '~/debug'
 import PluginDice from '~/dice'
 import PluginHljs from '~/hljs'
+import { PluginHomo } from '~/homo'
 import PluginJMComic from '~/jm-comic'
 import { PluginLookupIP } from '~/lookup-ip'
 import PluginMediawiki from '~/mediawiki'
@@ -405,6 +406,7 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(ProcessErrorHandler)
   ctx.plugin(PluginDatabaseAdmin)
   ctx.plugin(PluginDebug)
+  ctx.plugin(PluginHomo)
   ctx.plugin(PluginReboot)
   const randomHit = (probability: number) => Math.random() < probability
   ctx.plugin(PluginRepeater, {
