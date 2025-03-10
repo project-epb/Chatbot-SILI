@@ -25,7 +25,7 @@ export class PluginDebug extends BasePlugin {
           if (uin === session.userId) {
             return 'You cannot piggyback to yourself.'
           }
-          ctx.root.piggyback.executeAsUser(session, uin, command)
+          session.executeAsUser(uin, command)
         })
     })
 

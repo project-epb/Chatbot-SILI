@@ -21,6 +21,7 @@ import HTMLService from '@/services/html'
 
 import PluginAbout from '~/about'
 import PatchCallme from '~/callme'
+import PluginCanIUse from '~/caniuse'
 import PluginDatabaseAdmin from '~/dbadmin'
 import { PluginDebug } from '~/debug'
 import PluginDice from '~/dice'
@@ -316,6 +317,7 @@ app.plugin(function PluginCollectionDialogue(ctx) {
 // SILI Core
 app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginAbout)
+  ctx.plugin(PluginCanIUse)
   ctx.plugin(PluginDice)
   ctx.plugin(PluginHljs)
   ctx.plugin(PluginJMComic)
