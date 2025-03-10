@@ -2,7 +2,7 @@ import { Context } from 'koishi'
 
 import BasePlugin from './_boilerplate'
 
-export class PluginCanIUse extends BasePlugin {
+export default class PluginCanIUse extends BasePlugin {
   static readonly inject = ['html']
 
   constructor(ctx: Context) {
