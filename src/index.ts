@@ -122,10 +122,10 @@ const app = new App({
     }
     return items
   },
-  minSimilarity: 0.6,
+  minSimilarity: 0.8,
   delay: {
-    message: 1000,
-    broadcast: 1000,
+    message: 3 * 1000,
+    broadcast: 10 * 1000,
     prompt: 60 * 1000,
   },
 })
