@@ -15,9 +15,12 @@ export default class PiggybackService extends Service {
   constructor(public ctx: Context) {
     super(ctx, 'piggyback')
     const that = this
-    ctx.set('session.executeAsUser', function (userId: string, content: any) {
-      return that.executeAsUser(this, userId, content)
-    })
+    ctx.set(
+      'session.executeAsUser',
+      function (this: Session, userId: string, content: any) {
+        return that.executeAsUser(this, userId, content)
+      }
+    )
   }
 
   async executeAsUser(
