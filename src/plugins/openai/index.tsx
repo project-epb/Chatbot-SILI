@@ -16,7 +16,10 @@ import BasePlugin from '~/_boilerplate'
 import { getUserNickFromSession } from '$utils/formatSession'
 import { Memory, MemoryClient } from 'mem0ai'
 import { ClientOptions, OpenAI } from 'openai'
-import { ChatCompletionCreateParamsBase } from 'openai/resources/chat/completions.mjs'
+import {
+  ChatCompletionCreateParamsBase,
+  ChatCompletionCreateParamsStreaming,
+} from 'openai/resources/chat/completions.mjs'
 import { CompletionUsage } from 'openai/resources/completions'
 
 import ChatCensorService from './plugins/ChatCensorService'
@@ -300,7 +303,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           options.model || options.thinking
             ? this.config.reasoningModel || 'deepseek-r1'
             : this.config.model || 'gpt-4o-mini'
-        const body: ChatCompletionCreateParamsBase = {
+        const body: ChatCompletionCreateParamsStreaming = {
           model,
           messages: [
             // base prompt
