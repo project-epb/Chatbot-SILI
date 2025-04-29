@@ -3,7 +3,7 @@
  * @author dragon-fish
  * @license MIT
  */
-import { Context, Session, Time, arrayBufferToBase64 } from 'koishi'
+import { Context, Time, arrayBufferToBase64 } from 'koishi'
 
 import crypto from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -253,12 +253,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       .check(({ session }) => {
         const userId = session.user.id
         if (this.CONVERSATION_LOCKS.has(userId)) {
-          session.onebot
-            ?._request?.('set_msg_emoji_like', {
-              message_id: session.messageId,
-              emoji_id: '33',
-            })
-            .catch(() => {})
+          session?.setReaction?.('33').catch(() => {})
           return ''
         }
       })
@@ -364,10 +359,9 @@ export default class PluginOpenAi extends BasePlugin<Config> {
               stopEmojiReaction()
             } else {
               currentEmojiIndex = (currentEmojiIndex + 1) % emojiCodes.length
-              session.onebot?._request('set_msg_emoji_like', {
-                message_id: session.messageId,
-                emoji_id: emojiCodes[currentEmojiIndex],
-              })
+              session
+                ?.setReaction?.(emojiCodes[currentEmojiIndex])
+                .catch(() => {})
             }
           },
           10 * 1000,

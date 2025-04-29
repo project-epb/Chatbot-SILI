@@ -6,7 +6,7 @@
  */
 import { config as setupDotEnv } from 'dotenv'
 
-import { App, Dict, Random, type Session, Time } from 'koishi'
+import { App, Random, type Session, Time } from 'koishi'
 
 import { resolve } from 'node:path'
 
@@ -17,6 +17,7 @@ import { MinecraftConnect } from '@/modules/MinecraftConnect'
 import MgpGroupUtils from '@/modules/MoegirlGroupUtils'
 import ProcessErrorHandler from '@/modules/ProcessErrorHandler'
 import PiggybackService from '@/services/PiggybackService'
+import { QQNTEmojiReactionService } from '@/services/QQNTEmojiReaction'
 import HTMLService from '@/services/html'
 
 import PluginAbout from '~/about'
@@ -405,6 +406,7 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(MgpGroupUtils)
   ctx.plugin(PatchCallme)
   ctx.plugin(PiggybackService)
+  ctx.plugin(QQNTEmojiReactionService)
   ctx.plugin(ProcessErrorHandler)
   ctx.plugin(PluginDatabaseAdmin)
   ctx.plugin(PluginDebug)

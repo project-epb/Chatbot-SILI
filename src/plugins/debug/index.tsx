@@ -38,23 +38,43 @@ export class PluginDebug extends BasePlugin {
         return <face id={numId} />
       })
 
-    ctx
-      .platform('onebot')
-      .command('debug.reaction', '<faceId:posint> Set reaction', {})
-      .action(({ session }, faceId) => {
-        const numId = parseInt(faceId)
-        const msgId = session.quote?.id || session.messageId
-        if (isNaN(numId) || numId < 1) return 'Invalid face ID.'
-        return session.onebot
-          ?._request('set_msg_emoji_like', {
-            message_id: msgId,
-            emoji_id: faceId,
-          })
-          .then(() => '')
-          .catch((e) => {
-            return '失败：' + e.message
-          })
-      })
+    ctx.inject(['qqntEmojiReaction'], (ctx) => {
+      ctx
+        .platform('onebot')
+        .command('debug.reaction', 'Emoji reaction', {})
+        .option('add', '-a <faceId:posint> Add reaction')
+        .option('remove', '-r <faceId:posint> Remove reaction')
+        .example(
+          'If no action is specified, it will fetch the reactions from the message'
+        )
+        .action(({ session, options }) => {
+          const msgId = session.quote?.id || session.messageId
+          if (options.add) {
+            return session
+              .setReaction?.(options.add.toString())
+              .then(() => '')
+              .catch((e) => {
+                return '失败：' + e.message
+              })
+          } else if (options.remove) {
+            return session
+              .removeReaction?.(options.remove.toString())
+              .then(() => '')
+              .catch((e) => {
+                return '失败：' + e.message
+              })
+          } else {
+            return this.ctx.qqntEmojiReaction
+              .fetchReactions(msgId, session)
+              .then((reactions) => {
+                return JSON.stringify(reactions, null, 2)
+              })
+              .catch((e) => {
+                return '失败：' + e.message
+              })
+          }
+        })
+    })
 
     ctx.inject(['html'], (ctx) => {
       ctx
