@@ -238,6 +238,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       .option('thinking', '-t Enable reasoning mode', {
         type: 'boolean',
         hidden: true,
+        fallback: false,
       })
       .option('debug', '-d', { type: 'boolean', hidden: true, authority: 2 })
       .userFields(['id', 'name', 'openai_last_conversation_id', 'authority'])
@@ -345,7 +346,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
             include_usage: true,
           },
           // @ts-expect-error Qwen3 specific
-          enable_thinking: options.thinking,
+          enable_thinking: !!options.thinking,
           thinking_budget: this.config.maxTokens ?? 1024,
         }
         const stream = await this.openai.chat.completions
