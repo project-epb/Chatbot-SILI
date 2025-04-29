@@ -342,14 +342,19 @@ export default class PluginOpenAi extends BasePlugin<Config> {
               stream_options: {
                 include_usage: true,
               },
-              // Qwen3 specific
-              enable_thinking: options.thinking,
-              thinking_budget: 4096,
             },
-            { timeout: 90 * 1000 }
+            {
+              timeout: 90 * 1000,
+              body: {
+                // Qwen3 specific
+                enable_thinking: options.thinking,
+                thinking_budget: 4096,
+              },
+            }
           )
           .catch((e) => {
             this.CONVERSATION_LOCKS.delete(conversation_owner)
+            console.error('[chat] request error:', e)
             throw e
           })
 
