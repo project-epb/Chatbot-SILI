@@ -16,6 +16,7 @@ import BasePlugin from '~/_boilerplate'
 import { getUserNickFromSession } from '$utils/formatSession'
 import { Memory, MemoryClient } from 'mem0ai'
 import { ClientOptions, OpenAI } from 'openai'
+import { ChatCompletionCreateParamsBase } from 'openai/resources/chat/completions.mjs'
 import { CompletionUsage } from 'openai/resources/completions'
 
 import ChatCensorService from './plugins/ChatCensorService'
@@ -299,59 +300,55 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           options.model || options.thinking
             ? this.config.reasoningModel || 'deepseek-r1'
             : this.config.model || 'gpt-4o-mini'
-        const stream = await this.openai.chat.completions
-          .create(
+        const body: ChatCompletionCreateParamsBase = {
+          model,
+          messages: [
+            // base prompt
             {
-              model,
-              messages: [
-                // base prompt
-                {
-                  role: 'system',
-                  content: options.prompt || this.config.systemPrompt.basic,
-                },
-                // provide user info
-                {
-                  role: 'system',
-                  content: [
-                    `- You are talking with: ${userName}`,
-                    `- Current time: ${new Date().toISOString()} (user is in UTC+8)`,
-                    `- Focus on the user's most recent questions or topics while intelligently determining whether to incorporate contextual or memory-related information. Your cognitive processing mimics human short-term memory mechanisms, automatically filtering irrelevant context by default. Long-term memory retrieval is activated only when significant contextual relevance is detected.`,
-                    memories.length
-                      ? 'Below is your memory, use it at your discretion:\n' +
-                        memories
-                          .map((m) => m.memory)
-                          .filter(Boolean)
-                          .map((m, index) => `${index + 1}. ${m}`)
-                          .join('\n')
-                      : '',
-                  ]
-                    .map((i) => i.trim())
-                    .filter(Boolean)
-                    .join('\n'),
-                },
-                // chat history
-                ...histories,
-                // current user input
-                { role: 'user', content },
-              ],
-              max_tokens: this.config.maxTokens ?? 1024,
-              temperature: 1.2,
-              presence_penalty: 0.8,
-              frequency_penalty: 0,
-              stream: true,
-              stream_options: {
-                include_usage: true,
-              },
+              role: 'system',
+              content: options.prompt || this.config.systemPrompt.basic,
             },
+            // provide user info
             {
-              timeout: 90 * 1000,
-              body: {
-                // Qwen3 specific
-                enable_thinking: options.thinking,
-                thinking_budget: 4096,
-              },
-            }
-          )
+              role: 'system',
+              content: [
+                `- You are talking with: ${userName}`,
+                `- Current time: ${new Date().toISOString()} (user is in UTC+8)`,
+                `- Focus on the user's most recent questions or topics while intelligently determining whether to incorporate contextual or memory-related information. Your cognitive processing mimics human short-term memory mechanisms, automatically filtering irrelevant context by default. Long-term memory retrieval is activated only when significant contextual relevance is detected.`,
+                memories.length
+                  ? 'Below is your memory, use it at your discretion:\n' +
+                    memories
+                      .map((m) => m.memory)
+                      .filter(Boolean)
+                      .map((m, index) => `${index + 1}. ${m}`)
+                      .join('\n')
+                  : '',
+              ]
+                .map((i) => i.trim())
+                .filter(Boolean)
+                .join('\n'),
+            },
+            // chat history
+            ...histories,
+            // current user input
+            { role: 'user', content },
+          ],
+          max_tokens: this.config.maxTokens ?? 1024,
+          temperature: 1.2,
+          presence_penalty: 0.8,
+          frequency_penalty: 0,
+          stream: true,
+          stream_options: {
+            include_usage: true,
+          },
+          // @ts-expect-error Qwen3 specific
+          enable_thinking: options.thinking,
+          thinking_budget: this.config.maxTokens ?? 1024,
+        }
+        const stream = await this.openai.chat.completions
+          .create(body, {
+            timeout: 90 * 1000,
+          })
           .catch((e) => {
             this.CONVERSATION_LOCKS.delete(conversation_owner)
             console.error('[chat] request error:', e)
