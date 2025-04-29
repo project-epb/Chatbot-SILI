@@ -339,8 +339,8 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           ],
           max_tokens: this.config.maxTokens ?? 1024,
           temperature: 1.2,
+          top_p: 0.6,
           presence_penalty: 0.8,
-          frequency_penalty: 0,
           stream: true,
           stream_options: {
             include_usage: true,
