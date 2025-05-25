@@ -22,7 +22,7 @@ export default class MessagesLogger extends BasePlugin {
       )
     })
 
-    ctx.on('before-send', (session) => {
+    ctx.before('send', (session) => {
       const content = this.toSlimContent(
         session.content || session.elements?.join('') || '[UNKNOWN]'
       )
@@ -41,7 +41,7 @@ export default class MessagesLogger extends BasePlugin {
   toSlimContent(content: string) {
     if (!content) return content
     return content.replace(
-      /(src|url)="(base64:\/\/|data:).+?"/gi,
+      /(src|url)="(base64:|data:).+?"/gi,
       'src="(base64)"'
     )
   }

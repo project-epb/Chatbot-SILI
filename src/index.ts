@@ -11,6 +11,7 @@ import { App, Random, type Session, Time } from 'koishi'
 import { resolve } from 'node:path'
 
 import FallbackHandler from '@/modules/FallbackHandler'
+import { FixQQSendLinks } from '@/modules/FixQQSendLinks'
 import { GuildRequestFirewall } from '@/modules/GuildRequestFirewall'
 import MessagesLogger from '@/modules/MessagesLogger'
 import { MinecraftConnect } from '@/modules/MinecraftConnect'
@@ -451,6 +452,8 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(PluginSensitiveFilter)
   ctx.plugin(PluginSpawn, { shell: 'pwsh' })
   ctx.plugin(MinecraftConnect)
+  // FIXME: 临时修复
+  ctx.plugin(FixQQSendLinks)
 })
 
 /** 启动应用程序 */
