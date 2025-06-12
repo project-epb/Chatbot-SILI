@@ -74,14 +74,13 @@ services:
     image: initialencounter/llonebot:latest
     environment:
       VNC_PASSWD: ${VNC_PASSWD}
-    privileged: true
     mem_limit: 1g
     restart: always
     ports:
       - '6788:7081' # VNC
     volumes:
-      - liteloader_data:/LiteLoader/data
-      - qqnt_data:/data/.config/QQ
+      - llonebot_data:/root/llonebot
+      - qqnt_data:/root/.config/QQ
     networks:
       sili-network:
         aliases:
