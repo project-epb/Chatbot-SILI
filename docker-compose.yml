@@ -99,5 +99,5 @@ volumes:
     name: sili_mongo_data
   qqnt_data:
     name: sili_qqnt_data
-  liteloader_data:
-    name: sili_liteloader_data
+  llonebot_data:
+    name: llonebot_data
