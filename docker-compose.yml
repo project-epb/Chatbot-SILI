@@ -3,6 +3,7 @@ name: sili
 services:
   sili-core:
     container_name: sili-core
+    platform: linux/amd64
     build:
       context: .
       dockerfile: ./docker/sili-core.dockerfile
@@ -69,15 +70,18 @@ services:
       - mongo_data:/data/db
       - ./public:/data/public
 
+  # https://github.com/LLOneBot/llonebot.nix
   llonebot:
     container_name: sili-llonebot
     image: initialencounter/llonebot:latest
+    platform: linux/amd64
     environment:
       VNC_PASSWD: ${VNC_PASSWD}
     mem_limit: 1g
     restart: always
     ports:
       - '6788:7081' # VNC
+      - '6888:5900' # noVNC
     volumes:
       - llonebot_data:/root/llonebot
       - qqnt_data:/root/.config/QQ
