@@ -88,6 +88,13 @@ export default class PluginWhoAsked extends BasePlugin {
       {
         primary: 'id',
         autoInc: true,
+        indexes: [
+          // findLastMention
+          // 包含 platform, channelId, target, timestamp，支持按时间戳排序
+          ['platform', 'channelId', 'target', 'timestamp'],
+          // deleteOldLogs
+          ['timestamp'],
+        ],
       }
     )
   }

@@ -169,6 +169,14 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       {
         primary: 'id',
         autoInc: true,
+        indexes: [
+          // getChatHistoriesById
+          ['conversation_id', 'time'],
+          // 通过用户查找记录
+          ['conversation_owner', 'time'],
+          // 用于可能的时间范围清理操作
+          ['time'],
+        ],
       }
     )
   }
