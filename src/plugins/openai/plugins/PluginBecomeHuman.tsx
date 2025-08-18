@@ -17,7 +17,7 @@ export default class PluginBecomeHuman extends BasePlugin<BaseConfig> {
       '1029954579': 1 / 10,
       '138516409': 1 / 20,
       '412024832': 1 / 50,
-      '1001730756': 1 / 25,
+      '1026023666': 1 / 25,
     },
     minMessages: 15, // 至少需要 x 条消息才触发，否则难以接上话
     maxMessages: 50, // 携带消息上限，不能太高否则 token 会爆
@@ -125,8 +125,8 @@ ${tips}`,
       { headers: {} }
     )
 
-    console.log(response)
-    const text = response.choices[0].message.content
+    const text = response?.choices?.[0]?.message?.content || ''
+    console.log(response, text)
     if (!text || text.trim() === '##NO_REPLY##') return
     session.send(text)
   }
