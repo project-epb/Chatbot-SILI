@@ -5,16 +5,8 @@
  */
 import { Context, Session, Time } from 'koishi'
 
-import { writeFileSync } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
-
-import { cancellableInterval } from '@/utils/cancellableDefferred'
-
 import BasePlugin from '~/_boilerplate'
 
-import { getUserNickFromSession } from '$utils/formatSession'
-import { safelyStringify } from '$utils/safelyStringify'
 import { OpenAI } from 'openai'
 
 import type { Config as BaseConfig } from '..'
@@ -22,13 +14,10 @@ import type { Config as BaseConfig } from '..'
 export declare const Config: BaseConfig
 
 export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
-  static readonly inject = ['openai']
+  static readonly inject = ['openai', 'messageRecord']
   readonly openai: OpenAI
   readonly SYSTEM_PROMPT: string
-  readonly LOG_FILE = resolve(__dirname, '..', 'channel-messages.log')
-  private messageRecords: Record<string, Session['event'][]> = {}
   private readonly NO_RECORD_MAGIC_WORD = '[summary]'
-  private stopRecording?: () => void
 
   constructor(ctx: Context, config: BaseConfig) {
     if (!config.systemPrompt?.channelSummary) {
@@ -44,51 +33,8 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
 
     this.openai = this.ctx.openai
     this.SYSTEM_PROMPT = this.config.systemPrompt.channelSummary
-    this.#handleRecordsLog().then(() => {
-      this.#initListeners()
-      this.#initCommands()
-    })
-  }
 
-  stop() {
-    this.stopRecording?.()
-  }
-
-  async #handleRecordsLog() {
-    try {
-      const text = (await readFile(this.LOG_FILE)).toString()
-      const obj = JSON.parse(text)
-      this.messageRecords = obj
-    } catch (_) {
-      writeFile(this.LOG_FILE, '{}', 'utf-8').catch(() => {})
-    }
-
-    this.stopRecording = cancellableInterval(() => {
-      writeFile(
-        this.LOG_FILE,
-        safelyStringify(this.messageRecords),
-        'utf-8'
-      ).catch((e) => {
-        this.logger.error('Failed to write log file:', e)
-      })
-    }, 5 * Time.minute)
-
-    process.on('exit', () => {
-      try {
-        writeFileSync(
-          this.LOG_FILE,
-          safelyStringify(this.messageRecords),
-          'utf-8'
-        )
-      } catch (e) {
-        console.error('[channel-summary] Failed to write log file:', e)
-      }
-    })
-  }
-
-  #initListeners() {
-    this.ctx.channel().on('message', this.logSessionData.bind(this))
-    this.ctx.channel().on('before-send', this.logSessionData.bind(this))
+    this.#initCommands()
   }
 
   #initCommands() {
@@ -114,12 +60,13 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
   }
 
   async summarize(channelId: string) {
-    const records = this.getRecordsByChannelId(channelId)
+    const records =
+      await this.ctx.messageRecord.getRecordsByChannelId(channelId)
     if (records.length < 10) {
       return <>🥀啊哦——保存的聊天记录太少了，难以进行总结……</>
     }
 
-    const recordsText = this.formatRecords(records)
+    const recordsText = JSON.stringify(records)
 
     return this.openai.chat.completions
       .create(
@@ -170,38 +117,5 @@ export default class PluginChannelSummary extends BasePlugin<BaseConfig> {
           </>
         )
       })
-  }
-
-  logSessionData(session: Session) {
-    const content = session?.content || session.elements?.join('') || ''
-    if (content.includes(this.NO_RECORD_MAGIC_WORD)) {
-      return
-    }
-    const records = this.getRecordsByChannelId(session.channelId)
-    const dump = session.toJSON()
-    if (!dump?.message || !dump?.message?.content) {
-      dump.message ||= {}
-      dump.message.content = content
-    }
-    records.push(dump)
-    this.messageRecords[session.channelId] = records.slice(
-      records.length - this.config.recordsPerChannel
-    )
-  }
-  getRecordsByChannelId(channelId: string): Session['event'][] {
-    this.messageRecords[channelId] = this.messageRecords[channelId] || []
-    return this.messageRecords[channelId]
-  }
-  formatRecords(records: Session['event'][]) {
-    return JSON.stringify(
-      records.map((session) => {
-        return {
-          user_name: getUserNickFromSession(session),
-          user_id: session.user?.id || session._data?.user_id,
-          content: (session as any)?.content || session?.message?.content,
-          timestamp: session.timestamp,
-        }
-      })
-    )
   }
 }

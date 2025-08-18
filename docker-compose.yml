@@ -13,8 +13,8 @@ services:
       sili-network:
         aliases:
           - core.sili.local
-    # ports:
-    #   - '3100:3100'
+    ports:
+      - '3100:3100'
     volumes:
       - ./public:/data/public
       # 主要的 Node.js 项目文件
@@ -31,24 +31,24 @@ services:
     depends_on:
       - mongo
 
-  caddy:
-    image: caddy:2.9-alpine
-    container_name: sili-caddy
-    restart: always
-    mem_limit: 128m
-    networks:
-      sili-network:
-        aliases:
-          - caddy.sili.local
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
-    ports:
-      - '80:80'
-      - '443:443'
-      - '443:443/udp'
-    volumes:
-      - ./data/caddy/Caddyfile:/etc/caddy/Caddyfile
-      - ./public:/data/public
+  # caddy:
+  #   image: caddy:2.9-alpine
+  #   container_name: sili-caddy
+  #   restart: always
+  #   mem_limit: 128m
+  #   networks:
+  #     sili-network:
+  #       aliases:
+  #         - caddy.sili.local
+  #   extra_hosts:
+  #     - 'host.docker.internal:host-gateway'
+  #   ports:
+  #     - '80:80'
+  #     - '443:443'
+  #     - '443:443/udp'
+  #   volumes:
+  #     - ./data/caddy/Caddyfile:/etc/caddy/Caddyfile
+  #     - ./public:/data/public
 
   mongo:
     image: mongo:8.0-noble
