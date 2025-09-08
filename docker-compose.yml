@@ -57,7 +57,7 @@ services:
   llonebot:
     container_name: sili-llonebot
     image: initialencounter/llonebot:latest
-    platform: linux/amd64
+    # platform: linux/amd64
     environment:
       VNC_PASSWD: ${VNC_PASSWD}
     mem_limit: 1g

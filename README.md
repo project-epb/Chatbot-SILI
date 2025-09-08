@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://r2.epb.wiki/avatar/SILI.jpeg" alt="SILI avatar" width="200"/>
+<img src="https://github.com/user-attachments/assets/5bcf2bcd-5777-424d-b413-9c7a33344c1b" alt="SILI avatar" width="200"/>
 
 # Chatbot SILI v4
 
@@ -14,7 +14,7 @@ Brand new SILI: harder, better, faster, stronger.
 
 <div align="right">
 
-[查看 SILI 的角色设定](https://epbureau.notion.site/b06b4ac44771484e8cc276a83f030962?pvs=4)
+[查看 SILI 的角色设定](https://epb-wiki.notion.site/sili-network)
 
 </div>
 
@@ -97,7 +97,7 @@ Fandom 的全域跨语言链接同样适用，例如 `[[w:c:zh.ngnl:初濑伊纲
 **快速启动**
 
 ```sh
-docker-compose -p sili up -d
+docker compose up -d
 ```
 
 详见 [开发文档](docs/README.md)。
