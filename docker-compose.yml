@@ -13,6 +13,8 @@ services:
       sili-network:
         aliases:
           - core.sili.local
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     # ports:
     #   - '3100:3100'
     volumes:
@@ -30,25 +32,6 @@ services:
       - /root/.cache/puppeteer
     depends_on:
       - mongo
-
-  caddy:
-    image: caddy:2.9-alpine
-    container_name: sili-caddy
-    restart: always
-    mem_limit: 128m
-    networks:
-      sili-network:
-        aliases:
-          - caddy.sili.local
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
-    ports:
-      - '80:80'
-      - '443:443'
-      - '443:443/udp'
-    volumes:
-      - ./data/caddy/Caddyfile:/etc/caddy/Caddyfile
-      - ./public:/data/public
 
   mongo:
     image: mongo:8.0-noble
@@ -93,6 +76,7 @@ services:
 networks:
   sili-network:
     name: sili-network
+    external: true
 
 volumes:
   mongo_data:

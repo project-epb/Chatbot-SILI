@@ -137,12 +137,16 @@ export default class PluginMediawiki extends BasePlugin {
             inprop: 'url|displaytitle',
           })
           .then((res) => {
+            this.logger.info('QUERY DATA', res.data)
             // @ts-ignore
-            if (res.data.error || res.data.errors) {
+            if (res.data?.error || res.data?.errors) {
               throw new Error(
                 // @ts-ignore
-                JSON.stringify(res.data.error || res.data.errors, null, 2)
+                JSON.stringify(res.data?.error || res.data?.errors, null, 2)
               )
+            }
+            if (!res.data?.query) {
+              throw new Error('Invalid response data')
             }
             return res
           })
@@ -150,8 +154,6 @@ export default class PluginMediawiki extends BasePlugin {
             session.send(`查询时遇到问题：${e || '-'}`)
             throw e
           })
-
-        this.logger.debug('QUERY DATA', data.query)
 
         // Cache variables
         const { pages, redirects, interwiki, specialpagealiases, namespaces } =
