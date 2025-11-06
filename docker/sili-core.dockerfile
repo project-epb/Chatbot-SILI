@@ -31,12 +31,12 @@ RUN apt-clean-install \
 # 安装字体
 RUN \
     # 汉仪文黑
-    wget https://r2.epb.wiki/fonts/HYWenHei.7z && \
+    wget https://upy.epb.wiki/fonts/HYWenHei.7z && \
     7z x HYWenHei.7z -oHYWenHei && \
     mv HYWenHei/*.ttf /usr/share/fonts/truetype/ && \
     rm -rf HYWenHei HYWenHei.7z && \
     # Segoe UI Emoji
-    wget https://r2.epb.wiki/fonts/seguiemj.ttf && \
+    wget https://upy.epb.wiki/fonts/seguiemj.ttf && \
     mv seguiemj.ttf /usr/share/fonts/truetype/ && \
     # 刷新字体缓存
     fc-cache -fv
