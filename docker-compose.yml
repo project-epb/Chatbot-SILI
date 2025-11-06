@@ -1,41 +1,39 @@
 name: sili
 
 services:
-  sili-core:
+  core:
     container_name: sili-core
     platform: linux/amd64
     build:
       context: .
       dockerfile: ./docker/sili-core.dockerfile
+    command: ['/bin/bash', '-c', 'bun install --frozen-lockfile && bun start']
     mem_limit: 1.5g
     restart: always
     networks:
       sili-network:
         aliases:
           - core.sili.local
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
     # ports:
     #   - '3100:3100'
     volumes:
-      - ./public:/data/public
       # 主要的 Node.js 项目文件
       - ./src/:/app/src
       - ./package.json:/app/package.json
+      - ./bun.lock:/app/bun.lock
       - ./tsconfig.json:/app/tsconfig.json
       - ./.npmrc:/app/.npmrc
-      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
       - ./.env:/app/.env
       # koishi自带的data文件夹
-      - ./data/core:/app/data
+      - ./.volumns/core:/app/data
       # 缓存文件夹
       - /root/.cache/puppeteer
     depends_on:
       - mongo
 
   mongo:
-    image: mongo:8.0-noble
     container_name: sili-mongo
+    image: mongo:8.0-noble
     mem_limit: 512m
     networks:
       sili-network:
@@ -51,37 +49,33 @@ services:
     #   MONGO_INITDB_ROOT_PASSWORD: ${DB_MONGO_PASSWORD}
     volumes:
       - mongo_data:/data/db
-      - ./public:/data/public
 
-  # https://github.com/LLOneBot/llonebot.nix
-  llonebot:
-    container_name: sili-llonebot
-    image: initialencounter/llonebot:latest
-    # platform: linux/amd64
-    environment:
-      VNC_PASSWD: ${VNC_PASSWD}
-    mem_limit: 1g
-    restart: always
-    ports:
-      - '6788:7081' # VNC
-      - '6888:5900' # noVNC
-    volumes:
-      - llonebot_data:/root/llonebot
-      - qqnt_data:/root/.config/QQ
+  # https://github.com/NapNeko/NapCat-Docker
+  napcat:
+    container_name: sili-napcat
+    image: mlikiowa/napcat-docker:latest
     networks:
       sili-network:
         aliases:
-          - llonebot.sili.local
+          - napcat.sili.local
+    restart: always
+    # environment:
+    #   - NAPCAT_UID=${NAPCAT_UID:-1000}
+    #   - NAPCAT_GID=${NAPCAT_GID:-1000}
+    mem_limit: 1g
+    ports:
+      - 3080:6099
+    volumes:
+      - qqnt_data:/app/.config/QQ
+      - ./.volumns/napcat:/app/napcat/config
 
 networks:
   sili-network:
     name: sili-network
-    external: true
+    external: ${NETWORK_IS_EXTERNAL:-false}
 
 volumes:
   mongo_data:
     name: sili_mongo_data
   qqnt_data:
     name: sili_qqnt_data
-  llonebot_data:
-    name: llonebot_data

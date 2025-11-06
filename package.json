@@ -77,5 +77,8 @@
     "puppeteer": "^24.7.2",
     "shiki": "^1.24.0",
     "wiki-saikou": "^4.2.2"
-  }
+  },
+  "workspaces": [
+    "."
+  ]
 }
