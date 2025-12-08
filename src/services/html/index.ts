@@ -67,7 +67,7 @@ export default class HTMLService extends Service {
   <!-- <link rel="stylesheet" href="https://fonts.googlefonts.cn/css?family=Noto+Sans+SC"> -->
   <style>
     :root {
-      font-family: 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      font-family: 'Segoe UI Emoji', 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
       font-size: 14px;
       color: #252525;
     }
