@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Meme Renderer</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          Oxygen,
+          Ubuntu,
+          Cantarell,
+          'Open Sans',
+          'Helvetica Neue',
+          sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+        gap: 12px;
+      }
+      #memeCanvas {
+        border: 1px solid #ddd;
+      }
+      input {
+        width: 420px;
+        padding: 8px 10px;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="memeCanvas"></canvas>
+    <input id="textInput" placeholder="输入要说的话…" />
+
+    <script>
+      /**
+       * 通用表情包渲染类
+       * - 自动加载底图
+       * - 根据对话框区域自动调整字号
+       * - 自动换行（支持中文无空格 + 英文断词加前导 -）
+       * - 支持矩形 / 椭圆对话框选区
+       */
+      class MemeRenderer {
+        /**
+         * @param {Object} options
+         * @param {HTMLCanvasElement} options.canvas  要绘制的 canvas
+         * @param {string} options.imageUrl           底图地址
+         * @param {number} options.imageWidth         底图宽度（逻辑尺寸）
+         * @param {number} options.imageHeight        底图高度（逻辑尺寸）
+         * @param {Object} options.bubble             对话框区域
+         * @param {number} options.bubble.x
+         * @param {number} options.bubble.y
+         * @param {number} options.bubble.width
+         * @param {number} options.bubble.height
+         * @param {number} [options.bubble.padding=20]
+         * @param {"rect"|"ellipse"} [options.bubble.shape="rect"]  选区形状
+         * @param {number} [options.maxFontSize=56]
+         * @param {number} [options.minFontSize=18]
+         * @param {string} [options.fontFamily]       字体族
+         * @param {number} [options.maxLines]         最大文本行数
+         * @param {boolean} [options.debug=false]      调试模式：显示网格和文字区域底色
+         */
+        constructor(options) {
+          this.canvas = options.canvas
+          this.ctx = this.canvas.getContext('2d')
+
+          this.imageUrl = options.imageUrl
+          this.imageWidth = options.imageWidth
+          this.imageHeight = options.imageHeight
+
+          this.canvas.width = this.imageWidth
+          this.canvas.height = this.imageHeight
+
+          this.bubble = {
+            x: options.bubble.x,
+            y: options.bubble.y,
+            width: options.bubble.width,
+            height: options.bubble.height,
+            padding: options.bubble.padding ?? 20,
+            shape: options.bubble.shape || 'rect',
+          }
+
+          this.debug = options.debug ?? false
+
+          this.maxFontSize = options.maxFontSize ?? 56
+          this.minFontSize = options.minFontSize ?? 18
+          this.fontFamily =
+            options.fontFamily || getComputedStyle(document.body).fontFamily
+          this.maxLines = options.maxLines ?? 7
+
+          this._image = new Image()
+          this._image.crossOrigin = 'anonymous'
+          this._imageLoaded = false
+
+          this._image.onload = () => {
+            this._imageLoaded = true
+            if (this._pendingText !== undefined) {
+              this.render(this._pendingText)
+              this._pendingText = undefined
+            } else {
+              this._drawBase()
+            }
+          }
+          this._image.src = this.imageUrl
+        }
+
+        /**
+         * 只画底图
+         */
+        _drawBase() {
+          const ctx = this.ctx
+          ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+          ctx.drawImage(
+            this._image,
+            0,
+            0,
+            this.canvas.width,
+            this.canvas.height
+          )
+
+          // debug 模式下画 50x50 网格，方便对齐选区
+          if (this.debug) {
+            ctx.save()
+            ctx.lineWidth = 0.5
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)'
+            const step = 50
+
+            for (let x = 0; x <= this.canvas.width; x += step) {
+              ctx.beginPath()
+              ctx.moveTo(x, 0)
+              ctx.lineTo(x, this.canvas.height)
+              ctx.stroke()
+            }
+
+            for (let y = 0; y <= this.canvas.height; y += step) {
+              ctx.beginPath()
+              ctx.moveTo(0, y)
+              ctx.lineTo(this.canvas.width, y)
+              ctx.stroke()
+            }
+
+            ctx.restore()
+          }
+        }
+
+        /**
+         * 对外方法：渲染文字
+         * @param {string} text
+         */
+        render(text) {
+          if (!this._imageLoaded) {
+            // 图片还没好，先存起来，等 onload 后再渲染
+            this._pendingText = text
+            return
+          }
+
+          const ctx = this.ctx
+          this._drawBase()
+
+          let fontSize = this.maxFontSize
+          let lines = []
+          let lineHeight = 0
+
+          const maxTextWidth = this.bubble.width - this.bubble.padding * 2
+
+          while (fontSize >= this.minFontSize) {
+            ctx.font = `${fontSize}px ${this.fontFamily}`
+            ctx.textBaseline = 'top'
+
+            lines = this._wrapText(ctx, text, maxTextWidth)
+            lineHeight = fontSize * 1.2
+
+            const totalHeight = lines.length * lineHeight
+            const longestLineWidth = Math.max(
+              ...lines.map((line) => ctx.measureText(line).width),
+              0
+            )
+
+            if (
+              totalHeight <= this.bubble.height - this.bubble.padding * 2 &&
+              longestLineWidth <= maxTextWidth &&
+              lines.length <= this.maxLines
+            ) {
+              break
+            }
+
+            fontSize -= 2
+          }
+
+          if (lines.length > this.maxLines) {
+            lines = lines.slice(0, this.maxLines)
+          }
+
+          const totalTextHeight = lines.length * lineHeight
+          const startY =
+            this.bubble.y + (this.bubble.height - totalTextHeight) / 2
+
+          // debug 模式下在文字区域画半透明红色底色
+          if (this.debug) {
+            const padding = this.bubble.padding
+            ctx.save()
+            ctx.globalAlpha = 0.25
+
+            // 1. 绘制整个选区（蓝色）
+            ctx.fillStyle = 'blue'
+            if (this.bubble.shape === 'ellipse') {
+              const cx = this.bubble.x + this.bubble.width / 2
+              const cy = this.bubble.y + this.bubble.height / 2
+              const rx = this.bubble.width / 2
+              const ry = this.bubble.height / 2
+
+              ctx.beginPath()
+              ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
+              ctx.fill()
+            } else {
+              ctx.fillRect(
+                this.bubble.x,
+                this.bubble.y,
+                this.bubble.width,
+                this.bubble.height
+              )
+            }
+
+            // 2. 绘制 padding 内的选区（红色）
+            ctx.fillStyle = 'red'
+
+            if (this.bubble.shape === 'ellipse') {
+              const cx = this.bubble.x + this.bubble.width / 2
+              const cy = this.bubble.y + this.bubble.height / 2
+              const rx = (this.bubble.width - padding * 2) / 2
+              const ry = (this.bubble.height - padding * 2) / 2
+
+              ctx.beginPath()
+              ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
+              ctx.fill()
+            } else {
+              ctx.fillRect(
+                this.bubble.x + padding,
+                this.bubble.y + padding,
+                this.bubble.width - padding * 2,
+                this.bubble.height - padding * 2
+              )
+            }
+
+            ctx.restore()
+          }
+
+          ctx.save()
+          ctx.fillStyle = '#000000'
+          ctx.strokeStyle = '#000000'
+          ctx.lineWidth = 2
+
+          lines.forEach((line, index) => {
+            let displayLine = line
+            let textWidth = ctx.measureText(displayLine).width
+            const y = startY + index * lineHeight
+
+            // 如果是椭圆形对话框，计算当前行在椭圆中的最大宽度
+            if (this.bubble.shape === 'ellipse') {
+              const cx = this.bubble.x + this.bubble.width / 2
+              const cy = this.bubble.y + this.bubble.height / 2
+              const rx = (this.bubble.width - this.bubble.padding * 2) / 2
+              const ry = (this.bubble.height - this.bubble.padding * 2) / 2
+
+              // 计算当前行中心点相对于椭圆中心的垂直距离
+              const lineCenterY = y + fontSize / 2
+              const dy = lineCenterY - cy
+
+              // 根据椭圆方程计算该行的最大宽度
+              // (x/rx)^2 + (y/ry)^2 = 1 => x = rx * sqrt(1 - (y/ry)^2)
+              if (Math.abs(dy) < ry) {
+                const maxLineWidth =
+                  2 * rx * Math.sqrt(1 - (dy * dy) / (ry * ry))
+
+                // 如果当前行文字宽度超出椭圆该行的最大宽度，需要缩短文字
+                if (textWidth > maxLineWidth && displayLine.length > 0) {
+                  // 逐字符减少，直到宽度合适
+                  while (
+                    displayLine.length > 0 &&
+                    ctx.measureText(displayLine).width > maxLineWidth
+                  ) {
+                    displayLine = displayLine.slice(0, -1)
+                  }
+                  textWidth = ctx.measureText(displayLine).width
+                }
+              }
+
+              // 居中对齐(相对于椭圆中心)
+              const x = cx - textWidth / 2
+              ctx.strokeText(displayLine, x, y)
+              ctx.fillText(displayLine, x, y)
+            } else {
+              // 矩形对话框，正常居中
+              const x = this.bubble.x + (this.bubble.width - textWidth) / 2
+              ctx.strokeText(displayLine, x, y)
+              ctx.fillText(displayLine, x, y)
+            }
+          })
+
+          ctx.restore()
+        }
+
+        /**
+         * 判断是否为英文字符（A-Z / a-z）
+         * @param {string} ch
+         * @returns {boolean}
+         */
+        _isAsciiLetter(ch) {
+          return /[A-Za-z]/.test(ch)
+        }
+
+        /**
+         * 自动换行（按字符拆分，兼容中文）
+         * 英文单词被拆分换行时，在下一行前面加一个 "-"
+         * @param {CanvasRenderingContext2D} ctx
+         * @param {string} text
+         * @param {number} maxWidth
+         * @returns {string[]}
+         */
+        _wrapText(ctx, text, maxWidth) {
+          const lines = []
+          let line = ''
+
+          for (let i = 0; i < text.length; i++) {
+            const ch = text[i]
+
+            if (ch === '\n') {
+              lines.push(line)
+              line = ''
+              continue
+            }
+
+            const testLine = line + ch
+            const width = ctx.measureText(testLine).width
+
+            if (width > maxWidth && line !== '') {
+              const prevChar = line[line.length - 1]
+
+              // 如果在英文单词中间断行，则在新行前面加 "-"
+              if (this._isAsciiLetter(prevChar) && this._isAsciiLetter(ch)) {
+                lines.push(line)
+                line = '-' + ch
+              } else {
+                lines.push(line)
+                line = ch
+              }
+            } else {
+              line = testLine
+            }
+          }
+
+          if (line) lines.push(line)
+          return lines
+        }
+      }
+
+      // ========================= 开始渲染 =========================
+
+      const searchParams = new URLSearchParams(window.location.search)
+      const debugMode = searchParams.get('debug') === 'true'
+      const canvas = document.getElementById('memeCanvas')
+      const renderer = new MemeRenderer({
+        canvas,
+        imageUrl: 'https://i.loli.net/2021/07/25/CnBp6z3y8WFAJ4d.jpg',
+        imageWidth: 800,
+        imageHeight: 800,
+        bubble: {
+          x: 190,
+          y: 40,
+          width: 400,
+          height: 200,
+          padding: 16,
+          shape: 'ellipse',
+        },
+        maxFontSize: 72,
+        minFontSize: 18,
+        maxLines: 5,
+        debug: debugMode,
+      })
+
+      const input = document.getElementById('textInput')
+      input.addEventListener('input', (e) => {
+        renderer.render(e.target.value || '')
+      })
+
+      // 默认渲染文字
+      const defaultContent = searchParams.get('content') || '……'
+      if (defaultContent) {
+        input.value = defaultContent
+        renderer.render(defaultContent)
+      }
+    </script>
+  </body>
+</html>
