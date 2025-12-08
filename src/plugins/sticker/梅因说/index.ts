@@ -9,7 +9,7 @@ export default class 梅因说 extends BaseSticker {
   constructor(ctx: Context) {
     super(ctx)
     ctx
-      .command('sticker.梅因说 [content:text]', '沃里杰诺·梅因说', {
+      .command('sticker.梅因说 [content:text]', '沃利杰诺·梅因说', {
         minInterval: Time.minute,
       })
       .alias('sticker.main-said', '梅因说')
