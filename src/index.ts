@@ -286,8 +286,14 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   ctx.plugin(PluginSchedule)
   ctx.plugin(PluginSilk)
 
+  // 魔女审判
   ctx.plugin(PluginBasedata)
   ctx.plugin(PluginManosabaMemes)
+  ctx.command('manosaba').usage(`魔法少女的魔女审判`)
+  ctx.command('manosaba.安安说').alias('安安说')
+  ctx.command('manosaba.审判').alias('魔女审判')
+    .example(`基础陈述：赞同、疑问、伪证、反驳、魔法-角色名
+可用角色名：梅露露、诺亚、汉娜、奈叶香、亚里沙、米莉亚、雪莉、艾玛、玛格、安安、可可、希罗、蕾雅`)
 })
 
 app.plugin(function PluginCollectionDialogue(ctx) {
