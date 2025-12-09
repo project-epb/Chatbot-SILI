@@ -79,6 +79,7 @@ import * as PluginStatus from '@koishijs/plugin-status'
 import AdapterOnebot from 'koishi-plugin-adapter-onebot'
 import PluginAssetsS3 from 'koishi-plugin-assets-s3'
 import * as PluginBaidu from 'koishi-plugin-baidu'
+import * as PluginBasedata from 'koishi-plugin-basedata'
 import * as PluginDialogue from 'koishi-plugin-dialogue'
 import * as PluginDialogueAuthor from 'koishi-plugin-dialogue-author'
 import * as PluginDialogueContext from 'koishi-plugin-dialogue-context'
@@ -86,6 +87,7 @@ import * as PluginDialogueFlow from 'koishi-plugin-dialogue-flow'
 import * as PluginDialogueRateLimit from 'koishi-plugin-dialogue-rate-limit'
 import PluginGithub from 'koishi-plugin-github'
 import * as PluginImageSearch from 'koishi-plugin-image-search'
+import * as PluginManosabaMemes from 'koishi-plugin-manosaba-memes'
 import * as PluginNovelAi from 'koishi-plugin-novelai'
 import PluginPuppeteer from 'koishi-plugin-puppeteer'
 import * as PluginRateLimit from 'koishi-plugin-rate-limit'
@@ -283,6 +285,9 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   })
   ctx.plugin(PluginSchedule)
   ctx.plugin(PluginSilk)
+
+  ctx.plugin(PluginBasedata)
+  ctx.plugin(PluginManosabaMemes)
 })
 
 app.plugin(function PluginCollectionDialogue(ctx) {

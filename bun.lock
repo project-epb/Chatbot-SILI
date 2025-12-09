@@ -34,6 +34,7 @@
         "koishi-plugin-adapter-onebot": "^6.7.3",
         "koishi-plugin-assets-s3": "^1.3.2",
         "koishi-plugin-baidu": "^1.1.1",
+        "koishi-plugin-basedata": "^0.2.0",
         "koishi-plugin-dialogue": "^4.1.3",
         "koishi-plugin-dialogue-author": "^1.2.1",
         "koishi-plugin-dialogue-context": "^1.0.4",
@@ -41,6 +42,7 @@
         "koishi-plugin-dialogue-rate-limit": "^1.0.3",
         "koishi-plugin-github": "^5.5.1",
         "koishi-plugin-image-search": "^4.3.2",
+        "koishi-plugin-manosaba-memes": "^0.4.1",
         "koishi-plugin-mediawiki": "^3.1.0",
         "koishi-plugin-novelai": "^1.25.0",
         "koishi-plugin-puppeteer": "^3.9.0",
@@ -1006,6 +1008,8 @@
 
     "koishi-plugin-baidu": ["koishi-plugin-baidu@1.1.1", "https://registry.npmmirror.com/koishi-plugin-baidu/-/koishi-plugin-baidu-1.1.1.tgz", { "dependencies": { "cheerio": "1.0.0-rc.12" }, "peerDependencies": { "koishi": "4.18.0" } }, "sha512-b4m9Jtu/tk4urrMJEvLSxcLNs4JcPO1/gBZg2aPFnmZbxN0wiigdT7u8Qxf8Xm02PUnWV4cFjTmGiZRiZBb3Fg=="],
 
+    "koishi-plugin-basedata": ["koishi-plugin-basedata@0.2.0", "https://registry.npmmirror.com/koishi-plugin-basedata/-/koishi-plugin-basedata-0.2.0.tgz", { "peerDependencies": { "koishi": "^4.18.0" } }, "sha512-+pseDTxCSTEbMUkeAWQXcImX6rugbPhqLAcgHvA1DyA079G0SLcJeUL49qiunYcuEzz8t2/1N9E3SUDGgUQ69Q=="],
+
     "koishi-plugin-dialogue": ["koishi-plugin-dialogue@4.1.3", "https://registry.npmmirror.com/koishi-plugin-dialogue/-/koishi-plugin-dialogue-4.1.3.tgz", { "dependencies": { "fastest-levenshtein": "1.0.16" }, "peerDependencies": { "koishi": "4.18.0" } }, "sha512-zboxu39N9hVyizLpdUTUCcyBARELiT/r4pioH+U60IPniRrYH9KqbBi309d+mW7pADZIuyquCBaOO8hJs65orw=="],
 
     "koishi-plugin-dialogue-author": ["koishi-plugin-dialogue-author@1.2.1", "https://registry.npmmirror.com/koishi-plugin-dialogue-author/-/koishi-plugin-dialogue-author-1.2.1.tgz", { "peerDependencies": { "koishi": "4.18.0", "koishi-plugin-dialogue": "4.1.3" } }, "sha512-nkmRKUL7wC/kpde+s/KBmRlviLNWhYRCiu/X0JkGtFtMLtDnYcdueDu/Y6BGkWDruLG2tDfC3CKXWCiAP0nxtQ=="],
@@ -1019,6 +1023,8 @@
     "koishi-plugin-github": ["koishi-plugin-github@5.5.1", "https://registry.npmmirror.com/koishi-plugin-github/-/koishi-plugin-github-5.5.1.tgz", { "dependencies": { "@octokit/webhooks-types": "5.8.0", "koishi-plugin-markdown": "1.1.1" }, "peerDependencies": { "koishi": "4.18.0" } }, "sha512-MUbkKVCduefoIndKU7MbAiwXizYjGdmOXHeUWaH+gFs8Mts0TRroHD17x/PYRH3ogAzvVuug8XowQoYZFVG9aA=="],
 
     "koishi-plugin-image-search": ["koishi-plugin-image-search@4.3.2", "https://registry.npmmirror.com/koishi-plugin-image-search/-/koishi-plugin-image-search-4.3.2.tgz", { "dependencies": { "cheerio": "1.0.0-rc.12", "iqdb-client": "1.1.0", "nhentai-api": "3.4.3" }, "peerDependencies": { "koishi": "4.18.0" } }, "sha512-D/toPepRFR2Ta9k8iUVc3Hhu0hxVlpuFjUOq+aVqYy9fdHrzoDKDmD4fgZga8ox/gMrzYKNcsIAWioA97LA6JQ=="],
+
+    "koishi-plugin-manosaba-memes": ["koishi-plugin-manosaba-memes@0.4.1", "https://registry.npmmirror.com/koishi-plugin-manosaba-memes/-/koishi-plugin-manosaba-memes-0.4.1.tgz", { "peerDependencies": { "koishi": "^4.18.9" } }, "sha512-mqh53ue7jlBxVBvW5Ux4Xwz/J7Sn7clVXhQrqm1OBFVQ+Dxe9HbczTmyTDKj8cPLDktVBrHEpYUflvC8WlUTFA=="],
 
     "koishi-plugin-markdown": ["koishi-plugin-markdown@1.1.1", "https://registry.npmmirror.com/koishi-plugin-markdown/-/koishi-plugin-markdown-1.1.1.tgz", { "dependencies": { "marked": "4.3.0" }, "peerDependencies": { "koishi": "4.18.0" } }, "sha512-PM3WMFoiMjhHKQV1341wfGl/qsHB5wasqwS5Ga0g/yb1kC7k8gXM+DlKMS3E/tT3Vtc4yyS0DGS5BO2hdwLAbQ=="],
 
