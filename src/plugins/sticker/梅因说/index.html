@@ -25,10 +25,13 @@
         margin-top: 20px;
         gap: 12px;
       }
+      * {
+        box-sizing: border-box;
+      }
       #memeCanvas {
         border: 1px solid #ddd;
       }
-      input {
+      textarea {
         width: 420px;
         padding: 8px 10px;
         font-size: 16px;
@@ -37,7 +40,7 @@
   </head>
   <body>
     <canvas id="memeCanvas"></canvas>
-    <input id="textInput" placeholder="输入要说的话…" />
+    <textarea id="textInput" placeholder="输入要说的话…"></textarea>
 
     <script>
       /**
@@ -168,30 +171,85 @@
           let lines = []
           let lineHeight = 0
 
-          const maxTextWidth = this.bubble.width - this.bubble.padding * 2
-
-          while (fontSize >= this.minFontSize) {
+          // 尝试寻找合适的字号
+          for (; fontSize >= this.minFontSize; fontSize -= 2) {
             ctx.font = `${fontSize}px ${this.fontFamily}`
-            ctx.textBaseline = 'top'
-
-            lines = this._wrapText(ctx, text, maxTextWidth)
+            ctx.textBaseline = 'middle'
             lineHeight = fontSize * 1.2
 
-            const totalHeight = lines.length * lineHeight
-            const longestLineWidth = Math.max(
-              ...lines.map((line) => ctx.measureText(line).width),
-              0
-            )
+            if (this.bubble.shape === 'ellipse') {
+              let fit = false
+              // 尝试不同的行数，找到能容纳文本的最小行数（或者最大行数内能容纳）
+              for (let n = 1; n <= this.maxLines; n++) {
+                const totalH = n * lineHeight
+                if (totalH > this.bubble.height - this.bubble.padding * 2) break
 
-            if (
-              totalHeight <= this.bubble.height - this.bubble.padding * 2 &&
-              longestLineWidth <= maxTextWidth &&
-              lines.length <= this.maxLines
-            ) {
-              break
+                const startY = this.bubble.y + (this.bubble.height - totalH) / 2
+                const widths = []
+                for (let i = 0; i < n; i++) {
+                  widths.push(
+                    this._getEllipseLineWidth(startY + i * lineHeight, fontSize)
+                  )
+                }
+
+                const wrapped = this._wrapTextIntoWidths(ctx, text, widths)
+                if (wrapped) {
+                  lines = wrapped
+                  fit = true
+                  break
+                }
+              }
+
+              if (fit) break
+            } else {
+              const maxTextWidth = this.bubble.width - this.bubble.padding * 2
+              lines = this._wrapText(ctx, text, maxTextWidth)
+
+              const totalHeight = lines.length * lineHeight
+              const longestLineWidth = Math.max(
+                ...lines.map((line) => ctx.measureText(line).width),
+                0
+              )
+
+              if (
+                totalHeight <= this.bubble.height - this.bubble.padding * 2 &&
+                longestLineWidth <= maxTextWidth &&
+                lines.length <= this.maxLines
+              ) {
+                break
+              }
             }
+          }
 
-            fontSize -= 2
+          // 如果字号已经降到最小还是放不下，做最后的尝试（非严格模式）
+          if (fontSize < this.minFontSize) {
+            fontSize = this.minFontSize
+            ctx.font = `${fontSize}px ${this.fontFamily}`
+            lineHeight = fontSize * 1.2
+
+            if (this.bubble.shape === 'ellipse') {
+              // 尝试用最大行数填满
+              const n = this.maxLines
+              const totalH = n * lineHeight
+              // 即使高度溢出也尝试居中（可能会被裁剪，但比不显示好）
+              const startY = this.bubble.y + (this.bubble.height - totalH) / 2
+              const widths = []
+              for (let i = 0; i < n; i++) {
+                widths.push(
+                  this._getEllipseLineWidth(startY + i * lineHeight, fontSize)
+                )
+              }
+              lines = this._wrapTextIntoWidths(ctx, text, widths, false) || []
+
+              // 如果还是空的（比如宽度全是0），回退到矩形逻辑
+              if (lines.length === 0) {
+                const maxTextWidth = this.bubble.width - this.bubble.padding * 2
+                lines = this._wrapText(ctx, text, maxTextWidth)
+              }
+            } else {
+              const maxTextWidth = this.bubble.width - this.bubble.padding * 2
+              lines = this._wrapText(ctx, text, maxTextWidth)
+            }
           }
 
           if (lines.length > this.maxLines) {
@@ -260,7 +318,7 @@
           lines.forEach((line, index) => {
             let displayLine = line
             let textWidth = ctx.measureText(displayLine).width
-            const y = startY + index * lineHeight
+            const y = startY + index * lineHeight + lineHeight / 2
 
             // 如果是椭圆形对话框，计算当前行在椭圆中的最大宽度
             if (this.bubble.shape === 'ellipse') {
@@ -270,7 +328,7 @@
               const ry = (this.bubble.height - this.bubble.padding * 2) / 2
 
               // 计算当前行中心点相对于椭圆中心的垂直距离
-              const lineCenterY = y + fontSize / 2
+              const lineCenterY = y
               const dy = lineCenterY - cy
 
               // 根据椭圆方程计算该行的最大宽度
@@ -305,6 +363,106 @@
           })
 
           ctx.restore()
+        }
+
+        /**
+         * 获取椭圆在指定 Y 坐标处的可用宽度
+         * @param {number} y
+         * @param {number} fontSize
+         * @returns {number}
+         */
+        _getEllipseLineWidth(y, fontSize) {
+          const padding = this.bubble.padding
+          const cy = this.bubble.y + this.bubble.height / 2
+          const rx = (this.bubble.width - padding * 2) / 2
+          const ry = (this.bubble.height - padding * 2) / 2
+
+          // 计算当前行中心点相对于椭圆中心的垂直距离
+          const lineCenterY = y + fontSize / 2
+          const dy = lineCenterY - cy
+
+          if (Math.abs(dy) >= ry) {
+            return 0
+          }
+
+          const w = 2 * rx * Math.sqrt(1 - (dy * dy) / (ry * ry))
+          return Math.max(0, w)
+        }
+
+        /**
+         * 将文本尝试放入指定的行宽数组中
+         * @param {CanvasRenderingContext2D} ctx
+         * @param {string} text
+         * @param {number[]} widths
+         * @param {boolean} [strict=true] 如果为 true，当文本无法完全放入时返回 null
+         * @returns {string[] | null}
+         */
+        _wrapTextIntoWidths(ctx, text, widths, strict = true) {
+          const lines = []
+          let currentLineIndex = 0
+          let line = ''
+
+          if (!widths || widths.length === 0) return strict ? null : []
+
+          let currentMaxWidth = widths[0]
+
+          for (let i = 0; i < text.length; i++) {
+            if (currentLineIndex >= widths.length) {
+              return strict ? null : lines
+            }
+
+            const ch = text[i]
+
+            if (ch === '\n') {
+              lines.push(line)
+              line = ''
+              currentLineIndex++
+              if (currentLineIndex < widths.length) {
+                currentMaxWidth = widths[currentLineIndex]
+              }
+              continue
+            }
+
+            const testLine = line + ch
+            const width = ctx.measureText(testLine).width
+
+            if (width > currentMaxWidth && line !== '') {
+              const prevChar = line[line.length - 1]
+              let charToMove = ch
+              let lineToPush = line
+
+              if (this._isAsciiLetter(prevChar) && this._isAsciiLetter(ch)) {
+                lineToPush = line
+                charToMove = '-' + ch
+              }
+
+              lines.push(lineToPush)
+              currentLineIndex++
+
+              if (currentLineIndex >= widths.length) {
+                return strict ? null : lines
+              }
+
+              currentMaxWidth = widths[currentLineIndex]
+              line = charToMove
+
+              if (ctx.measureText(line).width > currentMaxWidth) {
+                if (strict) return null
+                return lines
+              }
+            } else {
+              line = testLine
+            }
+          }
+
+          if (line.length > 0) {
+            if (currentLineIndex >= widths.length) return strict ? null : lines
+            if (ctx.measureText(line).width > widths[currentLineIndex])
+              return strict ? null : lines
+            lines.push(line)
+          }
+
+          return lines
         }
 
         /**
@@ -363,7 +521,8 @@
 
       // ========================= 开始渲染 =========================
 
-      const searchParams = new URLSearchParams(window.location.search)
+      const url = new URL(window.location.href)
+      const searchParams = url.searchParams
       const debugMode = searchParams.get('debug') === 'true'
       const canvas = document.getElementById('memeCanvas')
       const renderer = new MemeRenderer({
@@ -388,6 +547,12 @@
       const input = document.getElementById('textInput')
       input.addEventListener('input', (e) => {
         renderer.render(e.target.value || '')
+        searchParams.set('content', e.target.value || '')
+        history.replaceState(
+          null,
+          '',
+          `${url.pathname}?${searchParams.toString()}`
+        )
       })
 
       // 默认渲染文字

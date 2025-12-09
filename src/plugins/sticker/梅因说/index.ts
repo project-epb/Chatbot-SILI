@@ -5,6 +5,9 @@ import { pathToFileURL } from 'node:url'
 
 import { BaseSticker } from '../_base'
 
+/**
+ * http://127.0.0.1:6780/%E6%A2%85%E5%9B%A0%E8%AF%B4/index.html?debug=true&content=%E6%A3%95%E8%89%B2%E7%8B%90%E7%8B%B8%E8%B6%8A%E8%BF%87%E4%BA%86%E9%82%A3%E5%8F%AA%E6%87%92%E7%8B%97/Quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog/%E6%A3%95%E8%89%B2%E7%8B%90%E7%8B%B8%E8%B6%8A%E8%BF%87%E4%BA%86%E9%82%A3%E5%8F%AA%E6%87%92%E7%8B%97/Quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog.
+ */
 export default class 梅因说 extends BaseSticker {
   constructor(ctx: Context) {
     super(ctx)
