@@ -22,6 +22,12 @@ export class MinecraftConnect extends BasePlugin {
     ) as MinecraftBot<Context>
     const mcCtx = ctx.platform('minecraft')
 
+    if (!qqBot || !mcBot) {
+      this.logger.error('QQ Bot or Minecraft Bot not found')
+      ctx.scope.dispose()
+      return
+    }
+
     mcCtx.on('message', (session) => {
       qqBot.sendMessage(
         QQ_GROUP,

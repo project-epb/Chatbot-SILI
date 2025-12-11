@@ -41,8 +41,8 @@ export default class MessagesLogger extends BasePlugin {
   toSlimContent(content: string) {
     if (!content) return content
     return content.replace(
-      /(src|url)="(base64:|data:).+?"/gi,
-      'src="(base64)"'
+      /(src|url)="(base64:|data:)(.+?)"/gi,
+      (_, $1, $2, $3) => `${$1}="${$2}(${$3.length} bytes)"`
     )
   }
 }
