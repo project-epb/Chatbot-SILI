@@ -49,19 +49,16 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
 # 将 bun 添加到 PATH
 ENV PATH="/root/.bun/bin:${PATH}"
 
-# 安装 Node.js 依赖
-COPY package.json bun.lock .npmrc ./
-RUN bun install --frozen-lockfile
-
-# 安装 Chrome
-VOLUME /root/.cache/puppeteer
-# https://pptr.nodejs.cn/guides/configuration
-# RUN pnpm dlx puppeteer browsers install chrome
-# 我们的项目依赖本身就包含了 puppeteer，所以我们不需要 dlx 浪费时间
-RUN bun puppeteer browsers install chrome
+# 安装 Chromium
+RUN apt-clean-install chromium-browser
 # https://source.chromium.org/chromium/chromium/src/+/main:chrome/installer/linux/debian/dist_package_versions.json
 RUN apt-clean-install \
     libasound2t64 libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libdrm2 libexpat1 libgbm1 libglib2.0-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libudev1 libuuid1 libx11-6 libx11-xcb1 libxcb-dri3-0 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxkbcommon0 libxrandr2 libxrender1 libxshmfence1 libxss1 libxtst6
+
+# 安装 Node.js 依赖
+COPY package.json bun.lock .npmrc ./
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+RUN bun install --frozen-lockfile
 
 # SILI，启动！
 CMD ["bun", "start"]
