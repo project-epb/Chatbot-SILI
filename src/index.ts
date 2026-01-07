@@ -78,6 +78,7 @@ import * as PluginStatus from '@koishijs/plugin-status'
 
 import AdapterOnebot from 'koishi-plugin-adapter-onebot'
 import PluginAssetsS3 from 'koishi-plugin-assets-s3'
+import * as PluginAutowithdraw from 'koishi-plugin-autowithdraw-fix'
 import * as PluginBaidu from 'koishi-plugin-baidu'
 import * as PluginBasedata from 'koishi-plugin-basedata'
 import * as PluginDialogue from 'koishi-plugin-dialogue'
@@ -461,10 +462,15 @@ app.plugin(function PluginCollectionInternal(ctx) {
     // },
   })
   ctx.plugin(PluginSensitiveFilter)
-  ctx.plugin(PluginSpawn, { shell: 'pwsh' })
+  ctx.plugin(PluginSpawn)
   ctx.plugin(MinecraftConnect)
   // FIXME: 临时修复
   ctx.plugin(FixQQSendLinks)
+  ctx.plugin(PluginAutowithdraw, {
+    withdrawExpire: 10 * 60, // 10 minutes
+    quoteEnable: false,
+    loggerinfo: false,
+  })
 })
 
 /** 启动应用程序 */
