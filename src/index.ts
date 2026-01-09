@@ -29,7 +29,6 @@ import { PluginDebug } from '~/debug'
 import PluginDice from '~/dice'
 import PluginHljs from '~/hljs'
 import { PluginHomo } from '~/homo'
-import PluginJMComic from '~/jm-comic'
 import { PluginLookupIP } from '~/lookup-ip'
 import PluginMediawiki from '~/mediawiki'
 import PluginMinecraft from '~/minecraft'
@@ -334,7 +333,6 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginCanIUse)
   ctx.plugin(PluginDice)
   ctx.plugin(PluginHljs)
-  ctx.plugin(PluginJMComic)
   if (process.env.TOKEN_IPGEOLOCATION) {
     ctx.plugin(PluginLookupIP, {
       ipgeoApiKey: process.env.TOKEN_IPGEOLOCATION,
