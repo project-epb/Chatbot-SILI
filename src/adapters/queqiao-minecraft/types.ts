@@ -86,6 +86,18 @@ export type MinecraftTextComponent =
       underlined?: boolean
       strikethrough?: boolean
       obfuscated?: boolean
+
+      // Vanilla JSON text component events
+      clickEvent?: {
+        action: string
+        value: string
+      }
+      hoverEvent?: {
+        action: string
+        value: MinecraftTextComponent
+      }
+      insertion?: string
+
       extra?: MinecraftTextComponent[]
     }
 

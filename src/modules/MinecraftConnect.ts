@@ -41,9 +41,37 @@ export class MinecraftConnect extends BasePlugin {
       if (session.bot.platform === 'minecraft') {
         const qqBot = getQqBot()
         if (!qqBot) return this.logger.warn('No OneBot bot connected.')
+
+        const referrer = (session.event as any)?.referrer
+        const rawCandidate =
+          referrer?.message != null ? referrer?.message : referrer?.raw_message
+
+        const tryParseMaybeJson = (value: unknown): unknown => {
+          if (typeof value !== 'string') return value
+          const trimmed = value.trim()
+          if (!trimmed) return value
+          if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return value
+          try {
+            return JSON.parse(trimmed)
+          } catch {
+            return value
+          }
+        }
+
+        let content: any = session.content
+        const parsed = tryParseMaybeJson(rawCandidate)
+        if (parsed && (typeof parsed === 'object' || Array.isArray(parsed))) {
+          const mcBot = session.bot as QueQiaoMinecraftBot<Context>
+          try {
+            content = mcBot.fromMinecraftRawText(parsed)
+          } catch {
+            // keep fallback
+          }
+        }
+
         qqBot.sendMessage(
           qqGroupId,
-          `[MC] ${session.username}:\n${session.content}`
+          `[MC] ${session.username}:\n${String(content ?? '')}`
         )
       }
 
