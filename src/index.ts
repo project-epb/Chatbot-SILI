@@ -207,7 +207,7 @@ app.plugin(function PluginCollectionAdapters(ctx) {
     })
   }
 
-  if (env.MINECRAFT_SERVER_URL) {
+  if (env.MINECRAFT_SERVER_NAME && env.MINECRAFT_SERVER_URL) {
     ctx.plugin(AdapterMinecraft, {
       bots: [
         {

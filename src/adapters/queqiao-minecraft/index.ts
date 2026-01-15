@@ -95,6 +95,7 @@ export class QueQiaoMinecraftBot<C extends Context = Context> extends Bot<
         file: () => '[文件]',
         face: () => '[表情]',
         image: () => '[图片]',
+        img: () => '[图片]',
         quote: () => '[回复]',
         video: () => '[视频]',
       })
@@ -106,8 +107,8 @@ export class QueQiaoMinecraftBot<C extends Context = Context> extends Bot<
     const components: MinecraftTextComponentList = [
       { text: groupLabel, color: 'aqua' },
       { text: ` ${sender}`, color: 'green' },
-      { text: ': ' },
-      { text: String(message ?? '') },
+      { text: ': ', color: 'white' },
+      { text: String(message ?? ''), color: 'white' },
     ]
     return components
   }
@@ -294,10 +295,9 @@ export class QueQiaoMinecraftAdapter<
     }
 
     if (kind === 'chat') {
-      const text =
-        (payload as any)?.raw_message ||
-        this.extractText((payload as any)?.message) ||
-        ''
+      let text = this.extractText((payload as any)?.raw_message)
+      if (!text) text = this.extractText((payload as any)?.message)
+      if (!text) text = ''
 
       baseEvent.type = 'message'
       baseEvent.message = {
@@ -330,7 +330,22 @@ export class QueQiaoMinecraftAdapter<
 
   private extractText(message: unknown): string {
     if (message == null) return ''
-    if (typeof message === 'string') return message
+    if (typeof message === 'string') {
+      const s = message
+      const trimmed = s.trim()
+
+      // 某些实现会把 TextComponent/RawText 作为 JSON 字符串返回，例如：{"text":"!help"}
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(trimmed)
+          return this.extractText(parsed)
+        } catch {
+          // ignore
+        }
+      }
+
+      return s
+    }
     if (typeof message === 'number' || typeof message === 'boolean') {
       return String(message)
     }
