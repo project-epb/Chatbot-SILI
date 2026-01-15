@@ -10,11 +10,11 @@ import { App, Random, type Session, Time } from 'koishi'
 
 import { resolve } from 'node:path'
 
+import AdapterMinecraft from '@/adapters/queqiao-minecraft'
 import FallbackHandler from '@/modules/FallbackHandler'
 import { FixQQSendLinks } from '@/modules/FixQQSendLinks'
 import { GuildRequestFirewall } from '@/modules/GuildRequestFirewall'
 import MessagesLogger from '@/modules/MessagesLogger'
-import { MinecraftConnect } from '@/modules/MinecraftConnect'
 import MgpGroupUtils from '@/modules/MoegirlGroupUtils'
 import ProcessErrorHandler from '@/modules/ProcessErrorHandler'
 import PiggybackService from '@/services/PiggybackService'
@@ -98,6 +98,8 @@ import * as PluginSwitch from 'koishi-plugin-switch'
 
 import PluginHTTP from '@cordisjs/plugin-http'
 import { executablePath } from 'puppeteer'
+
+import { MinecraftConnect } from './modules/MinecraftConnect'
 
 const PROD = process.env.NODE_ENV === 'production'
 
@@ -203,6 +205,28 @@ app.plugin(function PluginCollectionAdapters(ctx) {
       protocol: 'ws',
       token: env.KOOK_TOKEN,
     })
+  }
+
+  if (env.MINECRAFT_SERVER_URL) {
+    ctx.plugin(AdapterMinecraft, {
+      bots: [
+        {
+          selfId: 'SILI',
+          serverName: env.MINECRAFT_SERVER_NAME || 'QueQiao',
+          websocket: {
+            url: env.MINECRAFT_SERVER_URL,
+            accessToken: env.MINECRAFT_SERVER_TOKEN || undefined,
+          },
+        },
+      ],
+      debug: env.MINECRAFT_DEBUG === '1',
+    })
+    if (env.MINECRAFT_CONNECT_QQ_GROUP) {
+      ctx.plugin(MinecraftConnect, {
+        qqChannelId: env.MINECRAFT_CONNECT_QQ_GROUP,
+        mcServerId: env.MINECRAFT_SERVER_NAME,
+      })
+    }
   }
 
   // Repl
@@ -461,7 +485,6 @@ app.plugin(function PluginCollectionInternal(ctx) {
   })
   ctx.plugin(PluginSensitiveFilter)
   ctx.plugin(PluginSpawn)
-  ctx.plugin(MinecraftConnect)
   // FIXME: 临时修复
   ctx.plugin(FixQQSendLinks)
   ctx.plugin(PluginAutowithdraw, {

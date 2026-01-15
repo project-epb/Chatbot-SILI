@@ -58,7 +58,7 @@
         "openai": "^4.96.0",
         "puppeteer": "^24.32.1",
         "shiki": "^3.19.0",
-        "wiki-saikou": "^7.4.1",
+        "wiki-saikou": "^7.5.0",
       },
       "devDependencies": {
         "@satorijs/element": "^3.1.7",
@@ -1433,7 +1433,7 @@
 
     "widest-line": ["widest-line@3.1.0", "https://registry.npmmirror.com/widest-line/-/widest-line-3.1.0.tgz", { "dependencies": { "string-width": "4.2.3" } }, "sha512-NsmoXalsWVDMGupxZ5R08ka9flZjjiLvHVAWYOKtiKM8ujtZWr9cRffak+uSE48+Ob8ObalXpwyeUiyDD6QFgg=="],
 
-    "wiki-saikou": ["wiki-saikou@7.4.1", "https://registry.npmmirror.com/wiki-saikou/-/wiki-saikou-7.4.1.tgz", { "dependencies": { "fexios": "^5.2.0" } }, "sha512-AizHfx7QMUA5fMFZpV26e6ngl03Csu+tOWDKt1cHV3AO1JeAJ7X7of/gU8WAkmv95IWCzPG1bQ9KZMkUHsh0Ww=="],
+    "wiki-saikou": ["wiki-saikou@7.5.0", "https://registry.npmmirror.com/wiki-saikou/-/wiki-saikou-7.5.0.tgz", { "dependencies": { "fexios": "^6.1.1" } }, "sha512-q2OHcUuW0Zxd2/Ng5SVIC6oF5oKZ2xVOGp/OB05da1DtyLl+a4TplunYr0iL09LTELlHZxHDJlDYjRbuEv93XA=="],
 
     "wordwrap": ["wordwrap@1.0.0", "https://registry.npmmirror.com/wordwrap/-/wordwrap-1.0.0.tgz", {}, "sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q=="],
 
@@ -1628,6 +1628,8 @@
     "read-pkg/type-fest": ["type-fest@4.34.1", "https://registry.npmmirror.com/type-fest/-/type-fest-4.34.1.tgz", {}, "sha512-6kSc32kT0rbwxD6QL1CYe8IqdzN/J/ILMrNK+HMQCKH3insCDRY/3ITb0vcBss0a3t72fzh2YSzj8ko1HgwT3g=="],
 
     "supports-hyperlinks/supports-color": ["supports-color@7.2.0", "https://registry.npmmirror.com/supports-color/-/supports-color-7.2.0.tgz", { "dependencies": { "has-flag": "4.0.0" } }, "sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw=="],
+
+    "wiki-saikou/fexios": ["fexios@6.1.1", "https://registry.npmmirror.com/fexios/-/fexios-6.1.1.tgz", {}, "sha512-tQVIJoDovBiyqNZCJDG0w7ybtxcx34tslAREW/bCM2s/f/quSK4wJOjdSFR1kYGQz2gCqoDAwbO5xwqsCsf1Pw=="],
 
     "@aws-crypto/sha1-browser/@smithy/util-utf8/@smithy/util-buffer-from": ["@smithy/util-buffer-from@2.0.0", "https://registry.npmmirror.com/@smithy/util-buffer-from/-/util-buffer-from-2.0.0.tgz", { "dependencies": { "@smithy/is-array-buffer": "2.0.0", "tslib": "2.8.1" } }, "sha512-/YNnLoHsR+4W4Vf2wL5lGv0ksg8Bmk3GEGxn2vEQt52AQaPSCuaO5PM5VM7lP1K9qHRKHwrPGktqVoAHKWHxzw=="],
 

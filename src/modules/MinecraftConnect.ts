@@ -1,41 +1,92 @@
-import { Context } from 'koishi'
+import { Context, Session } from 'koishi'
 
-import { MinecraftBot } from '@/adapters/adapter-minecraft'
+import type { QueQiaoMinecraftBot } from '@/adapters/queqiao-minecraft'
 
 import BasePlugin from '~/_boilerplate'
+
+import OneBotBot from 'koishi-plugin-adapter-onebot'
 
 export class MinecraftConnect extends BasePlugin {
   constructor(
     public ctx: Context,
-    options
+    options: Partial<{
+      qqChannelId: string
+      mcServerId: string
+    }> = {}
   ) {
     super(ctx, options, 'mc-connect')
 
-    const QQ_GROUP = process.env.CHANNEL_QQ_NGNL_MINECRAFT
-
-    const qqBot = ctx.bots.find((bot) =>
-      ['onebot', 'red'].includes(bot.platform)
-    )
-    const qqCtx = ctx.channel(QQ_GROUP)
-    const mcBot = ctx.bots.find(
-      (bot) => bot.platform === 'minecraft'
-    ) as MinecraftBot<Context>
-    const mcCtx = ctx.platform('minecraft')
-
-    if (!qqBot || !mcBot) {
-      this.logger.error('QQ Bot or Minecraft Bot not found')
-      ctx.scope.dispose()
+    const qqGroupId =
+      options.qqChannelId || process.env.MINECRAFT_CONNECT_QQ_GROUP
+    if (!qqGroupId) {
+      this.logger.error(
+        'MinecraftConnect plugin requires qqChannelId option or MINECRAFT_CONNECT_QQ_GROUP env variable.'
+      )
       return
     }
 
-    mcCtx.on('message', (session) => {
-      qqBot.sendMessage(
-        QQ_GROUP,
-        `[MC] ${session.username}:\n${session.content}`
-      )
+    this.logger.info(
+      `Connecting Minecraft server and QQ group ${qqGroupId}`,
+      typeof qqGroupId
+    )
+
+    const getMcBot = () => {
+      return this.ctx.bots.find(
+        (bot) => bot.platform === 'minecraft'
+      ) as QueQiaoMinecraftBot<Context>
+    }
+    const getQqBot = () => {
+      return this.ctx.bots.find(
+        (bot) => bot.platform === 'onebot'
+      ) as OneBotBot<Context>
+    }
+
+    ctx.on('message', (session: Session) => {
+      // MC -> QQ
+      if (session.bot.platform === 'minecraft') {
+        const qqBot = getQqBot()
+        if (!qqBot) return this.logger.warn('No OneBot bot connected.')
+        console.info('MC channelId:', session.channelId)
+        qqBot.sendMessage(
+          qqGroupId,
+          `[MC] ${session.username}:\n${session.content}`
+        )
+      }
+
+      // QQ -> MC
+      if (
+        session.bot.platform === 'onebot' &&
+        session.channelId === qqGroupId
+      ) {
+        const mcBot = getMcBot()
+        if (!mcBot) return this.logger.warn('No Minecraft bot connected.')
+        mcBot.sendMessage('broadcast', session.content, undefined, {
+          sendAs: session.username,
+        })
+        console.info('QQ -> MC:', session.content)
+      }
     })
-    qqCtx.on('message', (session) => {
-      mcBot.sendMessageAs(session.username, session.content)
+
+    const mcCtx = ctx.platform('minecraft')
+    const qqCtx = ctx.platform('onebot').channel(qqGroupId)
+
+    mcCtx.on('guild-member-added', (session: Session) => {
+      console.info('MC Player Join:', session.username)
     })
+    mcCtx.on('guild-member-removed', (session: Session) => {
+      console.info('MC Player Leave:', session.username)
+    })
+
+    qqCtx
+      .command('rcon <cmd...>', '通过 Minecraft 服务器执行指令', {
+        authority: 4,
+      })
+      .action(async ({ session }, cmd) => {
+        const mcBot = getMcBot()
+        if (!mcBot) return session.text('无法找到 Minecraft 机器人。')
+        const command = Array.isArray(cmd) ? cmd.join(' ') : String(cmd || '')
+        const output = await mcBot.rconCommand(command)
+        return output || 'OK'
+      })
   }
 }
