@@ -15,6 +15,7 @@ import FallbackHandler from '@/modules/FallbackHandler'
 import { FixQQSendLinks } from '@/modules/FixQQSendLinks'
 import { GuildRequestFirewall } from '@/modules/GuildRequestFirewall'
 import MessagesLogger from '@/modules/MessagesLogger'
+import { MinecraftConnect } from '@/modules/MinecraftConnect'
 import MgpGroupUtils from '@/modules/MoegirlGroupUtils'
 import ProcessErrorHandler from '@/modules/ProcessErrorHandler'
 import PiggybackService from '@/services/PiggybackService'
@@ -98,8 +99,6 @@ import * as PluginSwitch from 'koishi-plugin-switch'
 
 import PluginHTTP from '@cordisjs/plugin-http'
 import { executablePath } from 'puppeteer'
-
-import { MinecraftConnect } from './modules/MinecraftConnect'
 
 const PROD = process.env.NODE_ENV === 'production'
 
@@ -222,10 +221,12 @@ app.plugin(function PluginCollectionAdapters(ctx) {
       debug: env.MINECRAFT_DEBUG === '1',
     })
     if (env.MINECRAFT_CONNECT_QQ_GROUP) {
-      ctx.plugin(MinecraftConnect, {
-        qqChannelId: env.MINECRAFT_CONNECT_QQ_GROUP,
-        mcServerId: env.MINECRAFT_SERVER_NAME,
-      })
+      ctx.plugin(MinecraftConnect, [
+        {
+          qqChannelId: env.MINECRAFT_CONNECT_QQ_GROUP,
+          mcServerId: env.MINECRAFT_SERVER_NAME,
+        },
+      ])
     }
   }
 
