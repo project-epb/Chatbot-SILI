@@ -1,12 +1,12 @@
 import { Bot, type Context } from 'koishi'
 
-import type { SendOptions } from '@satorijs/protocol'
+import type { Message, SendOptions, Upload } from '@satorijs/protocol'
 
 import type { QueQiaoMinecraftAdapter } from './adapter'
 import {
+  createSenderSpeakComponents,
   fromMinecraftTextComponents,
   pruneMessage,
-  toBroadcastComponents,
   toMinecraftTextComponents,
 } from './message-builder'
 import type {
@@ -45,35 +45,66 @@ export class QueQiaoMinecraftBot<C extends Context = Context> extends Bot<
   async sendMessage(
     channelId: string,
     content: any,
-    _guildId?: string,
-    options?: SendOptions & { sendAs?: string; groupName?: string }
+    _referrer?: any,
+    options?: SendOptions & { raw?: boolean }
   ): Promise<string[]> {
     const adapter = this.adapter as unknown as QueQiaoMinecraftAdapter
-    const sender =
-      options?.sendAs || this.ctx.root.config.name || this.selfId || 'Koishi'
+    const useRaw = !!options?.raw
+    const message = this.normalizeMessageComponents(content, useRaw)
+    const components = useRaw
+      ? message
+      : this.createSenderSpeakComponents(message, {
+          username: this.selfId || 'Koishi',
+          color: 'light_purple',
+        })
 
     // 约定：channelId 以 mc: 开头则私聊，否则广播
     if (channelId?.startsWith('mc:')) {
-      const nickname = channelId.slice(3)
-      await adapter.sendPrivateMessage(this, { nickname }, content, {
-        sendAs: sender,
-        groupName: options?.groupName,
+      const nickname = channelId.slice(3) || null
+      await adapter.sendRequest(this, 'send_private_msg', {
+        uuid: null,
+        nickname,
+        message: components,
       })
       return []
     }
 
-    await adapter.broadcast(this, content, {
-      sendAs: sender,
-      groupName: options?.groupName,
-    })
+    await adapter.sendRequest(this, 'broadcast', { message: components })
+    return []
+  }
+
+  async sendPrivateMessage(
+    userId: string,
+    content: any,
+    _guildId?: string,
+    options?: SendOptions & { raw?: boolean }
+  ): Promise<string[]> {
+    const target = userId.startsWith('mc:') ? userId : `mc:${userId}`
+    return this.sendMessage(target, content, undefined, options)
+  }
+
+  async createMessage(
+    channelId: string,
+    content: any,
+    _referrer?: any,
+    options?: SendOptions & { raw?: boolean }
+  ): Promise<Message[]> {
+    await this.sendMessage(channelId, content, undefined, options)
+    return []
+  }
+
+  async createUpload(..._uploads: Upload[]): Promise<string[]> {
     return []
   }
 
   async sendMessageAs(username: string, content: any, groupName?: string) {
-    return this.sendMessage('broadcast', content, undefined, {
-      sendAs: username,
-      groupName,
+    const message = this.normalizeMessageComponents(content, false)
+    const components = this.createSenderSpeakComponents(message, {
+      username,
+      color: 'light_purple',
+      hover: groupName ? { text: groupName } : undefined,
     })
+    return this.sendMessage('broadcast', components, undefined, { raw: true })
   }
 
   async rconCommand(command: string): Promise<string> {
@@ -93,11 +124,40 @@ export class QueQiaoMinecraftBot<C extends Context = Context> extends Bot<
     return fromMinecraftTextComponents(raw)
   }
 
-  toBroadcastComponents(
+  createSenderSpeakComponents(
     message: MinecraftTextComponent | MinecraftTextComponentList,
-    sender: string,
-    groupName?: string
+    sender: {
+      username: string
+      color?: string
+      hover?: MinecraftTextComponent | MinecraftTextComponentList
+    }
   ) {
-    return toBroadcastComponents(message, sender, groupName)
+    return createSenderSpeakComponents(message, sender)
+  }
+
+  private normalizeMessageComponents(content: any, raw: boolean) {
+    if (raw) {
+      if (Array.isArray(content)) return content as MinecraftTextComponentList
+      if (typeof content === 'string') return [content]
+      if (content && typeof content === 'object') {
+        const maybe = content as MinecraftTextComponent
+        const obj = content as Record<string, unknown>
+        if (
+          'text' in obj ||
+          'extra' in obj ||
+          'hoverEvent' in obj ||
+          'clickEvent' in obj ||
+          'color' in obj
+        ) {
+          return [maybe]
+        }
+      }
+    }
+
+    try {
+      return this.toMinecraftTextComponents(content)
+    } catch {
+      return [{ text: this.pruneMessage(content) }]
+    }
   }
 }

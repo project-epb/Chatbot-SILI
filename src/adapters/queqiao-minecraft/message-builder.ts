@@ -222,10 +222,10 @@ export function toMinecraftTextComponents(
   return components.length ? components : [{ text: '' }]
 }
 
-export function fromMinecraftTextComponents(raw: unknown): any {
+export function fromMinecraftTextComponents(raw: unknown): Fragment {
   const wrap = (tag: string, child: any) => h(tag, [child])
 
-  const convert = (v: unknown): any => {
+  const convert = (v: unknown): Fragment => {
     if (v == null) return ''
     if (
       typeof v === 'string' ||
@@ -247,7 +247,7 @@ export function fromMinecraftTextComponents(raw: unknown): any {
     const obj: any = v
     const textPart = typeof obj.text === 'string' ? obj.text : ''
     const extraPart = obj.extra ? convert(obj.extra) : ''
-    let inner: any
+    let inner: Fragment
 
     if (textPart && extraPart) inner = h(h.Fragment, [textPart, extraPart])
     else if (textPart) inner = textPart
@@ -266,7 +266,11 @@ export function fromMinecraftTextComponents(raw: unknown): any {
       click.action === 'open_url' &&
       typeof click.value === 'string'
     ) {
-      inner = h('a', { href: click.value }, [inner])
+      inner = h(
+        'a',
+        { href: click.value },
+        Array.isArray(inner) ? inner : [inner]
+      )
     }
 
     return inner
@@ -275,33 +279,45 @@ export function fromMinecraftTextComponents(raw: unknown): any {
   return convert(raw)
 }
 
-export function toBroadcastComponents(
+export function createSenderSpeakComponents(
   message: MinecraftTextComponent | MinecraftTextComponentList,
-  sender: string,
-  groupName?: string
+  sender?: {
+    username: string
+    color?: string
+    hover?: MinecraftTextComponent | MinecraftTextComponentList
+  }
 ) {
-  const groupLabel = groupName ? `[${groupName}]` : '[QQ]'
-
   const msgList: MinecraftTextComponentList = Array.isArray(message)
     ? message
     : [message]
 
-  // 用一个根组件包裹 extra，避免后续组件继承到前缀的颜色（例如 aqua）。
+  const hover =
+    sender?.hover == null
+      ? undefined
+      : Array.isArray(sender.hover)
+        ? { text: '', extra: sender.hover }
+        : sender.hover
+
+  // 用一个根组件包裹 extra，避免后续组件继承到前缀的颜色。
   // 根组件设为 white，则未显式指定 color 的文本默认显示为白色。
   const root: MinecraftTextComponent = {
     text: '',
     color: 'white',
     extra: [
-      { text: groupLabel, color: 'aqua' },
+      { text: '[', color: 'white' },
       {
-        text: ` ${sender}`,
-        color: 'green',
-        hoverEvent: {
-          action: 'show_text',
-          value: { text: `Sender: ${sender}` },
-        },
+        text: sender?.username ?? '',
+        color: sender?.color ?? 'green',
+        ...(hover
+          ? {
+              hoverEvent: {
+                action: 'show_text',
+                value: hover,
+              },
+            }
+          : {}),
       },
-      { text: ': ', color: 'white' },
+      { text: ']: ', color: 'white' },
       ...msgList,
     ],
   }

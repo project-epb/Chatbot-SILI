@@ -6,7 +6,6 @@ import {
   type QueQiaoMinecraftBotConfig,
 } from './bot'
 import type {
-  MinecraftTextComponentList,
   QueQiaoApi,
   QueQiaoEvent,
   QueQiaoRequest,
@@ -308,7 +307,7 @@ export class QueQiaoMinecraftAdapter<
     return String(message)
   }
 
-  private async sendRequest<TData, TResp>(
+  async sendRequest<TData, TResp>(
     bot: QueQiaoMinecraftBot,
     api: QueQiaoApi,
     data: TData
@@ -334,55 +333,6 @@ export class QueQiaoMinecraftAdapter<
 
     const resp = await p
     return resp
-  }
-
-  async broadcast(
-    bot: QueQiaoMinecraftBot,
-    content: any,
-    options?: { sendAs?: string; groupName?: string }
-  ) {
-    const sender = options?.sendAs || bot.selfId
-    let message: MinecraftTextComponentList
-    try {
-      message = bot.toMinecraftTextComponents(content)
-    } catch {
-      message = [{ text: bot.pruneMessage(content) }]
-    }
-
-    const components = bot.toBroadcastComponents(
-      message,
-      sender,
-      options?.groupName
-    )
-
-    await this.sendRequest(bot, 'broadcast', { message: components })
-  }
-
-  async sendPrivateMessage(
-    bot: QueQiaoMinecraftBot,
-    target: { uuid?: string; nickname?: string },
-    content: any,
-    options?: { sendAs?: string; groupName?: string }
-  ) {
-    const sender = options?.sendAs || bot.selfId
-    let message: MinecraftTextComponentList
-    try {
-      message = bot.toMinecraftTextComponents(content)
-    } catch {
-      message = [{ text: bot.pruneMessage(content) }]
-    }
-
-    const components = bot.toBroadcastComponents(
-      message,
-      sender,
-      options?.groupName
-    )
-
-    await this.sendRequest(bot, 'send_private_msg', {
-      uuid: target.uuid ?? null,
-      nickname: target.nickname ?? null,
-      message: components,
-    })
   }
 
   async sendRconCommand(

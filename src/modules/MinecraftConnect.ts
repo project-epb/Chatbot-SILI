@@ -95,10 +95,20 @@ export class MinecraftConnect extends BasePlugin {
             `No Minecraft bot connected for server: ${mapping.mcServerId}`
           )
 
-        mcBot.sendMessage('broadcast', session.content, undefined, {
-          sendAs: session.username,
-          groupName: mapping.mcServerId,
+        let message: any
+        try {
+          message = mcBot.toMinecraftTextComponents(session.content)
+        } catch {
+          message = [{ text: mcBot.pruneMessage(session.content) }]
+        }
+
+        const components = mcBot.createSenderSpeakComponents(message, {
+          username: `${session.username}@QQ`,
+          color: 'green',
+          hover: { text: String(session.userId || '') },
         })
+
+        mcBot.sendMessage('broadcast', components, undefined, { raw: true })
       }
     })
 
