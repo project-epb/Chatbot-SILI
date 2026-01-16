@@ -1,9 +1,10 @@
-import { MediaWikiApi } from 'wiki-saikou'
+import type { CookieJarItem } from 'fexios/plugins'
+import { MediaWikiApi } from 'wiki-saikou/node'
 
 const MOCK_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'
 
-const COOKIE_STORE = new Map<string, any>()
+const COOKIE_STORE = new Map<string, CookieJarItem[]>()
 
 export async function useApi(baseURL: string): Promise<MediaWikiApi> {
   const USE_MOCK_HEADER = [
@@ -38,12 +39,12 @@ export async function useApi(baseURL: string): Promise<MediaWikiApi> {
     },
   ]
 
-  const api = new MediaWikiApi(baseURL)
+  const api = new MediaWikiApi({ baseURL })
 
   const mockHeaders = USE_MOCK_HEADER.find((i) => i.match(baseURL))
   if (mockHeaders) {
     console.info('[MWAPI]', 'Use mock headers:', baseURL, mockHeaders.headers)
-    api.defaultOptions = { headers: mockHeaders.headers }
+    Object.assign(api.config.fexiosConfigs.headers, mockHeaders.headers)
   }
 
   const auth = USE_AUTHORIZATION.find((i) => i.match(baseURL))
@@ -52,18 +53,29 @@ export async function useApi(baseURL: string): Promise<MediaWikiApi> {
     const cookies = COOKIE_STORE.get(`${baseURL}#${auth.username}`)
     if (cookies) {
       console.info('[MWAPI]', 'By cookies:', baseURL, auth.username)
-      api.cookies = cookies
+      const items = COOKIE_STORE.get(`${baseURL}#${auth.username}`)
+      if (items) {
+        items.forEach((item) => {
+          api.request.cookieJar?.setCookie(item)
+        })
+      }
     } else {
       console.info('[MWAPI]', 'By login:', baseURL, auth.username)
       await api
         .login(auth.username, auth.password)
         .then(() => {
-          return api.getUserInfo()
+          return api.get<{ query: { userinfo: { id: number } } }>({
+            action: 'query',
+            meta: 'userinfo',
+          })
         })
-        .then((userinfo) => {
-          if (userinfo.id > 0) {
-            console.info('[MWAPI]', 'Logged in:', baseURL, userinfo)
-            COOKIE_STORE.set(`${baseURL}#${auth.username}`, api.cookies)
+        .then(({ data }) => {
+          if (data.query.userinfo.id > 0) {
+            console.info('[MWAPI]', 'Logged in:', baseURL, data.query.userinfo)
+            COOKIE_STORE.set(
+              `${baseURL}#${auth.username}`,
+              api.request.cookieJar?.getCookies()
+            )
           }
         })
         .catch((e) => {

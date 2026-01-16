@@ -49,7 +49,7 @@
     "@koishijs/plugin-sandbox": "^3.4.2",
     "@koishijs/plugin-server": "^3.2.7",
     "@koishijs/plugin-status": "^7.4.10",
-    "fexios": "^5.2.0",
+    "fexios": "^6.1.1",
     "json5": "^2.2.3",
     "koishi": "^4.18.9",
     "koishi-plugin-adapter-onebot": "^6.8.0",
@@ -79,7 +79,7 @@
     "openai": "^4.96.0",
     "puppeteer": "^24.32.1",
     "shiki": "^3.19.0",
-    "wiki-saikou": "^7.5.0"
+    "wiki-saikou": "^7.5.1"
   },
   "workspaces": [
     "."

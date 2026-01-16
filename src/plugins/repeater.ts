@@ -92,6 +92,7 @@ export default class PluginRepeater extends BasePlugin {
   listenQqEmoji() {
     const DRAGONS = [392, 393, 394]
     const TRAINS = [419, 420, 421]
+    const SNAKES = [429, 430, 431]
 
     this.ctx.platform('onebot').middleware(async (session, next) => {
       await next()
@@ -110,8 +111,29 @@ export default class PluginRepeater extends BasePlugin {
         // TODO: 火车头 不确定机制
         else if (TRAINS.includes(faceId)) {
           session.send(
-            h('face', { ...faces[0].attrs, /** id: Math.min(421, faceId + 1) */ })
+            h('face', {
+              ...faces[0].attrs /** id: Math.min(421, faceId + 1) */,
+            })
           )
+        }
+        // 蛇年接下一个
+        else if (SNAKES.includes(faceId)) {
+          if (faceId === 431 && Math.random() > 0.9) {
+            // 隐藏款，概率10%
+            session.send(
+              h('face', {
+                ...faces[0].attrs,
+                id: 432,
+              })
+            )
+          } else {
+            session.send(
+              h('face', {
+                ...faces[0].attrs,
+                id: Math.min(431, faceId + 1),
+              })
+            )
+          }
         }
       }
     })
