@@ -44,6 +44,7 @@ export async function useApi(baseURL: string): Promise<MediaWikiApi> {
   const mockHeaders = USE_MOCK_HEADER.find((i) => i.match(baseURL))
   if (mockHeaders) {
     console.info('[MWAPI]', 'Use mock headers:', baseURL, mockHeaders.headers)
+    api.config.fexiosConfigs.headers ||= {}
     Object.assign(api.config.fexiosConfigs.headers, mockHeaders.headers)
   }
 
