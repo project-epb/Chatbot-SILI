@@ -48,6 +48,7 @@ export default class PluginReboot extends BasePlugin {
 
     ctx
       .command('admin/reboot', '[tags:text] 重启机器人', { authority: 4 })
+      .alias('restart', '重启')
       .option('sync', '-s 从 Git 同步并处理依赖')
       .option('dumpdb', '-d 备份数据库')
       .option('yes', '-y 跳过确认', { hidden: true })

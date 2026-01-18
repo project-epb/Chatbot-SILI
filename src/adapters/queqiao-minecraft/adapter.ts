@@ -20,15 +20,76 @@ export interface QueQiaoMinecraftAdapterConfig {
   requestTimeout?: number
 }
 
+class QueQiaoMinecraftWsClient<C extends Context> extends Adapter.WsClientBase<
+  C,
+  QueQiaoMinecraftBot<C>
+> {
+  constructor(
+    ctx: C,
+    private owner: QueQiaoMinecraftAdapter<C>,
+    private bot: QueQiaoMinecraftBot<C>,
+    config: Adapter.WsClientConfig
+  ) {
+    super(ctx, config)
+  }
+
+  protected prepare() {
+    const wsConfig = this.bot.config.websocket
+    const headers: Record<string, string> = {
+      'x-self-name': this.bot.config.serverName,
+      ...(wsConfig.extraHeaders || {}),
+    }
+    if (wsConfig.accessToken) {
+      headers['Authorization'] = `Bearer ${wsConfig.accessToken}`
+    }
+
+    this.owner.logDebug(`Connecting bot=${this.bot.selfId} url=${wsConfig.url}`)
+    this.owner.logDebug('Headers:', headers)
+    return this.ctx.http.ws(wsConfig.url, { headers })
+  }
+
+  protected accept(socket: WebSocket) {
+    this.bot.ws = socket
+
+    // QueQiao 无显式 READY，连接建立即认为上线
+    this.bot.online()
+    this.owner.logger.info(`QueQiao WebSocket connected (${this.bot.selfId})`)
+
+    socket.addEventListener('message', (ev) => {
+      const { data } = ev
+      try {
+        const text = typeof data === 'string' ? data : data.toString()
+        this.owner.logDebug(`WS recv (${this.bot.selfId}):`, text)
+        const obj = JSON.parse(text)
+        this.owner.handleIncoming(this.bot, obj)
+      } catch (err) {
+        this.owner.logger.warn(
+          `Failed to parse WS message (${this.bot.selfId})`,
+          err
+        )
+      }
+    })
+  }
+
+  protected getActive() {
+    return this.bot.isActive
+  }
+
+  protected setStatus(status: any, error?: Error) {
+    // Status 来自 @satorijs/protocol，这里不强依赖枚举类型
+    ;(this.bot as any).status = status
+    ;(this.bot as any).error = error
+  }
+}
+
 export class QueQiaoMinecraftAdapter<
   C extends Context = Context,
 > extends Adapter<C, QueQiaoMinecraftBot<C>> {
-  private logger = new Logger('adapter-minecraft-queqiao')
+  public logger = new Logger('adapter-minecraft-queqiao')
   private debug: boolean
-  private reconnectInterval: number
-  private maxReconnectAttempts: number
   private requestTimeout: number
-  private reconnectAttempts = new Map<string, number>()
+  private wsClientConfig: Adapter.WsClientConfig
+  private clients = new Map<string, QueQiaoMinecraftWsClient<C>>()
 
   constructor(
     ctx: C,
@@ -37,8 +98,14 @@ export class QueQiaoMinecraftAdapter<
     super(ctx)
 
     this.debug = !!config.debug
-    this.reconnectInterval = config.reconnectInterval ?? 5000
-    this.maxReconnectAttempts = config.maxReconnectAttempts ?? 10
+    const retryInterval = config.reconnectInterval ?? 5000
+    const retryTimes = config.maxReconnectAttempts ?? 10
+    // 为了保持旧行为：始终按同一间隔重试
+    this.wsClientConfig = {
+      retryInterval,
+      retryTimes,
+      retryLazy: retryInterval,
+    }
     this.requestTimeout = config.requestTimeout ?? 10_000
 
     ctx.on('ready', async () => {
@@ -46,93 +113,36 @@ export class QueQiaoMinecraftAdapter<
         const bot = new QueQiaoMinecraftBot(ctx, botConfig)
         bot.adapter = this
         this.bots.push(bot)
-        await this.connectWebSocket(bot)
+        await this.connect(bot)
       }
     })
   }
 
-  private logDebug(...args: any[]) {
+  logDebug(...args: any[]) {
     if (!this.debug) return
     this.logger.info('[DEBUG]', ...args)
   }
 
-  private buildHeaders(
-    bot: QueQiaoMinecraftBot,
-    wsConfig: QueQiaoMinecraftBotConfig['websocket']
-  ) {
-    const headers: Record<string, string> = {
-      'x-self-name': bot.config.serverName,
-      ...(wsConfig.extraHeaders || {}),
-    }
-    if (wsConfig.accessToken) {
-      headers['Authorization'] = `Bearer ${wsConfig.accessToken}`
-    }
-    return headers
+  async connect(bot: QueQiaoMinecraftBot<C>) {
+    if (this.clients.has(bot.selfId)) return
+    const client = new QueQiaoMinecraftWsClient(
+      this.ctx,
+      this,
+      bot,
+      this.wsClientConfig
+    )
+    this.clients.set(bot.selfId, client)
+    await client.start()
   }
 
-  private async connectWebSocket(bot: QueQiaoMinecraftBot) {
-    const wsConfig = bot.config.websocket
-    const headers = this.buildHeaders(bot, wsConfig)
-
-    this.logDebug(`Connecting bot=${bot.selfId} url=${wsConfig.url}`)
-    this.logDebug('Headers:', headers)
-
-    const ws = this.ctx.http.ws(wsConfig.url, { headers })
-    bot.ws = ws
-
-    ws.addEventListener('open', () => {
-      bot.online()
-      this.reconnectAttempts.set(bot.selfId, 0)
-      this.logger.info(`QueQiao WebSocket connected (${bot.selfId})`)
-    })
-
-    ws.addEventListener('message', (ev) => {
-      const { data } = ev
-      try {
-        const text = typeof data === 'string' ? data : data.toString()
-        this.logDebug(`WS recv (${bot.selfId}):`, text)
-        const obj = JSON.parse(text)
-        this.handleIncoming(bot, obj)
-      } catch (err) {
-        this.logger.warn(`Failed to parse WS message (${bot.selfId})`, err)
-      }
-    })
-
-    ws.addEventListener('close', (ev) => {
-      bot.offline()
-      const { code, reason } = ev
-      const reasonText = reason?.toString?.() || ''
-      this.logger.warn(
-        `QueQiao WebSocket closed (${bot.selfId}) code=${code} reason=${reasonText}`
-      )
-      this.scheduleReconnect(bot)
-    })
-
-    ws.addEventListener('error', (ev) => {
-      this.logger.warn(`QueQiao WebSocket error (${bot.selfId})`, ev)
-    })
+  async disconnect(bot: QueQiaoMinecraftBot<C>) {
+    const client = this.clients.get(bot.selfId)
+    if (!client) return
+    await client.stop()
+    this.clients.delete(bot.selfId)
   }
 
-  private scheduleReconnect(bot: QueQiaoMinecraftBot) {
-    const attempt = (this.reconnectAttempts.get(bot.selfId) || 0) + 1
-    this.reconnectAttempts.set(bot.selfId, attempt)
-
-    if (attempt > this.maxReconnectAttempts) {
-      this.logger.error(
-        `QueQiao WebSocket reconnect exceeded max attempts (${bot.selfId})`
-      )
-      return
-    }
-
-    setTimeout(() => {
-      this.connectWebSocket(bot).catch((err) => {
-        this.logger.warn(`Reconnect failed (${bot.selfId})`, err)
-        this.scheduleReconnect(bot)
-      })
-    }, this.reconnectInterval)
-  }
-
-  private handleIncoming(bot: QueQiaoMinecraftBot, obj: any) {
+  handleIncoming(bot: QueQiaoMinecraftBot, obj: any) {
     // response
     if (obj && obj.post_type === 'response') {
       const echo = obj.echo
@@ -355,7 +365,7 @@ export class QueQiaoMinecraftAdapter<
   async stop() {
     for (const bot of this.bots) {
       try {
-        bot.ws?.close()
+        await this.disconnect(bot)
       } catch {
         // ignore
       }
