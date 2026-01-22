@@ -101,7 +101,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       maxTokens: 4096,
       recordsPerChannel: 100,
       systemPrompt: {
-        basic: PluginOpenAi.readPromptFile('SILI-v3.md'),
+        basic: PluginOpenAi.readPromptFile('SILI-v4-2.md'),
         channelSummary: PluginOpenAi.readPromptFile('channel-summary.md'),
         censor: PluginOpenAi.readPromptFile('censor.txt'),
       },
@@ -248,6 +248,11 @@ export default class PluginOpenAi extends BasePlugin<Config> {
         hidden: true,
         fallback: false,
       })
+      .option('search', '-s Enable web search', {
+        type: 'boolean',
+        hidden: true,
+        fallback: false,
+      })
       .option('debug', '-d', { type: 'boolean', hidden: true, authority: 2 })
       .userFields(['id', 'name', 'openai_last_conversation_id', 'authority'])
       .check((_, content) => {
@@ -326,9 +331,8 @@ export default class PluginOpenAi extends BasePlugin<Config> {
               content: [
                 `- You are talking with: ${userName}`,
                 `- Current time: ${new Date().toISOString()} (user is in UTC+8)`,
-                `- Focus on the user's most recent questions or topics while intelligently determining whether to incorporate contextual or memory-related information. Your cognitive processing mimics human short-term memory mechanisms, automatically filtering irrelevant context by default. Long-term memory retrieval is activated only when significant contextual relevance is detected.`,
                 memories.length
-                  ? 'Below is your memory, use it at your discretion:\n' +
+                  ? 'Below is your memories, use it at your discretion:\n' +
                     memories
                       .map((m) => m.memory)
                       .filter(Boolean)
@@ -346,9 +350,8 @@ export default class PluginOpenAi extends BasePlugin<Config> {
             { role: 'user', content },
           ],
           max_tokens: this.config.maxTokens ?? 1024,
-          temperature: 1.2,
-          top_p: 0.6,
-          presence_penalty: 0.8,
+          top_p: 0.8,
+          temperature: 0.8,
           stream: true,
           stream_options: {
             include_usage: true,
@@ -356,6 +359,8 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           // @ts-expect-error Qwen3 specific
           enable_thinking: !!options.thinking,
           thinking_budget: this.config.maxTokens ?? 1024,
+          enable_search:
+            !!options.search || this.checkShouldEnableSearch(content),
         }
         const stream = await this.openai.chat.completions
           .create(body, {
@@ -710,6 +715,39 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           }
         )
       ).reverse() as OpenAIConversationLog[]) || []
+    )
+  }
+
+  readonly ENABLE_SEARCH_KEYWORDS = [
+    '搜索',
+    '查找',
+    '查一下',
+    '找一下',
+    '搜一下',
+    '帮我找',
+    '帮我搜',
+    '帮我查',
+    '最近',
+    '最新',
+    '今天',
+    '昨天',
+    '前天',
+    '前几天',
+    '几天前',
+    '这周',
+    '本周',
+    '这个月',
+    '本月',
+    '今年',
+    '新闻',
+    '资讯',
+    '动态',
+    '发生了什么',
+    '发生了啥',
+  ]
+  checkShouldEnableSearch(content: string): boolean {
+    return this.ENABLE_SEARCH_KEYWORDS.some((keyword) =>
+      content.includes(keyword)
     )
   }
 }
