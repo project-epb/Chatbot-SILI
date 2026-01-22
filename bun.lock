@@ -29,7 +29,7 @@
         "@koishijs/plugin-sandbox": "^3.4.2",
         "@koishijs/plugin-server": "^3.2.7",
         "@koishijs/plugin-status": "^7.4.10",
-        "fexios": "^6.1.1",
+        "fexios": "^6.2.1",
         "json5": "^2.2.3",
         "koishi": "^4.18.9",
         "koishi-plugin-adapter-onebot": "^6.8.0",
@@ -59,7 +59,7 @@
         "openai": "^4.96.0",
         "puppeteer": "^24.32.1",
         "shiki": "^3.19.0",
-        "wiki-saikou": "^7.5.1",
+        "wiki-saikou": "^7.6.0",
       },
       "devDependencies": {
         "@satorijs/element": "^3.1.7",
@@ -828,7 +828,7 @@
 
     "fd-slicer": ["fd-slicer@1.1.0", "https://registry.npmmirror.com/fd-slicer/-/fd-slicer-1.1.0.tgz", { "dependencies": { "pend": "1.2.0" } }, "sha512-cE1qsB/VwyQozZ+q1dGxR8LBYNZeofhEdUNGSMbQD3Gw2lAzX9Zb3uIU6Ebc/Fmyjo9AWWfnn0AUCHqtevs/8g=="],
 
-    "fexios": ["fexios@6.1.1", "https://registry.npmmirror.com/fexios/-/fexios-6.1.1.tgz", {}, "sha512-tQVIJoDovBiyqNZCJDG0w7ybtxcx34tslAREW/bCM2s/f/quSK4wJOjdSFR1kYGQz2gCqoDAwbO5xwqsCsf1Pw=="],
+    "fexios": ["fexios@6.2.1", "https://registry.npmmirror.com/fexios/-/fexios-6.2.1.tgz", {}, "sha512-z5hv0/CjQBgwq9g+5ZZIQELG95KH1p2tqcfZcp6JSPWqNG83hzKMO7pTrSA201/FGQnQ6wpj1cTQw8RVK2GaVg=="],
 
     "figures": ["figures@3.2.0", "https://registry.npmmirror.com/figures/-/figures-3.2.0.tgz", { "dependencies": { "escape-string-regexp": "1.0.5" } }, "sha512-yaduQFRKLXYOGgEn6AZau90j3ggSOyiqXU0F9JZfeXYhNa+Jk4X+s45A2zg5jns87GAFa34BBm2kXw4XpNcbdg=="],
 
@@ -1434,7 +1434,7 @@
 
     "widest-line": ["widest-line@3.1.0", "https://registry.npmmirror.com/widest-line/-/widest-line-3.1.0.tgz", { "dependencies": { "string-width": "4.2.3" } }, "sha512-NsmoXalsWVDMGupxZ5R08ka9flZjjiLvHVAWYOKtiKM8ujtZWr9cRffak+uSE48+Ob8ObalXpwyeUiyDD6QFgg=="],
 
-    "wiki-saikou": ["wiki-saikou@7.5.1", "https://registry.npmmirror.com/wiki-saikou/-/wiki-saikou-7.5.1.tgz", { "dependencies": { "fexios": "^6.1.1" } }, "sha512-pdCRK0+xk0n6EsH+DomqSdLX3HLsgt04jEu7eBXuB8l3plUiA3KO2iHtAOsot3EpwFQ3yhjUfP5/WQqv/Vsxqg=="],
+    "wiki-saikou": ["wiki-saikou@7.6.0", "https://registry.npmmirror.com/wiki-saikou/-/wiki-saikou-7.6.0.tgz", { "dependencies": { "fexios": "^6.2.1" } }, "sha512-KErr1fgLYuP6JuD6pPrg3huo5WW4q30Tw4a2YOIwAJzVm6MUf/UnEerU73F3+HgvXZwZ8161zuQo1DvKjqTJjg=="],
 
     "wordwrap": ["wordwrap@1.0.0", "https://registry.npmmirror.com/wordwrap/-/wordwrap-1.0.0.tgz", {}, "sha512-gvVzJFlPycKc5dZN4yPkP8w7Dc37BtP1yczEneOb4uq34pXZcvrtRTmWV8W+Ume+XCxKgbjM+nevkyFPMybd4Q=="],
 
