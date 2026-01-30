@@ -14,7 +14,6 @@ import { cancellableInterval } from '@/utils/cancellableDefferred'
 import BasePlugin from '~/_boilerplate'
 
 import { getUserNickFromSession } from '$utils/formatSession'
-import { Memory, MemoryClient } from 'mem0ai'
 import { ClientOptions, OpenAI } from 'openai'
 import {
   ChatCompletionCreateParamsBase,
@@ -34,7 +33,6 @@ declare module 'koishi' {
   }
   interface Context {
     openai: OpenAI
-    mem0?: MemoryClient
   }
 }
 
@@ -80,7 +78,6 @@ export default class PluginOpenAi extends BasePlugin<Config> {
   static inject = ['html', 'database']
 
   readonly openai: OpenAI
-  readonly memory?: MemoryClient
   readonly openaiOptions: ClientOptions
   RANDOM_ERROR_MSG = (
     <random>
@@ -130,22 +127,6 @@ export default class PluginOpenAi extends BasePlugin<Config> {
     }
 
     this.ctx.set('openai', this.openai)
-
-    if (process.env.MEM0_BASE_URL) {
-      this.memory = new MemoryClient({
-        apiKey: '',
-        host: process.env.MEM0_BASE_URL,
-      })
-    } else if (process.env.MEM0_API_KEY) {
-      this.memory = new MemoryClient({
-        apiKey: process.env.MEM0_API_KEY,
-        organizationId: process.env.MEM0_ORGANIZATION_ID,
-        projectId: process.env.MEM0_PROJECT_ID,
-      })
-    }
-    if (this.memory) {
-      this.ctx.set('mem0', this.memory)
-    }
 
     this.#installSubPlugins()
   }
@@ -275,8 +256,8 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           return ''
         }
       })
-      .action(async ({ session, options }, content) => {
-        this.logger.info('[chat] input', options, content)
+      .action(async ({ session, options }, userPrompt) => {
+        this.logger.info('[chat] input', options, userPrompt)
 
         const startTime = Date.now()
         const conversation_owner = session.user.id
@@ -294,73 +275,78 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           historiesLenth: histories.length,
         })
 
-        let memories: Memory[] = []
-        if (this.memory && session.user.authority > 1) {
-          memories = await this.memory
-            .search(content, {
-              user_id: conversation_id,
-              agent_id: 'sili',
-              limit: 5,
-            })
-            .catch((e) => {
-              this.logger.error('[chat] memory search error:', e)
-              return [] as Memory[]
-            })
-          this.logger.info('[chat] memories:', memories)
-        }
-
         if (options['no-prompt']) {
-          options.prompt = 'You are an useful AI assistant.'
+          options.prompt = ''
         }
 
         const model =
           options.model || options.thinking
             ? this.config.reasoningModel || 'deepseek-r1'
             : this.config.model || 'gpt-4o-mini'
+
+        const enableSearch =
+          !!options.search || this.checkShouldEnableSearch(userPrompt)
+
         const body: ChatCompletionCreateParamsStreaming = {
           model,
           messages: [
             // base prompt
             {
               role: 'system',
-              content: options.prompt || this.config.systemPrompt.basic,
+              content:
+                typeof options.prompt === 'string'
+                  ? options.prompt
+                  : this.config.systemPrompt.basic,
             },
-            // provide user info
+            // chat context
             {
               role: 'system',
               content: [
-                `- You are talking with: ${userName}`,
-                `- Current time: ${new Date().toISOString()} (user is in UTC+8)`,
-                memories.length
-                  ? 'Below is your memories, use it at your discretion:\n' +
-                    memories
-                      .map((m) => m.memory)
-                      .filter(Boolean)
-                      .map((m, index) => `${index + 1}. ${m}`)
-                      .join('\n')
-                  : '',
-              ]
-                .map((i) => i.trim())
-                .filter(Boolean)
-                .join('\n'),
+                {
+                  type: 'text',
+                  text:
+                    'Conversation context: ' +
+                    JSON.stringify({
+                      user_name: userName,
+                      user_timezone: 'Asia/Shanghai',
+                      current_time: new Date().toISOString(),
+                    }),
+                  // @ts-ignore
+                  cache_control: { type: 'ephemeral' },
+                },
+              ],
             },
             // chat history
             ...histories,
             // current user input
-            { role: 'user', content },
+            {
+              role: 'user',
+              content: userPrompt,
+            },
           ],
           max_tokens: this.config.maxTokens ?? 1024,
-          top_p: 0.8,
           temperature: 0.8,
+          // 注：Claude 系列模型不支持同时设置 top_p 和 temperature
+          top_p: model.toLocaleLowerCase().includes('claude') ? undefined : 0.8,
           stream: true,
           stream_options: {
             include_usage: true,
           },
-          // @ts-expect-error Qwen3 specific
-          enable_thinking: !!options.thinking,
+          enable_thinking: !!options.thinking ? true : undefined,
           thinking_budget: this.config.maxTokens ?? 1024,
-          enable_search:
-            !!options.search || this.checkShouldEnableSearch(content),
+          enable_search: enableSearch,
+          web_search_options: enableSearch
+            ? {
+                search_context_size: 'medium',
+                user_location: {
+                  type: 'approximate',
+                  approximate: {
+                    country: 'CN',
+                    timezone: 'Asia/Shanghai',
+                  },
+                },
+              }
+            : undefined,
         }
         const stream = await this.openai.chat.completions
           .create(body, {
@@ -515,7 +501,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
         if (fullContent) {
           // save conversations to database
           ;[
-            { role: 'user', content, time: startTime },
+            { role: 'user', content: userPrompt, time: startTime },
             {
               role: 'assistant',
               content: fullContent,
@@ -531,27 +517,6 @@ export default class PluginOpenAi extends BasePlugin<Config> {
               conversation_id,
             })
           )
-
-          // update memories
-          if (this.memory && session.user.authority > 1) {
-            const updates = await this.memory
-              .add(
-                [
-                  { role: 'user', content },
-                  { role: 'assistant', content: fullContent },
-                ],
-                {
-                  user_id: conversation_id,
-                  agent_id: 'sili',
-                }
-              )
-              .catch((e) => {
-                this.logger.error('[chat] failed to update memory:', e)
-                return [] as Memory[]
-              })
-            updates.length &&
-              this.logger.info('[chat] memory updates:', updates)
-          }
         }
       })
 
@@ -702,20 +667,62 @@ export default class PluginOpenAi extends BasePlugin<Config> {
   async getChatHistoriesById(
     conversation_id: string,
     limit = 10
-  ): Promise<OpenAIConversationLog[]> {
-    return (
-      ((
-        await this.ctx.database.get(
-          'openai_chat',
-          { conversation_id },
-          {
-            sort: { time: 'desc' },
-            limit: Math.min(25, Math.max(0, limit)),
-            fields: ['content', 'role'],
-          }
-        )
-      ).reverse() as OpenAIConversationLog[]) || []
-    )
+  ): Promise<
+    Array<
+      Pick<OpenAIConversationLog, 'role' | 'content'> & {
+        // OpenAI-compatible extension used by some providers (e.g. Claude).
+        // @ts-ignore
+        cache_control?: { type: 'ephemeral' }
+      }
+    >
+  > {
+    const pairLimit = Math.max(0, Math.floor(limit))
+    if (!pairLimit) return []
+
+    const expectedMessages = pairLimit * 2
+
+    // Fetch a bit more than needed so we can drop invalid prefix and still keep enough pairs.
+    const queryLimit = Math.min(60, expectedMessages + 10)
+
+    const raw = (await this.ctx.database.get(
+      'openai_chat',
+      { conversation_id },
+      {
+        sort: { time: 'desc' },
+        limit: queryLimit,
+        fields: ['content', 'role'],
+      }
+    )) as Array<Pick<OpenAIConversationLog, 'role' | 'content'>> | null
+
+    let histories: Array<
+      Pick<OpenAIConversationLog, 'role' | 'content'> & {
+        // @ts-ignore
+        cache_control?: { type: 'ephemeral' }
+      }
+    > = (raw?.slice().reverse() as any) || []
+
+    // If validation fails, drop from the beginning until remaining items are valid.
+    while (histories.length > 0 && !this.isValidUserAssistantPairs(histories)) {
+      histories = histories.slice(1)
+    }
+
+    if (histories.length > expectedMessages) {
+      histories = histories.slice(histories.length - expectedMessages)
+    }
+
+    return histories
+  }
+
+  private isValidUserAssistantPairs(items: any[]) {
+    if (items.length === 0) return true
+    if (items.length % 2 !== 0) return false
+    if (items[0].role !== 'user') return false
+    if (items[items.length - 1].role !== 'assistant') return false
+    for (let i = 0; i < items.length; i++) {
+      const expectedRole = i % 2 === 0 ? 'user' : 'assistant'
+      if (items[i].role !== expectedRole) return false
+    }
+    return true
   }
 
   readonly ENABLE_SEARCH_KEYWORDS = [

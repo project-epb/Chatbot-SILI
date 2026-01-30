@@ -10,16 +10,16 @@
     "env:pull": "dotenv-vault pull"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=24.11.0"
   },
   "devDependencies": {
     "@satorijs/element": "^3.1.7",
-    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
-    "@types/node": "^24.10.3",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "@types/node": "^24.10.9",
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "dotenv-vault": "^1.27.0",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "yml-register": "^1.2.5"
@@ -74,11 +74,10 @@
     "koishi-plugin-schedule": "^5.0.1",
     "koishi-plugin-silk": "^2.0.1",
     "koishi-plugin-switch": "^1.10.1",
-    "mem0ai": "^1.0.33",
     "mint-filter": "^4.0.3",
-    "openai": "^4.96.0",
+    "openai": "^6.17.0",
     "puppeteer": "^24.32.1",
-    "shiki": "^3.19.0",
+    "shiki": "^3.21.0",
     "wiki-saikou": "^7.6.0"
   },
   "workspaces": [
