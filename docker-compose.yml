@@ -34,7 +34,7 @@ services:
   mongo:
     container_name: sili-mongo
     image: mongo:8.0-noble
-    mem_limit: 512m
+    mem_limit: 256m
     networks:
       sili-network:
         aliases:
