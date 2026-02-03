@@ -162,8 +162,8 @@ export default class PluginOpenAi extends BasePlugin<Config> {
     )
   }
   #installSubPlugins() {
-    this.ctx.plugin(PluginChannelSummary, this.config)
-    this.ctx.plugin(ChatCensorService, this.config)
+    // this.ctx.plugin(PluginChannelSummary, this.config)
+    // this.ctx.plugin(ChatCensorService, this.config)
   }
 
   #initCommands() {
