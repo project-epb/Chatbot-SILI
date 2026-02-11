@@ -9,7 +9,7 @@ services:
       dockerfile: ./docker/sili-core.dockerfile
     command: ['/bin/bash', '-c', 'bun install --frozen-lockfile && bun start']
     mem_limit: 1.5g
-    restart: always
+    restart: unless-stopped
     networks:
       sili-network:
         aliases:
@@ -39,7 +39,7 @@ services:
       sili-network:
         aliases:
           - mongo.sili.local
-    restart: always
+    restart: unless-stopped
     ports:
       # 我们暴露此端口到宿主机，这样就能通过 MongoDB Compase 等应用连接它
       - '27017:27017'
@@ -58,7 +58,7 @@ services:
       sili-network:
         aliases:
           - napcat.sili.local
-    restart: always
+    restart: unless-stopped
     # environment:
     #   - NAPCAT_UID=${NAPCAT_UID:-1000}
     #   - NAPCAT_GID=${NAPCAT_GID:-1000}
