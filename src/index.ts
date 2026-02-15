@@ -30,7 +30,6 @@ import { PluginDebug } from '~/debug'
 import PluginDice from '~/dice'
 import PluginHljs from '~/hljs'
 import { PluginHomo } from '~/homo'
-import { PluginLookupIP } from '~/lookup-ip'
 import PluginMediawiki from '~/mediawiki'
 import PluginMinecraft from '~/minecraft'
 import PluginMute from '~/mute'
@@ -358,11 +357,6 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginCanIUse)
   ctx.plugin(PluginDice)
   ctx.plugin(PluginHljs)
-  if (process.env.TOKEN_IPGEOLOCATION) {
-    ctx.plugin(PluginLookupIP, {
-      ipgeoApiKey: process.env.TOKEN_IPGEOLOCATION,
-    })
-  }
   ctx.plugin(PluginMinecraft)
   ctx.plugin(PluginMute)
   if (process.env.NOVELAI_USERNAME) {
@@ -378,7 +372,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
         type: 'login',
         email: process.env.NOVELAI_USERNAME,
         password: process.env.NOVELAI_PASSWORD,
-        model: 'nai-v3',
+        model: 'nai-diffusion-4-5-full',
         basePrompt: 'best quality, amazing quality, very aesthetic, absurdres',
         resolution: { width: 832, height: 1216 },
         scale: 8,
@@ -421,7 +415,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginVersion)
   ctx.plugin(PluginWebShot)
   ctx.plugin(PluginWhoAsked)
-  ctx.plugin(PluginYoudao)
+  // ctx.plugin(PluginYoudao)
 
   // MediaWiki
   ctx.plugin(PluginMediawiki, {
