@@ -150,8 +150,17 @@ export default class PluginMediawiki extends BasePlugin {
             }
             return res
           })
-          .catch((e) => {
-            session.send(`查询时遇到问题：${e || '-'}`)
+          .catch((e: any) => {
+            console.error('action=query error', e, e?.cause)
+            session.send(
+              [
+                `⚠️查询时遇到问题：${e || '-'}`,
+                ...titles.map(
+                  (i) =>
+                    `${i.name} - ${getUrl(mwApi, { title: i.name })}${i.anchor ? '#' + i.anchor : ''}`
+                ),
+              ].join('\n')
+            )
             throw e
           })
 

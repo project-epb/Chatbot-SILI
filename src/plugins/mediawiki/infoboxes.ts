@@ -7,18 +7,14 @@ export const INFOBOX_DEFINITION: InfoboxDefinition[] = [
     selector: [
       // 标准信息框
       '.mw-parser-output .infotemplatebox',
-      '.mw-parser-output table.infobox2',
+      '.mw-parser-output table.infobox',
+      '.mw-parser-output .infobox2',
+      '.mw-parser-output .infobox3',
+      '.mw-parser-output .moe-infobox',
       // 成句
       '.mw-parser-output table.infoboxSpecial',
-      // 旧版兼容
-      '.mw-parser-output table.infobox',
     ],
-    injectStyles: `
-      /* 调整信息框外观 */
-      .mw-parser-output .infotemplatebox {
-        margin: 1rem !important;
-      }
-    `,
+    injectStyles: '',
     skin: 'apioutput',
   },
   // Minecraft Wiki

@@ -3,39 +3,41 @@ import { MediaWikiApi } from 'wiki-saikou/node'
 const MW_CLIENTS = new Map<string, MediaWikiApi>()
 const MOCK_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'
-const MW_ACCOUNTS: {
-  match: (url: string) => boolean
-  username: string
-  password: string
-}[] = [
-  {
-    match: (url: string) => url.includes('.moegirl.org.cn'),
-    username: process.env.MW_BOTPASSWORD_MOEGIRL_USERNAME,
-    password: process.env.MW_BOTPASSWORD_MOEGIRL_PASSWORD,
-  },
-]
-const MOCK_HEADER = [
-  {
-    match: (url: string) => url.includes('huijiwiki.com'),
-    headers: {
-      'User-Agent': MOCK_UA,
-    },
-  },
-  {
-    match: (url: string) => url.includes('ngnl.wiki'),
-    headers: {
-      'User-Agent': MOCK_UA,
-    },
-  },
-  {
-    match: (url: string) => url.includes('.moegirl.org.cn'),
-    headers: {
-      'User-Agent': process.env.TOKEN_MOEGIRL_USER_AGENT,
-    },
-  },
-]
 
 export async function useApi(baseURL: string): Promise<MediaWikiApi> {
+  // 这几个常量被故意放在函数内，是为了在运行时动态获取环境变量
+  const MW_ACCOUNTS: {
+    match: (url: string) => boolean
+    username: string
+    password: string
+  }[] = [
+    {
+      match: (url: string) => url.includes('.moegirl.org.cn'),
+      username: process.env.MW_BOTPASSWORD_MOEGIRL_USERNAME,
+      password: process.env.MW_BOTPASSWORD_MOEGIRL_PASSWORD,
+    },
+  ]
+  const MOCK_HEADER = [
+    {
+      match: (url: string) => url.includes('huijiwiki.com'),
+      headers: {
+        'User-Agent': MOCK_UA,
+      },
+    },
+    {
+      match: (url: string) => url.includes('ngnl.wiki'),
+      headers: {
+        'User-Agent': MOCK_UA,
+      },
+    },
+    {
+      match: (url: string) => url.includes('.moegirl.org.cn'),
+      headers: {
+        'User-Agent': process.env.TOKEN_MOEGIRL_USER_AGENT,
+      },
+    },
+  ]
+
   if (MW_CLIENTS.has(baseURL)) {
     return MW_CLIENTS.get(baseURL)!
   }
