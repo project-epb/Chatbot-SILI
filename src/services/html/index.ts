@@ -6,6 +6,7 @@ import type { BundledLanguage, BundledLanguageInfo } from 'shiki'
 declare module 'koishi' {
   export interface Context {
     html: HTMLService
+    puppeteer: import('koishi-plugin-puppeteer').default
   }
 }
 
@@ -241,9 +242,8 @@ code.hljs[class~='lang-wiki']:before {
     lang: BundledLanguage,
     startFrom: number | false = 1
   ) {
-    const { bundledLanguages, bundledLanguagesInfo, codeToHtml } = await import(
-      'shiki'
-    )
+    const { bundledLanguages, bundledLanguagesInfo, codeToHtml } =
+      await import('shiki')
 
     lang = lang || ('' as any)
     if ((lang as any) !== '' && !(lang in bundledLanguages)) {
