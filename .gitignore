@@ -156,3 +156,7 @@ badwords.ini
 .flaskenv*
 
 .volumns/
+
+# claude code superpowers plugin
+docs/superpowers
+.superpowers

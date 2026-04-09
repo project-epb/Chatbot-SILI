@@ -25,6 +25,7 @@
     "yml-register": "^1.2.5"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.86.1",
     "@cordisjs/plugin-http": "^0.6.3",
     "@koishijs/plugin-adapter-dingtalk": "^2.4.2",
     "@koishijs/plugin-adapter-discord": "^4.5.10",

@@ -3,7 +3,7 @@
  * @author dragon-fish
  * @license MIT
  */
-import { Context, Time, arrayBufferToBase64 } from 'koishi'
+import { Context, Time, h } from 'koishi'
 
 import crypto from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -14,15 +14,17 @@ import { cancellableInterval } from '@/utils/cancellableDefferred'
 import BasePlugin from '~/_boilerplate'
 
 import { getUserNickFromSession } from '$utils/formatSession'
-import { ClientOptions, OpenAI } from 'openai'
-import {
-  ChatCompletionCreateParamsBase,
-  ChatCompletionCreateParamsStreaming,
-} from 'openai/resources/chat/completions.mjs'
-import { CompletionUsage } from 'openai/resources/completions'
+import type { ClientOptions as AnthropicClientOptions } from '@anthropic-ai/sdk'
+import { Inject } from 'cordis'
+import type { ClientOptions } from 'openai'
 
-import ChatCensorService from './plugins/ChatCensorService'
-import PluginChannelSummary from './plugins/PluginChannelSummary'
+import {
+  ChatCompletionUsage,
+  ChatMessage,
+  LLMProviderBase,
+} from './providers/_base'
+import { AnthropicProvider } from './providers/anthropic'
+import { OpenAIProvider } from './providers/openai'
 
 declare module 'koishi' {
   export interface Tables {
@@ -32,7 +34,7 @@ declare module 'koishi' {
     openai_last_conversation_id: string
   }
   interface Context {
-    openai: OpenAI
+    llm: PluginLLM
   }
 }
 
@@ -42,44 +44,63 @@ interface OpenAIConversationLog {
   conversation_owner: number
   role: 'system' | 'user' | 'assistant'
   content: string
-  usage?: CompletionUsage
+  usage?: ChatCompletionUsage
   model?: string
   time: number
 }
 
+export type ProviderConfig =
+  | {
+      name: string
+      type: 'openai'
+      options: ClientOptions
+      model?: string
+      reasoningModel?: string
+      maxTokens?: number
+    }
+  | {
+      name: string
+      type: 'anthropic'
+      options: AnthropicClientOptions
+      model?: string
+      reasoningModel?: string
+      maxTokens?: number
+    }
+
 export interface Config {
-  /** OpenAI 配置 */
-  openaiOptions: ClientOptions
-  /** 普通聊天(chat)时使用的模型 */
+  providers: ProviderConfig[]
   model?: string
-  /** 推理模式时使用的模型（例如 gpt-o1, deepseek-r1） */
   reasoningModel?: string
-  /** 最大 token 限额 */
   maxTokens?: number
-  /** 系统提示词 */
   systemPrompt?: Partial<{
-    /** 普通聊天，也就是和 bot 直接聊天时的提示词，一般是角色扮演的要求 */
-    basic: string
-    /** 群聊总结时的提示词，一般是要求总结的格式 */
-    channelSummary: string
-    /** 审查敏感内容时的提示词，一般是要求审核哪些内容 */
-    censor: string
-    /** 其他自定义提示词 */
+    default: string
     [key: string]: string
   }>
-  /** 用于总结群聊消息，每个群保留的消息数量 */
-  recordsPerChannel?: number
-  /** 模型别名（主要用于火山引擎） */
   modelAliases?: Record<string, string>
 }
 export declare const Config: Config
 
-export default class PluginOpenAi extends BasePlugin<Config> {
-  static inject = ['html', 'database']
+export default class PluginLLM extends BasePlugin<Config> {
+  static inject: Inject = {
+    database: { required: true },
+    html: { required: false },
+  }
 
-  readonly openai: OpenAI
-  readonly openaiOptions: ClientOptions
-  RANDOM_ERROR_MSG = (
+  readonly providers: Map<string, LLMProviderBase> = new Map()
+
+  get defaultProvider(): LLMProviderBase {
+    const first = this.providers.values().next().value
+    if (!first) throw new Error('No LLM provider configured')
+    return first
+  }
+
+  useProvider(name: string): LLMProviderBase {
+    const p = this.providers.get(name)
+    if (!p) throw new Error(`LLM provider "${name}" not found`)
+    return p
+  }
+
+  readonly RANDOM_ERROR_MSG = (
     <random>
       <template>SILI不知道喔。</template>
       <template>这道题SILI不会，长大后在学习~</template>
@@ -92,15 +113,12 @@ export default class PluginOpenAi extends BasePlugin<Config> {
   readonly CONVERSATION_LOCKS = new Set<string | number>()
 
   constructor(ctx: Context, config: Config) {
-    const defaultConfigs = {
+    const defaultConfigs: Partial<Config> = {
       model: 'gpt-4o-mini',
       reasoningModel: 'gpt-o1-mini',
-      maxTokens: 4096,
-      recordsPerChannel: 100,
+      maxTokens: 8192,
       systemPrompt: {
-        basic: PluginOpenAi.readPromptFile('SILI-v4-2.md'),
-        channelSummary: PluginOpenAi.readPromptFile('channel-summary.md'),
-        censor: PluginOpenAi.readPromptFile('censor.txt'),
+        default: PluginLLM.readPromptFile('SILI-v5.prompt.md'),
       },
     }
     config = {
@@ -111,24 +129,36 @@ export default class PluginOpenAi extends BasePlugin<Config> {
         ...config.systemPrompt,
       },
     }
-    if (!config.openaiOptions) {
-      throw new Error('Required payloads: openaiOptions')
-    }
-    super(ctx, config, 'openai')
+    super(ctx, config, 'llm')
 
-    this.openaiOptions = this.config.openaiOptions || {}
-    this.openai = new OpenAI({
-      ...this.openaiOptions,
-    })
+    for (const providerConfig of config.providers) {
+      switch (providerConfig.type) {
+        case 'openai':
+          this.providers.set(
+            providerConfig.name,
+            new OpenAIProvider(providerConfig.options)
+          )
+          break
+        case 'anthropic':
+          this.providers.set(
+            providerConfig.name,
+            new AnthropicProvider(providerConfig.options)
+          )
+          break
+        default:
+          this.logger.warn(
+            `Unknown provider type: ${(providerConfig as any).type}`
+          )
+      }
+    }
+
     this.#initDatabase()
     this.#initCommands()
     if (config.modelAliases) {
       this.MODEL_ALIASES = config.modelAliases
     }
 
-    this.ctx.set('openai', this.openai)
-
-    this.#installSubPlugins()
+    this.ctx.set('llm', this)
   }
 
   async #initDatabase() {
@@ -161,42 +191,146 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       }
     )
   }
-  #installSubPlugins() {
-    // this.ctx.plugin(PluginChannelSummary, this.config)
-    // this.ctx.plugin(ChatCensorService, this.config)
-  }
 
   #initCommands() {
-    this.ctx.command('openai', 'Make ChatBot Great Again')
+    this.ctx.command('llm', 'Make ChatBot Great Again')
 
     this.ctx
-      .command('openai.models', 'List all models', { authority: 3 })
+      .command('llm.providers', 'List configured providers', { authority: 3 })
       .action(async () => {
-        const { data } = await this.openai.models.list()
-        this.logger.info('openai.models', data)
-        if (data.length >= 10) {
-          return (
-            <html>
-              <p>Currently available models:</p>
-              <ul>
-                {data.map((i) => (
-                  <li>{i.id}</li>
-                ))}
-              </ul>
-            </html>
-          )
-        } else {
-          return (
-            <>
-              <p>Currently available models:</p>
-              <p>{data.map((i) => i.id).join('\n')}</p>
-            </>
-          )
+        const providers = this.config.providers
+        if (!providers.length) return 'No providers configured.'
+
+        const html = this.ctx.get('html')
+        if (html) {
+          const tableHtml = `
+<div style="padding: 16px; max-width: 600px;">
+  <h3 style="margin: 0 0 12px;">LLM Providers (${providers.length})</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+    <thead>
+      <tr style="background: #f0f0f0; text-align: left;">
+        <th style="padding: 6px 10px; border: 1px solid #ddd;">Name</th>
+        <th style="padding: 6px 10px; border: 1px solid #ddd;">Type</th>
+        <th style="padding: 6px 10px; border: 1px solid #ddd;">Model</th>
+        <th style="padding: 6px 10px; border: 1px solid #ddd;">Reasoning</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${providers
+        .map(
+          (p, i) => `
+        <tr style="background: ${i % 2 ? '#fafafa' : '#fff'};">
+          <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.name}${i === 0 ? ' <span style="color: #888; font-size: 11px;">default</span>' : ''}</td>
+          <td style="padding: 4px 10px; border: 1px solid #ddd;">${p.type}</td>
+          <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.model || '-'}</td>
+          <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.reasoningModel || '-'}</td>
+        </tr>`
+        )
+        .join('')}
+    </tbody>
+  </table>
+</div>`
+          const img = await html.html(tableHtml, 'div')
+          if (img) return h.image(img, 'image/jpeg')
         }
+
+        // Fallback: plain text
+        return providers
+          .map((p, i) => {
+            const def = i === 0 ? ' (default)' : ''
+            return `${p.name} [${p.type}]${def}${p.model ? ` model=${p.model}` : ''}`
+          })
+          .join('\n')
       })
 
     this.ctx
-      .command('openai/chat <content:text>', 'ChatGPT', {
+      .command('llm.models <provider:string>', 'List available models', {
+        authority: 3,
+      })
+      .action(async (_, providerName) => {
+        const name = providerName || this.config.providers[0]?.name
+        if (!name) return 'No providers configured.'
+
+        const provider = this.providers.get(name)
+        if (!provider) return `Provider "${name}" not found.`
+
+        const models = await provider.listModels()
+        if (!models.length) {
+          return `Provider "${name}" does not support model listing.`
+        }
+
+        const hasPricing = models.some(
+          (m) => m.inputPrice != null || m.outputPrice != null
+        )
+        const hasName = models.some((m) => m.name)
+        const hasContext = models.some((m) => m.contextLength)
+
+        const formatPrice = (v?: number) =>
+          v != null ? `$${v.toFixed(2)}` : '-'
+        const formatContext = (v?: number) => {
+          if (v == null) return '-'
+          if (v >= 1_000_000)
+            return `${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`
+          if (v >= 1_000)
+            return `${(v / 1_000).toFixed(v % 1_000 === 0 ? 0 : 1)}k`
+          return String(v)
+        }
+
+        const th = (text: string) =>
+          `<th style="padding: 6px 10px; border: 1px solid #ddd;">${text}</th>`
+        const td = (text: string, mono = false) =>
+          `<td style="padding: 4px 10px; border: 1px solid #ddd;${mono ? ' font-family: monospace;' : ''}">${text}</td>`
+
+        const html = this.ctx.get('html')
+        if (html) {
+          const tableHtml = `
+<div style="padding: 16px; max-width: 900px;">
+  <h3 style="margin: 0 0 12px;">Models from ${name} (${models.length})</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+    <thead>
+      <tr style="background: #f0f0f0; text-align: left;">
+        ${th('ID')}
+        ${hasName ? th('Name') : ''}
+        ${hasContext ? th('Context') : ''}
+        ${hasPricing ? th('Input $/M') + th('Output $/M') : ''}
+      </tr>
+    </thead>
+    <tbody>
+      ${models
+        .map(
+          (m, i) => `
+        <tr style="background: ${i % 2 ? '#fafafa' : '#fff'};">
+          ${td(m.id, true)}
+          ${hasName ? td(m.name || '-') : ''}
+          ${hasContext ? td(formatContext(m.contextLength)) : ''}
+          ${hasPricing ? td(formatPrice(m.inputPrice)) + td(formatPrice(m.outputPrice)) : ''}
+        </tr>`
+        )
+        .join('')}
+    </tbody>
+  </table>
+</div>`
+          const img = await html.html(tableHtml, 'div')
+          if (img) return h.image(img, 'image/jpeg')
+        }
+
+        // Fallback: plain text
+        return (
+          `Models from ${name} (${models.length}):\n` +
+          models
+            .map((m) => {
+              const parts = [m.id]
+              if (m.name) parts.push(`(${m.name})`)
+              if (m.contextLength)
+                parts.push(`[${formatContext(m.contextLength)}]`)
+              return parts.join(' ')
+            })
+            .join('\n')
+        )
+      })
+
+    this.ctx
+      .command('llm/chat <content:text>', "I'm talking!", {
         minInterval: 1 * Time.minute,
         maxUsage: 10,
         bypassAuthority: 2,
@@ -235,6 +369,10 @@ export default class PluginOpenAi extends BasePlugin<Config> {
         fallback: false,
       })
       .option('debug', '-d', { type: 'boolean', hidden: true, authority: 2 })
+      .option('provider', '<provider:string> AI service to use', {
+        hidden: true,
+        authority: 2,
+      })
       .userFields(['id', 'name', 'openai_last_conversation_id', 'authority'])
       .check((_, content) => {
         if (!content?.trim()) {
@@ -246,6 +384,12 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           const maybeRealModel = this.MODEL_ALIASES[options.model]
           if (maybeRealModel) {
             options.model = maybeRealModel
+          }
+          // Syntax sugar: provider#model (e.g. openrouter#claude-opus-4.6)
+          const hashIndex = options.model.indexOf('#')
+          if (hashIndex > 0) {
+            options.provider = options.model.slice(0, hashIndex)
+            options.model = options.model.slice(hashIndex + 1)
           }
         }
       })
@@ -279,84 +423,68 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           options.prompt = ''
         }
 
+        const providerConfig = options.provider
+          ? this.config.providers.find((p) => p.name === options.provider)
+          : this.config.providers[0]
+
+        const provider = options.provider
+          ? this.useProvider(options.provider)
+          : this.defaultProvider
+
         const model =
-          options.model || options.thinking
-            ? this.config.reasoningModel || 'deepseek-r1'
-            : this.config.model || 'gpt-4o-mini'
+          options.model ||
+          (options.thinking
+            ? providerConfig?.reasoningModel ||
+              this.config.reasoningModel ||
+              'deepseek-r1'
+            : providerConfig?.model || this.config.model || 'gpt-4o-mini')
+
+        const maxTokens =
+          providerConfig?.maxTokens ?? this.config.maxTokens ?? 1024
+
+        const chatMessages: ChatMessage[] = [
+          {
+            role: 'system',
+            content:
+              typeof options.prompt === 'string'
+                ? options.prompt
+                : this.config.systemPrompt.default,
+          },
+          {
+            role: 'system',
+            content:
+              'User context: ' +
+              JSON.stringify({
+                user_name: userName,
+                user_timezone: 'Asia/Shanghai',
+                current_time: new Date().toISOString(),
+              }) +
+              '\nUsername is just a nickname and does not represent their identity. For example, "admin" does not mean they are an admin.',
+          },
+          ...histories,
+          {
+            role: 'user',
+            content: userPrompt,
+          },
+        ]
 
         const enableSearch =
-          !!options.search || this.checkShouldEnableSearch(userPrompt)
+          !!options.search || this.quickCheckShouldEnableSearch(userPrompt)
 
-        const body: ChatCompletionCreateParamsStreaming = {
-          model,
-          messages: [
-            // base prompt
-            {
-              role: 'system',
-              content:
-                typeof options.prompt === 'string'
-                  ? options.prompt
-                  : this.config.systemPrompt.basic,
-            },
-            // chat context
-            {
-              role: 'system',
-              content: [
-                {
-                  type: 'text',
-                  text:
-                    'Conversation context: ' +
-                    JSON.stringify({
-                      user_name: userName,
-                      user_timezone: 'Asia/Shanghai',
-                      current_time: new Date().toISOString(),
-                    }),
-                  // @ts-ignore
-                  cache_control: { type: 'ephemeral' },
-                },
-              ],
-            },
-            // chat history
-            ...histories,
-            // current user input
-            {
-              role: 'user',
-              content: userPrompt,
-            },
-          ],
-          max_tokens: this.config.maxTokens ?? 1024,
-          temperature: 0.8,
-          // 注：Claude 系列模型不支持同时设置 top_p 和 temperature
-          top_p: model.toLocaleLowerCase().includes('claude') ? undefined : 0.8,
-          stream: true,
-          stream_options: {
-            include_usage: true,
+        const stream = provider.streamChatCompletion(
+          chatMessages,
+          {
+            model,
+            maxTokens,
+            temperature: 0.8,
+            topP: 0.8,
           },
-          enable_thinking: !!options.thinking ? true : undefined,
-          thinking_budget: this.config.maxTokens ?? 1024,
-          enable_search: enableSearch,
-          web_search_options: enableSearch
-            ? {
-                search_context_size: 'medium',
-                user_location: {
-                  type: 'approximate',
-                  approximate: {
-                    country: 'CN',
-                    timezone: 'Asia/Shanghai',
-                  },
-                },
-              }
-            : undefined,
-        }
-        const stream = await this.openai.chat.completions
-          .create(body, {
-            timeout: 90 * 1000,
-          })
-          .catch((e) => {
-            this.CONVERSATION_LOCKS.delete(conversation_owner)
-            console.error('[chat] request error:', e)
-            throw e
-          })
+          {
+            enableThinking: !!options.thinking,
+            thinkingBudget: maxTokens,
+            enableSearch,
+          }
+        )
 
         // 如果没有开启调试模式，每思考 10 秒发送一个状态指示器
         const emojiCodes = ['181', '285', '267', '312', '284', '37']
@@ -381,24 +509,24 @@ export default class PluginOpenAi extends BasePlugin<Config> {
         let fullContent = ''
         let sendContentFromIndex = 0
         let sendThinkingFromIndex = 0
-        let usage: CompletionUsage | undefined
+        let usage: ChatCompletionUsage | undefined
         let thinkingEnd = false
         let lastMessageId: string
         const shouldSendThinking = options.debug
 
         // #region chat-stream
         try {
-          for await (const chunk of stream) {
-            if (chunk.usage) {
-              usage = chunk.usage
+          for await (const delta of stream) {
+            if (delta.kind === 'usage') {
+              usage = delta.usage
+              continue
             }
-            const thinking: string =
-              (chunk as any).choices?.[0]?.delta?.reasoning_content?.trim() ||
-              ''
-            const content = chunk.choices?.[0]?.delta?.content?.trim() || ''
+            if (delta.kind === 'error') {
+              throw delta.error
+            }
 
-            // 内心独白
-            if (thinking) {
+            if (delta.kind === 'reasoning_content') {
+              const thinking = delta.content
               fullThinking += thinking
               if (shouldSendThinking) {
                 const { text, nextIndex } = this.splitContent(
@@ -418,26 +546,28 @@ export default class PluginOpenAi extends BasePlugin<Config> {
                 }
               }
             }
-            // 内心独白结束
-            if (content && !thinkingEnd) {
-              thinkingEnd = true
-              this.logger.info('[chat] think end:', fullThinking)
-              if (
-                fullThinking &&
-                sendThinkingFromIndex < fullThinking.length &&
-                shouldSendThinking
-              ) {
-                stopEmojiReaction()
-                ;[lastMessageId = lastMessageId] = await session.sendQueued(
-                  <>
-                    {lastMessageId && <quote id={lastMessageId}></quote>}
-                    [内心独白] {fullThinking.slice(sendThinkingFromIndex)}
-                  </>
-                )
+
+            if (delta.kind === 'content') {
+              const content = delta.content
+              // End thinking phase
+              if (!thinkingEnd) {
+                thinkingEnd = true
+                this.logger.info('[chat] think end:', fullThinking)
+                if (
+                  fullThinking &&
+                  sendThinkingFromIndex < fullThinking.length &&
+                  shouldSendThinking
+                ) {
+                  stopEmojiReaction()
+                  ;[lastMessageId = lastMessageId] = await session.sendQueued(
+                    <>
+                      {lastMessageId && <quote id={lastMessageId}></quote>}
+                      [内心独白] {fullThinking.slice(sendThinkingFromIndex)}
+                    </>
+                  )
+                }
               }
-            }
-            // 正文内容
-            if (content) {
+              // Send content
               fullContent += content
               const { text, nextIndex } = this.splitContent(
                 fullContent,
@@ -447,7 +577,6 @@ export default class PluginOpenAi extends BasePlugin<Config> {
               if (text) {
                 this.logger.info('[chat] sending:', text)
                 stopEmojiReaction()
-                // await session.sendQueued(text)
                 ;[lastMessageId = lastMessageId] = await session.sendQueued(
                   <>
                     {lastMessageId && <quote id={lastMessageId}></quote>}
@@ -521,7 +650,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       })
 
     this.ctx
-      .command('openai/chat.reset', '开始新的对话')
+      .command('llm.reset', '开始新的对话')
       .userFields(['openai_last_conversation_id'])
       .action(async ({ session }) => {
         if (!session.user.openai_last_conversation_id) {
@@ -534,6 +663,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
           )
         } else {
           session.user.openai_last_conversation_id = ''
+          await session.user.$update()
           return (
             <random>
               <>让我们开始新话题吧！</>
@@ -544,35 +674,6 @@ export default class PluginOpenAi extends BasePlugin<Config> {
             </random>
           )
         }
-      })
-
-    this.ctx
-      .command(
-        'openai.tts <input:text>',
-        'Generates audio from the input text',
-        {
-          maxUsage: 3,
-          bypassAuthority: 3,
-        }
-      )
-      .option('model', '-m <model:string> tts-1 or tts-1-hd')
-      .option(
-        'voice',
-        '-v <voice:string> alloy, echo, fable, onyx, nova, and shimmer'
-      )
-      .option('speed', '-s <speed:number> 0.25 - 4.0')
-      .action(async ({ options }, input) => {
-        if (!input) {
-          return 'SILI不知道你想说什么呢。'
-        }
-
-        options = Object.fromEntries(
-          Object.entries(options).filter(([, val]) => !!val)
-        )
-
-        const buffer = await this.createTTS(input, options as any)
-        const base64 = arrayBufferToBase64(buffer)
-        return <audio src={`data:audio/mp3;base64,${base64}`}></audio>
       })
   }
 
@@ -637,21 +738,6 @@ export default class PluginOpenAi extends BasePlugin<Config> {
     return { text: '', nextIndex: fromIndex }
   }
 
-  async createTTS(
-    input: string,
-    options?: Partial<OpenAI.Audio.Speech.SpeechCreateParams>
-  ) {
-    const data = await this.openai.audio.speech.create({
-      model: 'tts-1',
-      voice: 'nova',
-      input,
-      response_format: 'mp3',
-      speed: 1,
-      ...options,
-    })
-    return data.arrayBuffer()
-  }
-
   static readPromptFile(file: string) {
     try {
       return readFileSync(resolve(__dirname, `./prompts/${file}`), {
@@ -667,15 +753,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
   async getChatHistoriesById(
     conversation_id: string,
     limit = 10
-  ): Promise<
-    Array<
-      Pick<OpenAIConversationLog, 'role' | 'content'> & {
-        // OpenAI-compatible extension used by some providers (e.g. Claude).
-        // @ts-ignore
-        cache_control?: { type: 'ephemeral' }
-      }
-    >
-  > {
+  ): Promise<Array<Pick<OpenAIConversationLog, 'role' | 'content'>>> {
     const pairLimit = Math.max(0, Math.floor(limit))
     if (!pairLimit) return []
 
@@ -694,12 +772,8 @@ export default class PluginOpenAi extends BasePlugin<Config> {
       }
     )) as Array<Pick<OpenAIConversationLog, 'role' | 'content'>> | null
 
-    let histories: Array<
-      Pick<OpenAIConversationLog, 'role' | 'content'> & {
-        // @ts-ignore
-        cache_control?: { type: 'ephemeral' }
-      }
-    > = (raw?.slice().reverse() as any) || []
+    let histories: Array<Pick<OpenAIConversationLog, 'role' | 'content'>> =
+      (raw?.slice().reverse() as any) || []
 
     // If validation fails, drop from the beginning until remaining items are valid.
     while (histories.length > 0 && !this.isValidUserAssistantPairs(histories)) {
@@ -752,7 +826,7 @@ export default class PluginOpenAi extends BasePlugin<Config> {
     '发生了什么',
     '发生了啥',
   ]
-  checkShouldEnableSearch(content: string): boolean {
+  quickCheckShouldEnableSearch(content: string): boolean {
     return this.ENABLE_SEARCH_KEYWORDS.some((keyword) =>
       content.includes(keyword)
     )

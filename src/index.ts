@@ -21,6 +21,7 @@ import ProcessErrorHandler from '@/modules/ProcessErrorHandler'
 import PiggybackService from '@/services/PiggybackService'
 import { QQNTEmojiReactionService } from '@/services/QQNTEmojiReaction'
 import HTMLService from '@/services/html'
+import { parseLLMProviders } from '@/utils/parseLLMProviders'
 
 import PluginAbout from '~/about'
 import PatchCallme from '~/callme'
@@ -30,10 +31,10 @@ import { PluginDebug } from '~/debug'
 import PluginDice from '~/dice'
 import PluginHljs from '~/hljs'
 import { PluginHomo } from '~/homo'
+import PluginLLM from '~/llm'
 import PluginMediawiki from '~/mediawiki'
 import PluginMinecraft from '~/minecraft'
 import PluginMute from '~/mute'
-import PluginOpenAi from '~/openai'
 import PluginPing from '~/ping'
 import PluginPixiv from '~/pixiv'
 import PluginPowerUser from '~/power-user'
@@ -389,15 +390,11 @@ app.plugin(function PluginCollectionSILICore(ctx) {
       },
     })
   }
-  ctx.plugin(PluginOpenAi, {
-    openaiOptions: {
-      baseURL: env.OPENAI_BASE_RUL,
-      apiKey: env.OPENAI_API_KEY,
-    },
-    maxTokens: 4096,
-    recordsPerChannel: 50,
-    model: env.OPENAI_MODEL || 'gpt-4o',
-    reasoningModel: env.OPENAI_REASONING_MODEL || 'deepseek-r1',
+  ctx.plugin(PluginLLM, {
+    providers: parseLLMProviders(env),
+    maxTokens: env.LLM_MAX_TOKENS ? Number(env.LLM_MAX_TOKENS) : 4096,
+    model: env.LLM_MODEL || 'gpt-4o',
+    reasoningModel: env.LLM_REASONING_MODEL || 'deepseek-r1',
   })
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv, {

@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -16,9 +15,9 @@
     "jsx": "react-jsx",
     "jsxImportSource": "@satorijs/element",
     "paths": {
-      "@/*": ["src/*"],
-      "~/*": ["src/plugins/*"],
-      "$utils/*": ["src/utils/*"]
+      "@/*": ["./src/*"],
+      "~/*": ["./src/plugins/*"],
+      "$utils/*": ["./src/utils/*"]
     }
   },
   "include": ["src", ".debug", "scripts"]
