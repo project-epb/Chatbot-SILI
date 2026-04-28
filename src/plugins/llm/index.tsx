@@ -44,6 +44,7 @@ interface OpenAIConversationLog {
   conversation_owner: number
   role: 'system' | 'user' | 'assistant'
   content: string
+  reasoning_content: string
   usage?: ChatCompletionUsage
   model?: string
   time: number
@@ -71,6 +72,7 @@ export interface Config {
   providers: ProviderConfig[]
   model?: string
   reasoningModel?: string
+  historyMessageCount?: number
   maxTokens?: number
   systemPrompt?: Partial<{
     default: string
@@ -79,6 +81,14 @@ export interface Config {
   modelAliases?: Record<string, string>
 }
 export declare const Config: Config
+
+/**
+ * Whether the given model expects `reasoning_content` to be carried over in chat history.
+ * Currently only DeepSeek V4 family relies on this for multi-turn thought continuity.
+ */
+function modelNeedsReasoningContent(model: string): boolean {
+  return /deepseek-v4/i.test(model)
+}
 
 export default class PluginLLM extends BasePlugin<Config> {
   static inject: Inject = {
@@ -117,6 +127,7 @@ export default class PluginLLM extends BasePlugin<Config> {
       model: 'gpt-4o-mini',
       reasoningModel: 'gpt-o1-mini',
       maxTokens: 8192,
+      historyMessageCount: 10,
       systemPrompt: {
         default: PluginLLM.readPromptFile('SILI-v5.prompt.md'),
       },
@@ -412,13 +423,6 @@ export default class PluginLLM extends BasePlugin<Config> {
         const conversation_id: string =
           (session.user.openai_last_conversation_id ||= crypto.randomUUID())
 
-        const histories = await this.getChatHistoriesById(conversation_id)
-        this.logger.info('[chat] user data', {
-          conversation_owner,
-          conversation_id,
-          historiesLenth: histories.length,
-        })
-
         if (options['no-prompt']) {
           options.prompt = ''
         }
@@ -442,6 +446,33 @@ export default class PluginLLM extends BasePlugin<Config> {
         const maxTokens =
           providerConfig?.maxTokens ?? this.config.maxTokens ?? 1024
 
+        const histories = await this.getChatHistoriesById(
+          conversation_id,
+          this.config.historyMessageCount,
+          modelNeedsReasoningContent(model)
+        )
+        this.logger.info('[chat] user data', {
+          conversation_owner,
+          conversation_id,
+          historiesLenth: histories.length,
+        })
+
+        const TZ = 'Asia/Shanghai'
+        const chatInfo = {
+          user_id: session.user.id,
+          user_name: userName,
+          current_time:
+            new Date().toLocaleString('sv', { timeZone: TZ }) + ` (${TZ})`,
+          platform: session.platform === 'onebot' ? 'qq' : session.platform,
+        }
+        const chatInfoBlock = [
+          '<chat_info>',
+          JSON.stringify(chatInfo),
+          '- This information is auto-injected by the AI orchestration system. Use as needed; you do not have to mention it in your reply.',
+          '- user_name is a self-chosen display name and does not represent identity, role, or permissions (e.g., "admin" does not mean the user is an administrator).',
+          '</chat_info>',
+        ].join('\n')
+
         const chatMessages: ChatMessage[] = [
           {
             role: 'system',
@@ -450,21 +481,15 @@ export default class PluginLLM extends BasePlugin<Config> {
                 ? options.prompt
                 : this.config.systemPrompt.default,
           },
-          {
-            role: 'system',
-            content:
-              'User context: ' +
-              JSON.stringify({
-                user_name: userName,
-                user_timezone: 'Asia/Shanghai',
-                current_time: new Date().toISOString(),
-              }) +
-              '\nUsername is just a nickname and does not represent their identity. For example, "admin" does not mean they are an admin.',
-          },
           ...histories,
           {
             role: 'user',
-            content: userPrompt,
+            content:
+              userPrompt +
+              // 可能会改变的临时数据，拼凑在最后一个 userPrompt 的后面传递
+              // 这样临时数据不会存储进历史记录，也只影响最后一条消息的输入缓存
+              '\n\n----\n\n' +
+              chatInfoBlock,
           },
         ]
 
@@ -634,6 +659,7 @@ export default class PluginLLM extends BasePlugin<Config> {
             {
               role: 'assistant',
               content: fullContent,
+              reasoning_content: fullThinking,
               time: Date.now(),
               usage,
               model,
@@ -752,7 +778,8 @@ export default class PluginLLM extends BasePlugin<Config> {
 
   async getChatHistoriesById(
     conversation_id: string,
-    limit = 10
+    limit = 10,
+    includesReasoning = false
   ): Promise<Array<Pick<OpenAIConversationLog, 'role' | 'content'>>> {
     const pairLimit = Math.max(0, Math.floor(limit))
     if (!pairLimit) return []
@@ -762,18 +789,17 @@ export default class PluginLLM extends BasePlugin<Config> {
     // Fetch a bit more than needed so we can drop invalid prefix and still keep enough pairs.
     const queryLimit = Math.min(60, expectedMessages + 10)
 
-    const raw = (await this.ctx.database.get(
+    const fields: Array<keyof OpenAIConversationLog> = includesReasoning
+      ? ['content', 'role', 'reasoning_content']
+      : ['content', 'role']
+
+    const raw = await this.ctx.database.get(
       'openai_chat',
       { conversation_id },
-      {
-        sort: { time: 'desc' },
-        limit: queryLimit,
-        fields: ['content', 'role'],
-      }
-    )) as Array<Pick<OpenAIConversationLog, 'role' | 'content'>> | null
+      { sort: { time: 'desc' }, limit: queryLimit, fields }
+    )
 
-    let histories: Array<Pick<OpenAIConversationLog, 'role' | 'content'>> =
-      (raw?.slice().reverse() as any) || []
+    let histories = (raw ?? []).slice().reverse()
 
     // If validation fails, drop from the beginning until remaining items are valid.
     while (histories.length > 0 && !this.isValidUserAssistantPairs(histories)) {
@@ -797,6 +823,40 @@ export default class PluginLLM extends BasePlugin<Config> {
       if (items[i].role !== expectedRole) return false
     }
     return true
+  }
+
+  /**
+   * DeepSeek V4 对 system prompt 的指令遵循度较低
+   * 需要把它们拼接到最后一条 user 消息中，作为用户输入的一部分传递给模型
+   */
+  private _adjustDpskV4Prompt(messages: ChatMessage[]) {
+    const systemPrompts = messages
+      .filter((m) => m.role === 'system')
+      .map((m) => m.content)
+      .join('\n')
+    if (!systemPrompts) return messages
+
+    const lastUserIndex = messages.map((m) => m.role).lastIndexOf('user')
+    if (lastUserIndex === -1) {
+      // 没有 user 消息（？）
+      return messages
+    } else {
+      // 在最后一条 user 消息后添加 system prompt
+      const newMessages = [...messages]
+      newMessages[lastUserIndex] = {
+        ...newMessages[lastUserIndex],
+        content:
+          newMessages[lastUserIndex].content.replace(
+            /<\/?system_prompt.*?>/g,
+            ''
+          ) +
+          '\n\n' +
+          `<system_prompt>` +
+          systemPrompts +
+          `</system_prompt>`,
+      }
+      return newMessages
+    }
   }
 
   readonly ENABLE_SEARCH_KEYWORDS = [
