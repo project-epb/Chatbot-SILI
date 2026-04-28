@@ -23,6 +23,7 @@ import {
   ChatMessage,
   LLMProviderBase,
 } from './providers/_base'
+import { MemoryStore } from './memory'
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
 
@@ -124,6 +125,7 @@ export default class PluginLLM extends BasePlugin<Config> {
   readonly MODEL_ALIASES: Record<string, string> = {}
   // 用户同时只能进行一个对话，防止在一次对话结束前发起新的对话
   readonly CONVERSATION_LOCKS = new Set<string | number>()
+  readonly memory: MemoryStore = new MemoryStore(this.ctx)
 
   constructor(ctx: Context, config: Config) {
     const defaultConfigs: Partial<Config> = {
@@ -208,6 +210,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         ],
       }
     )
+    MemoryStore.initSchema(this.ctx)
   }
 
   #initCommands() {
