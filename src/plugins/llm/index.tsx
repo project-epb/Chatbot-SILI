@@ -42,9 +42,12 @@ interface OpenAIConversationLog {
   id: number
   conversation_id: string
   conversation_owner: number
-  role: 'system' | 'user' | 'assistant'
+  role: 'system' | 'user' | 'assistant' | 'tool'
   content: string
   reasoning_content: string
+  tool_calls?: string             // JSON 序列化的 ToolCall[]
+  tool_call_id?: string           // tool 角色填
+  tool_name?: string              // tool 角色填，便于日志
   usage?: ChatCompletionUsage
   model?: string
   time: number
@@ -183,7 +186,11 @@ export default class PluginLLM extends BasePlugin<Config> {
         conversation_id: 'string',
         conversation_owner: 'integer',
         role: 'string',
-        content: 'string',
+        content: 'text',
+        reasoning_content: 'text',
+        tool_calls: 'text',
+        tool_call_id: 'string',
+        tool_name: 'string',
         usage: 'json',
         model: 'string',
         time: 'integer',
