@@ -24,6 +24,13 @@ import {
   LLMProviderBase,
   ToolCall,
 } from './providers/_base'
+import { runAgentLoop } from './agent-loop'
+import {
+  buildCommandCatalog,
+  renderCommandCatalog,
+  type CommandCatalogEntry,
+} from './command-catalog'
+import { ToolRegistry, executeKoishiCommandHandler } from './tools'
 import { MemoryStore } from './memory'
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
@@ -128,6 +135,9 @@ export default class PluginLLM extends BasePlugin<Config> {
   // 用户同时只能进行一个对话，防止在一次对话结束前发起新的对话
   readonly CONVERSATION_LOCKS = new Set<string | number>()
   readonly memory: MemoryStore = new MemoryStore(this.ctx)
+  readonly tools: ToolRegistry = new ToolRegistry()
+  private commandCatalog: CommandCatalogEntry[] = []
+  private commandCatalogText: string = ''
 
   constructor(ctx: Context, config: Config) {
     const defaultConfigs: Partial<Config> = {
@@ -175,6 +185,19 @@ export default class PluginLLM extends BasePlugin<Config> {
     if (config.modelAliases) {
       this.MODEL_ALIASES = config.modelAliases
     }
+
+    // 注册内建工具
+    this.tools.register(executeKoishiCommandHandler)
+
+    // 启动后构建命令目录（吃 prompt cache）
+    this.ctx.on('ready', () => {
+      this.commandCatalog = buildCommandCatalog(this.ctx)
+      this.commandCatalogText = renderCommandCatalog(this.commandCatalog)
+      this.logger.info(
+        '[llm] command catalog built, %d top-level commands',
+        this.commandCatalog.length
+      )
+    })
 
     this.ctx.set('llm', this)
   }
@@ -508,27 +531,17 @@ export default class PluginLLM extends BasePlugin<Config> {
         const enableSearch =
           !!options.search || this.quickCheckShouldEnableSearch(userPrompt)
 
-        const stream = provider.streamChatCompletion(
-          chatMessages,
-          {
-            model,
-            maxTokens,
-            temperature: 0.8,
-            topP: 0.8,
-          },
-          {
-            enableThinking: !!options.thinking,
-            thinkingBudget: maxTokens,
-            enableSearch,
-          }
-        )
+        // 用于流式逐字输出的累积缓冲，emoji reaction 检测它非空后停止
+        let sendBuffer = ''
+        let sendFromIndex = 0
+        let lastMessageId: string
 
         // 如果没有开启调试模式，每思考 10 秒发送一个状态指示器
         const emojiCodes = ['181', '285', '267', '312', '284', '37']
         let currentEmojiIndex = -1
         const stopEmojiReaction = cancellableInterval(
           () => {
-            if (sendContentFromIndex || sendThinkingFromIndex) {
+            if (sendBuffer.length > 0) {
               stopEmojiReaction()
             } else {
               currentEmojiIndex = (currentEmojiIndex + 1) % emojiCodes.length
@@ -541,90 +554,124 @@ export default class PluginLLM extends BasePlugin<Config> {
           60 * 1000
         )
 
-        // 读取流式数据
-        let fullThinking = ''
-        let fullContent = ''
-        let sendContentFromIndex = 0
-        let sendThinkingFromIndex = 0
-        let usage: ChatCompletionUsage | undefined
-        let thinkingEnd = false
-        let lastMessageId: string
-        const shouldSendThinking = options.debug
+        // 加载用户记忆
+        const platform =
+          session.platform === 'onebot' ? 'qq' : session.platform || 'unknown'
+        const userId =
+          session.user.id?.toString() || session.userId || 'anonymous'
+        const memoryContent = await this.memory.get(platform, userId)
 
-        // #region chat-stream
-        try {
-          for await (const delta of stream) {
-            if (delta.kind === 'usage') {
-              usage = delta.usage
-              continue
-            }
-            if (delta.kind === 'error') {
-              throw delta.error
-            }
+        // 重新构造 system prompt：原 prompt + 命令目录 + 用户记忆
+        const baseSystemPrompt =
+          typeof options.prompt === 'string'
+            ? options.prompt
+            : this.config.systemPrompt.default
+        const systemPromptParts = [baseSystemPrompt]
+        if (this.commandCatalogText) {
+          systemPromptParts.push(this.commandCatalogText)
+          systemPromptParts.push(
+            [
+              '## 调用工具',
+              '调用 `execute_koishi_command` 时传入 `name`、`args`、`options`。',
+              '调用前请确认指令存在于上述清单中。',
+            ].join('\n')
+          )
+        }
+        if (memoryContent) {
+          systemPromptParts.push(
+            [
+              '## 关于这个用户的长期记忆',
+              memoryContent,
+              '以上记忆由系统周期性自动维护，对话中可参考但不要主动更新。',
+            ].join('\n\n')
+          )
+        }
 
-            if (delta.kind === 'reasoning_content') {
-              const thinking = delta.content
-              fullThinking += thinking
-              if (shouldSendThinking) {
-                const { text, nextIndex } = this.splitContent(
-                  fullThinking,
-                  sendThinkingFromIndex
-                )
-                sendThinkingFromIndex = nextIndex
-                if (text) {
-                  this.logger.info('[chat] thinking:', text)
-                  stopEmojiReaction()
-                  ;[lastMessageId = lastMessageId] = await session.sendQueued(
-                    <>
-                      {lastMessageId && <quote id={lastMessageId}></quote>}
-                      [内心独白] {text}
-                    </>
-                  )
-                }
-              }
-            }
+        chatMessages[0] = {
+          role: 'system',
+          content: systemPromptParts.join('\n\n'),
+        }
 
-            if (delta.kind === 'content') {
-              const content = delta.content
-              // End thinking phase
-              if (!thinkingEnd) {
-                thinkingEnd = true
-                this.logger.info('[chat] think end:', fullThinking)
-                if (
-                  fullThinking &&
-                  sendThinkingFromIndex < fullThinking.length &&
-                  shouldSendThinking
-                ) {
-                  stopEmojiReaction()
-                  ;[lastMessageId = lastMessageId] = await session.sendQueued(
-                    <>
-                      {lastMessageId && <quote id={lastMessageId}></quote>}
-                      [内心独白] {fullThinking.slice(sendThinkingFromIndex)}
-                    </>
-                  )
-                }
+        // 逐字流给用户的 helper
+        const flushVisibleText = async (force: boolean) => {
+          const next = force
+            ? {
+                text: sendBuffer.slice(sendFromIndex),
+                nextIndex: sendBuffer.length,
               }
-              // Send content
-              fullContent += content
-              const { text, nextIndex } = this.splitContent(
-                fullContent,
-                sendContentFromIndex
-              )
-              sendContentFromIndex = nextIndex
-              if (text) {
-                this.logger.info('[chat] sending:', text)
-                stopEmojiReaction()
-                ;[lastMessageId = lastMessageId] = await session.sendQueued(
-                  <>
-                    {lastMessageId && <quote id={lastMessageId}></quote>}
-                    {text}
-                  </>
-                )
-              }
-            }
+            : this.splitContent(sendBuffer, sendFromIndex)
+          if (next.text) {
+            stopEmojiReaction()
+            ;[lastMessageId = lastMessageId] = await session.sendQueued(
+              <>
+                {lastMessageId && <quote id={lastMessageId}></quote>}
+                {next.text}
+              </>
+            )
           }
+          sendFromIndex = next.nextIndex
+        }
+
+        // 如果禁用 agent，临时使用一个空 registry
+        const effectiveRegistry =
+          this.config.enableAgent === false ? new ToolRegistry() : this.tools
+
+        let agentResult: Awaited<ReturnType<typeof runAgentLoop>>
+        try {
+          agentResult = await runAgentLoop({
+            ctx: this.ctx,
+            provider,
+            messages: chatMessages,
+            options: {
+              model,
+              maxTokens,
+              temperature: 0.8,
+              topP: 0.8,
+            },
+            features: {
+              enableThinking: !!options.thinking,
+              thinkingBudget: maxTokens,
+              enableSearch,
+            },
+            registry: effectiveRegistry,
+            maxIterations: this.config.maxToolIterations ?? 5,
+            showToolCallNotice: this.config.showToolCallNotice ?? true,
+            session,
+            logger: this.logger,
+            onUserVisibleText: async (chunk) => {
+              sendBuffer += chunk
+              await flushVisibleText(false)
+            },
+            onAssistantRecord: async (record) => {
+              await this.ctx.database.create('openai_chat', {
+                conversation_owner,
+                conversation_id,
+                role: 'assistant',
+                content: record.content,
+                reasoning_content: record.reasoningContent,
+                tool_calls: record.toolCalls
+                  ? JSON.stringify(record.toolCalls)
+                  : undefined,
+                usage: record.usage,
+                model: record.model,
+                time: record.time,
+              } as any)
+            },
+            onToolRecord: async (record) => {
+              await this.ctx.database.create('openai_chat', {
+                conversation_owner,
+                conversation_id,
+                role: 'tool',
+                content: record.content,
+                reasoning_content: '',
+                tool_call_id: record.toolCallId,
+                tool_name: record.toolName,
+                time: record.time,
+              } as any)
+            },
+          })
         } catch (e) {
-          this.logger.error('[chat] stream error:', e)
+          this.logger.error('[chat] agent loop error:', e)
           return (
             <>
               <quote id={session.messageId}></quote>
@@ -635,56 +682,34 @@ export default class PluginLLM extends BasePlugin<Config> {
           this.CONVERSATION_LOCKS.delete(conversation_owner)
           stopEmojiReaction()
         }
-        //#endregion
 
         // 处理剩余的文本
-        if (sendContentFromIndex < fullContent.length) {
-          const text = fullContent.slice(sendContentFromIndex)
-          this.logger.info('[chat] send remaining:', text)
-          ;[lastMessageId = lastMessageId] = await session.sendQueued(
-            <>
-              {lastMessageId && <quote id={lastMessageId}></quote>}
-              {text}
-            </>
-          )
-        }
+        await flushVisibleText(true)
 
-        if (usage && options.debug) {
+        if (agentResult.totalUsage && options.debug) {
           await session.sendQueued(
             <>
               {lastMessageId && <quote id={lastMessageId}></quote>}
-              {JSON.stringify(usage, null, 2)}
+              {JSON.stringify(agentResult.totalUsage, null, 2)}
             </>
           )
         }
 
-        this.logger.success('[chat] stream end:', {
-          fullThinking,
-          fullContent,
-          usage,
+        this.logger.success('[chat] agent end:', {
+          iterations: agentResult.iterations,
+          fullContent: agentResult.fullContent,
+          usage: agentResult.totalUsage,
         })
 
-        if (fullContent) {
-          // save conversations to database
-          ;[
-            { role: 'user', content: userPrompt, time: startTime },
-            {
-              role: 'assistant',
-              content: fullContent,
-              reasoning_content: fullThinking,
-              time: Date.now(),
-              usage,
-              model,
-            },
-          ].forEach((item) =>
-            // @ts-ignore
-            this.ctx.database.create('openai_chat', {
-              ...item,
-              conversation_owner,
-              conversation_id,
-            })
-          )
-        }
+        // 落库 user 消息（time 早于其他记录，按 time 排序仍正确）
+        await this.ctx.database.create('openai_chat', {
+          conversation_owner,
+          conversation_id,
+          role: 'user',
+          content: userPrompt,
+          reasoning_content: '',
+          time: startTime,
+        } as any)
       })
 
     this.ctx
