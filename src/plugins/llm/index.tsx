@@ -22,10 +22,12 @@ import {
   ChatCompletionUsage,
   ChatMessage,
   LLMProviderBase,
+  ToolCall,
 } from './providers/_base'
 import { MemoryStore } from './memory'
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
+import { groupAndTrimHistory, type HistoryRow } from './history-filter'
 
 declare module 'koishi' {
   export interface Tables {
@@ -790,49 +792,59 @@ export default class PluginLLM extends BasePlugin<Config> {
     conversation_id: string,
     limit = 10,
     includesReasoning = false
-  ): Promise<Array<Pick<OpenAIConversationLog, 'role' | 'content'>>> {
-    const pairLimit = Math.max(0, Math.floor(limit))
-    if (!pairLimit) return []
+  ): Promise<ChatMessage[]> {
+    const userTurnLimit = Math.max(0, Math.floor(limit))
+    if (!userTurnLimit) return []
 
-    const expectedMessages = pairLimit * 2
+    // 一个回合最多 1 user + N assistant(tool_calls) + N tool + 1 final assistant
+    const queryLimit = Math.min(200, userTurnLimit * 8 + 20)
 
-    // Fetch a bit more than needed so we can drop invalid prefix and still keep enough pairs.
-    const queryLimit = Math.min(60, expectedMessages + 10)
-
-    const fields: Array<keyof OpenAIConversationLog> = includesReasoning
-      ? ['content', 'role', 'reasoning_content']
-      : ['content', 'role']
-
-    const raw = await this.ctx.database.get(
+    const raw = (await this.ctx.database.get(
       'openai_chat',
       { conversation_id },
-      { sort: { time: 'desc' }, limit: queryLimit, fields }
-    )
+      {
+        sort: { time: 'desc' },
+        limit: queryLimit,
+        fields: [
+          'content',
+          'role',
+          'reasoning_content',
+          'tool_calls',
+          'tool_call_id',
+          'tool_name',
+        ],
+      }
+    )) as Array<HistoryRow & { reasoning_content?: string }> | null
 
-    let histories = (raw ?? []).slice().reverse()
+    const rowsAsc = (raw ?? []).slice().reverse()
 
-    // If validation fails, drop from the beginning until remaining items are valid.
-    while (histories.length > 0 && !this.isValidUserAssistantPairs(histories)) {
-      histories = histories.slice(1)
-    }
+    const trimmed = groupAndTrimHistory(rowsAsc, userTurnLimit)
 
-    if (histories.length > expectedMessages) {
-      histories = histories.slice(histories.length - expectedMessages)
-    }
-
-    return histories
-  }
-
-  private isValidUserAssistantPairs(items: any[]) {
-    if (items.length === 0) return true
-    if (items.length % 2 !== 0) return false
-    if (items[0].role !== 'user') return false
-    if (items[items.length - 1].role !== 'assistant') return false
-    for (let i = 0; i < items.length; i++) {
-      const expectedRole = i % 2 === 0 ? 'user' : 'assistant'
-      if (items[i].role !== expectedRole) return false
-    }
-    return true
+    // 转回 ChatMessage 形态
+    return trimmed.map((row): ChatMessage => {
+      if (row.role === 'tool') {
+        return {
+          role: 'tool',
+          tool_call_id: row.tool_call_id ?? '',
+          tool_name: row.tool_name ?? '',
+          content: row.content,
+        }
+      }
+      if (row.role === 'assistant') {
+        const tool_calls = row.tool_calls
+          ? (JSON.parse(row.tool_calls) as ToolCall[])
+          : undefined
+        return {
+          role: 'assistant',
+          content: row.content,
+          tool_calls,
+          ...(includesReasoning && row.reasoning_content
+            ? { reasoning_content: row.reasoning_content }
+            : {}),
+        }
+      }
+      return { role: row.role as 'user' | 'system', content: row.content }
+    })
   }
 
   /**
