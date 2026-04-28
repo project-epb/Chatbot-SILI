@@ -710,6 +710,19 @@ export default class PluginLLM extends BasePlugin<Config> {
           reasoning_content: '',
           time: startTime,
         } as any)
+
+        // 异步触发 memory fork（不阻塞主对话）
+        this.maybeTriggerMemoryFork({
+          platform,
+          userId,
+          conversation_id,
+          conversation_owner,
+          provider,
+          model,
+          maxTokens,
+        }).catch((e) =>
+          this.logger.warn('[memory-fork] schedule failed:', e)
+        )
       })
 
     this.ctx
@@ -869,6 +882,51 @@ export default class PluginLLM extends BasePlugin<Config> {
         }
       }
       return { role: row.role as 'user' | 'system', content: row.content }
+    })
+  }
+
+  private async maybeTriggerMemoryFork(args: {
+    platform: string
+    userId: string
+    conversation_id: string
+    conversation_owner: number
+    provider: LLMProviderBase
+    model: string
+    maxTokens: number
+  }) {
+    const interval = this.config.memoryUpdateInterval ?? 10
+    const byteLimit = this.config.memoryByteLimit ?? 8192
+
+    const meta = await this.memory.getMeta(args.platform, args.userId)
+    const userMessages = await this.ctx.database.get(
+      'openai_chat',
+      {
+        conversation_owner: args.conversation_owner,
+        role: 'user',
+      },
+      { fields: ['id'] }
+    )
+    const userMessageCount = userMessages?.length ?? 0
+    const since = userMessageCount - (meta?.message_count_at_update ?? 0)
+    if (since < interval) return
+
+    // 拉取对话上下文
+    const history = await this.getChatHistoriesById(args.conversation_id, 50)
+
+    const { maybeRunMemoryFork } = await import('./memory-fork')
+    await maybeRunMemoryFork({
+      ctx: this.ctx,
+      logger: this.logger,
+      store: this.memory,
+      provider: args.provider,
+      model: args.model,
+      maxTokens: args.maxTokens,
+      byteLimit,
+      platform: args.platform,
+      userId: args.userId,
+      conversationId: args.conversation_id,
+      currentMessageCount: userMessageCount,
+      history,
     })
   }
 
