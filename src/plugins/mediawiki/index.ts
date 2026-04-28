@@ -47,7 +47,7 @@ const DEFAULT_CONFIGS: Config = {
 export { Config }
 
 export const name = 'mediawiki'
-export default class PluginMediawiki extends BasePlugin {
+export default class PluginMediawiki extends BasePlugin<Config> {
   static inject = ['database', 'puppeteer']
 
   readonly INFOBOX_DEFINITION = INFOBOX_DEFINITION
