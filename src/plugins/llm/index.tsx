@@ -92,6 +92,13 @@ export interface Config {
     [key: string]: string
   }>
   modelAliases?: Record<string, string>
+
+  // Agent 改造新增
+  enableAgent?: boolean
+  maxToolIterations?: number
+  showToolCallNotice?: boolean
+  memoryByteLimit?: number
+  memoryUpdateInterval?: number
 }
 export declare const Config: Config
 
@@ -145,6 +152,11 @@ export default class PluginLLM extends BasePlugin<Config> {
       reasoningModel: 'gpt-o1-mini',
       maxTokens: 8192,
       historyMessageCount: 10,
+      enableAgent: true,
+      maxToolIterations: 5,
+      showToolCallNotice: true,
+      memoryByteLimit: 8192,
+      memoryUpdateInterval: 10,
       systemPrompt: {
         default: PluginLLM.readPromptFile('SILI-v5.prompt.md'),
       },
