@@ -2,7 +2,7 @@
  * @name MgpGroupUtils
  * @desc 内部插件，萌娘百科B站粉丝群工具箱
  */
-import { Context, Time, h, segment } from 'koishi'
+import { Context, Session, Time, h, segment } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
@@ -21,11 +21,7 @@ declare module 'koishi' {
 export default class MoegirlGroupUtils extends BasePlugin {
   // Constants
   readonly MUTE_DURATION = [0, 10 * Time.minute, 2 * Time.hour, 1 * Time.day]
-  readonly KEYWORDS_BLACKLIST =
-    process.env.MOEGIRL_KEYWORDS_BLACKLIST?.split('\n')
-      .map((i) => i.trim())
-      .filter((i) => !!i)
-      .map((i) => new RegExp(i)) || []
+  private KEYWORDS_BLACKLIST: RegExp[] = []
   readonly COMMAND_WHITELIST = [
     'chat',
     'dialogue',
@@ -42,16 +38,24 @@ export default class MoegirlGroupUtils extends BasePlugin {
   constructor(public ctx: Context) {
     super(ctx, {}, 'mgp-utils')
 
+    this.KEYWORDS_BLACKLIST =
+      process.env.MOEGIRL_KEYWORDS_BLACKLIST?.split('\n')
+        .map((i) => i.trim())
+        .filter((i) => !!i)
+        .map((i) => new RegExp(i)) || []
+
     ctx.model.extend('user', {
       mgpGroupSpamLogs: 'list',
     })
 
-    ctx = ctx.channel(
-      ...(process.env.CHANNEL_QQ_MOEGIRL_BFANS as string).split('|')
-    )
+    const isMoegirlChannel = (session: Session) =>
+      process.env.CHANNEL_QQ_MOEGIRL_BFANS?.split('|').includes(
+        session.channelId
+      )
 
     // 指令白名单
     ctx.on('command/before-execute', async ({ command, session }) => {
+      if (!isMoegirlChannel(session)) return
       const hitWhiteList = this.COMMAND_WHITELIST.some((i) =>
         command?.name?.startsWith(i)
       )
@@ -69,6 +73,7 @@ export default class MoegirlGroupUtils extends BasePlugin {
 
     // 自动禁言
     ctx.on('message', async (session) => {
+      if (!isMoegirlChannel(session)) return
       if (!this.KEYWORDS_BLACKLIST.length)
         return this.logger.warn('missing KEYWORDS_BLACKLIST')
 
@@ -112,9 +117,7 @@ export default class MoegirlGroupUtils extends BasePlugin {
         `keywords: ${hitBlackList[1]}`,
         `${session.content}`,
         `该用户第【${count}】次触发关键词，本次将【${
-          duration === Infinity
-            ? '踢出群聊'
-            : '禁言 ' + Time.format(duration)
+          duration === Infinity ? '踢出群聊' : '禁言 ' + Time.format(duration)
         }】`,
       ].join('\n')
 
@@ -151,6 +154,7 @@ export default class MoegirlGroupUtils extends BasePlugin {
 
     // 入群监控
     ctx.on('guild-member-request', async (sess) => {
+      if (!isMoegirlChannel(sess)) return
       const data = await sess.app.database.getUser(
         sess.platform,
         sess.userId as string,

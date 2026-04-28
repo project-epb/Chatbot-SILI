@@ -10,8 +10,12 @@ export default class MessagesLogger extends BasePlugin {
   constructor(public ctx: Context) {
     super(ctx, {}, 'message')
 
+    ctx.on('before-attach-channel', (session, fields) => {
+      fields.add('name')
+    })
+
     ctx.on('message', (session) => {
-      const content = this.toSlimContent(session.content) || '[UNKNOWN]'
+      const content = this.toSlimContent(session.content) ?? '[UNKNOWN]'
       this.logger.info(
         `${session.platform}${
           session.event.guild
@@ -22,9 +26,9 @@ export default class MessagesLogger extends BasePlugin {
       )
     })
 
-    ctx.before('send', (session) => {
+    ctx.on('send', (session) => {
       const content = this.toSlimContent(
-        session.content || session.elements?.join('') || '[UNKNOWN]'
+        session.content ?? session.elements?.join('') ?? '[UNKNOWN]'
       )
       ctx
         .logger('SEND')
