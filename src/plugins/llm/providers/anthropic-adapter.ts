@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk'
-import type { ChatMessage } from './_base'
+import type { ChatMessage, StreamChatDelta } from './_base'
 
 export function splitSystemMessages(messages: ChatMessage[]): {
   system: string
@@ -59,4 +59,52 @@ export function toAnthropicMessages(
 
   flush()
   return out
+}
+
+interface AnthropicBlockState {
+  type: 'text' | 'tool_use' | string
+  id?: string
+  name?: string
+  argText: string
+}
+
+export class AnthropicStreamAggregator {
+  private blocks = new Map<number, AnthropicBlockState>()
+
+  startBlock(
+    index: number,
+    block: { type: string; id?: string; name?: string }
+  ): void {
+    this.blocks.set(index, {
+      type: block.type,
+      id: block.id,
+      name: block.name,
+      argText: '',
+    })
+  }
+
+  appendInputJson(index: number, partial: string): void {
+    const state = this.blocks.get(index)
+    if (state) state.argText += partial
+  }
+
+  finalizeBlock(
+    index: number
+  ): Extract<StreamChatDelta, { kind: 'tool_call' }> | null {
+    const state = this.blocks.get(index)
+    if (!state) return null
+    if (state.type !== 'tool_use') return null
+    let args: Record<string, any>
+    try {
+      args = state.argText ? JSON.parse(state.argText) : {}
+    } catch (e) {
+      throw new Error(
+        `Tool call JSON parse failed for ${state.name}: ${state.argText}`
+      )
+    }
+    return {
+      kind: 'tool_call',
+      toolCall: { id: state.id!, name: state.name!, arguments: args },
+    }
+  }
 }
