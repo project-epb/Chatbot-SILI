@@ -1,5 +1,5 @@
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
-import type { ChatMessage } from './_base'
+import type { ChatMessage, ToolCall } from './_base'
 
 export function toOpenAIMessage(msg: ChatMessage): ChatCompletionMessageParam {
   switch (msg.role) {
@@ -30,5 +30,50 @@ export function toOpenAIMessage(msg: ChatMessage): ChatCompletionMessageParam {
       return { role: 'user', content: msg.content }
     case 'system':
       return { role: 'system', content: msg.content }
+  }
+}
+
+interface OpenAIToolCallDelta {
+  index: number
+  id?: string
+  type?: 'function'
+  function?: { name?: string; arguments?: string }
+}
+
+interface ToolCallBuffer {
+  id: string
+  name: string
+  argText: string
+}
+
+export class OpenAIStreamAggregator {
+  private toolCallBuffer = new Map<number, ToolCallBuffer>()
+
+  absorbToolCallDeltas(deltas: OpenAIToolCallDelta[] | undefined): void {
+    for (const tc of deltas ?? []) {
+      const buf =
+        this.toolCallBuffer.get(tc.index) ??
+        ({ id: '', name: '', argText: '' } as ToolCallBuffer)
+      if (tc.id) buf.id = tc.id
+      if (tc.function?.name) buf.name = tc.function.name
+      if (tc.function?.arguments) buf.argText += tc.function.arguments
+      this.toolCallBuffer.set(tc.index, buf)
+    }
+  }
+
+  finalizeToolCalls(): ToolCall[] {
+    const out: ToolCall[] = []
+    for (const buf of this.toolCallBuffer.values()) {
+      let args: Record<string, any>
+      try {
+        args = buf.argText ? JSON.parse(buf.argText) : {}
+      } catch (e) {
+        throw new Error(
+          `Tool call JSON parse failed for ${buf.name}: ${buf.argText}`
+        )
+      }
+      out.push({ id: buf.id, name: buf.name, arguments: args })
+    }
+    return out
   }
 }
