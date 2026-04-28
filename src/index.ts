@@ -119,14 +119,19 @@ const { env } = process
 const app = new App({
   nickname: env.KOISHI_NICKNAME?.split('|'),
   prefix: (ctx) => {
+    // QQ官方适配器，必须at才能收到消息，无需前缀
     if (['qq', 'qqguild'].includes(ctx.platform)) {
       return ''
     }
-    const items = env.KOISHI_PREFIX?.split('|') || []
-    if (['villa', 'discord'].includes(ctx.platform)) {
-      items.unshift('/')
+    // 钉钉适配器，必须at才能收到消息，无需前缀
+    if (ctx.platform === 'dingtalk') {
+      return ''
     }
-    return items
+    const prefixes = env.KOISHI_PREFIX?.split('|') || []
+    if (['villa', 'discord'].includes(ctx.platform)) {
+      prefixes.unshift('/')
+    }
+    return prefixes
   },
   minSimilarity: 0.8,
   delay: {
@@ -197,6 +202,22 @@ app.plugin(function PluginCollectionAdapters(ctx) {
       appkey: DINGTALK_APPKEY,
       secret: DINGTALK_SECRET,
     })
+    // FIX: AdapterDingtalk 没有正确处理应答，导致钉钉会重复发送消息，我们只能在这里做一下去重处理
+    const _handledMsgIds: string[] = []
+    ctx.on('message', (session) => {
+      if (session.platform !== 'dingtalk') return
+      const eventId = session.messageId
+      if (_handledMsgIds.includes(eventId)) {
+        ctx
+          .logger('DINGTALK')
+          .debug(`Ignore duplicated event ${eventId} from DingTalk`)
+        return ''
+      }
+      _handledMsgIds.push(eventId)
+      if (_handledMsgIds.length > 100) {
+        _handledMsgIds.splice(0, _handledMsgIds.length - 100)
+      }
+    })
   }
 
   if (env.KOOK_TOKEN) {
@@ -240,7 +261,7 @@ app.plugin(function PluginCollectionLegacy(ctx) {
   // [core]
   ctx.plugin(function PluginCollectionLegacyCore(ctx) {
     ctx.plugin(PluginHelp)
-    ctx.command('help').alias('帮助')
+    // ctx.command('help').alias('帮助')
     ctx.plugin(PluginCommands)
     ctx.plugin(PluginSwitch)
     ctx.plugin(PluginAssetsS3, {
@@ -265,7 +286,6 @@ app.plugin(function PluginCollectionLegacy(ctx) {
     ctx.plugin(PluginBroadcast)
     ctx.plugin(PluginCallme)
     ctx.plugin(PluginEcho)
-    ctx.command('echo', { authority: 3 })
     ctx.plugin(PluginRateLimit)
     ctx.plugin(PluginRecall)
   })
@@ -314,11 +334,11 @@ app.plugin(async function PluginCollectionThirdParty(ctx) {
   // 魔女审判
   ctx.plugin(PluginBasedata)
   ctx.plugin(PluginManosabaMemes)
-  ctx.command('manosaba').usage(`魔法少女的魔女审判`)
-  ctx.command('manosaba.安安说').alias('安安说')
-  ctx.command('manosaba.审判').alias('魔女审判')
-    .example(`基础陈述：赞同、疑问、伪证、反驳、魔法-角色名
-可用角色名：梅露露、诺亚、汉娜、奈叶香、亚里沙、米莉亚、雪莉、艾玛、玛格、安安、可可、希罗、蕾雅`)
+  //   ctx.command('manosaba').usage(`魔法少女的魔女审判`)
+  //   ctx.command('manosaba.安安说').alias('安安说')
+  //   ctx.command('manosaba.审判').alias('魔女审判')
+  //     .example(`基础陈述：赞同、疑问、伪证、反驳、魔法-角色名
+  // 可用角色名：梅露露、诺亚、汉娜、奈叶香、亚里沙、米莉亚、雪莉、艾玛、玛格、安安、可可、希罗、蕾雅`)
 })
 
 app.plugin(function PluginCollectionDialogue(ctx) {
@@ -418,8 +438,8 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   ctx.plugin(PluginMediawiki, {
     searchIfNotExist: true,
     showDetailsByDefault: true,
+    cmdAuthConnect: 2,
   })
-  ctx.command('wiki.connect').config.authority = 2
 })
 
 // Internal utils

@@ -27,7 +27,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.86.1",
     "@cordisjs/plugin-http": "^0.6.3",
-    "@koishijs/plugin-adapter-dingtalk": "^2.4.2",
+    "@koishijs/plugin-adapter-dingtalk": "^2.5.0",
     "@koishijs/plugin-adapter-discord": "^4.5.10",
     "@koishijs/plugin-adapter-kook": "^4.7.0",
     "@koishijs/plugin-adapter-qq": "^4.10.1",

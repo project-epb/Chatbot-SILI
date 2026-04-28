@@ -7,7 +7,7 @@
       "dependencies": {
         "@anthropic-ai/sdk": "^0.86.1",
         "@cordisjs/plugin-http": "^0.6.3",
-        "@koishijs/plugin-adapter-dingtalk": "^2.4.2",
+        "@koishijs/plugin-adapter-dingtalk": "^2.5.0",
         "@koishijs/plugin-adapter-discord": "^4.5.10",
         "@koishijs/plugin-adapter-kook": "^4.7.0",
         "@koishijs/plugin-adapter-qq": "^4.10.1",
@@ -272,7 +272,7 @@
 
     "@koishijs/loader": ["@koishijs/loader@4.6.9", "https://registry.npmmirror.com/@koishijs/loader/-/loader-4.6.9.tgz", { "dependencies": { "dotenv": "^16.4.5", "js-yaml": "^4.1.0", "ns-require": "^1.1.4" }, "peerDependencies": { "@koishijs/core": "4.18.9" } }, "sha512-3dAGRMjQ7b798mrenauGJ5yjIAVsM8+E3T6xFftQrgzPzFkdS9tqImjAv7Ye5syhRQ09JFdXAKAjbtOlGIVR8g=="],
 
-    "@koishijs/plugin-adapter-dingtalk": ["@koishijs/plugin-adapter-dingtalk@2.4.2", "https://registry.npmmirror.com/@koishijs/plugin-adapter-dingtalk/-/plugin-adapter-dingtalk-2.4.2.tgz", { "dependencies": { "@satorijs/adapter-dingtalk": "2.4.2" }, "peerDependencies": { "koishi": "4.18.0" } }, "sha512-bXaeyZSh2br2n6vhTfVKfhOX/Fvz296+TvO8NLXtJ6Jekdi37xPmwedjWx2BH0DDeB+WL0mBWHaAtj9ty6VzVg=="],
+    "@koishijs/plugin-adapter-dingtalk": ["@koishijs/plugin-adapter-dingtalk@2.5.0", "https://registry.npmmirror.com/@koishijs/plugin-adapter-dingtalk/-/plugin-adapter-dingtalk-2.5.0.tgz", { "dependencies": { "@satorijs/adapter-dingtalk": "^2.5.0" }, "peerDependencies": { "koishi": "^4.18.11" } }, "sha512-ee26OxX62Yy84pib3D6HctvTfwvBe+FJ0d+XUxYLKehJPthHJQiGQbArxvzTqAYDPcVbU799BLittae26K89Fg=="],
 
     "@koishijs/plugin-adapter-discord": ["@koishijs/plugin-adapter-discord@4.5.10", "https://registry.npmmirror.com/@koishijs/plugin-adapter-discord/-/plugin-adapter-discord-4.5.10.tgz", { "dependencies": { "@satorijs/adapter-discord": "^4.5.10" }, "peerDependencies": { "koishi": "^4.18.4" } }, "sha512-/hZtop7Fzza/J9bSx1igzTzxvljfoZtyuX0B74mhw5XvnooTB6tUP9C2E2B42PSNOgOMitreHQNoFzGfIJ3QMw=="],
 
@@ -352,7 +352,7 @@
 
     "@puppeteer/browsers": ["@puppeteer/browsers@2.11.0", "https://registry.npmmirror.com/@puppeteer/browsers/-/browsers-2.11.0.tgz", { "dependencies": { "debug": "^4.4.3", "extract-zip": "^2.0.1", "progress": "^2.0.3", "proxy-agent": "^6.5.0", "semver": "^7.7.3", "tar-fs": "^3.1.1", "yargs": "^17.7.2" }, "bin": { "browsers": "lib/cjs/main-cli.js" } }, "sha512-n6oQX6mYkG8TRPuPXmbPidkUbsSRalhmaaVAQxvH1IkQy63cwsH+kOjB3e4cpCDHg0aSvsiX9bQ4s2VB6mGWUQ=="],
 
-    "@satorijs/adapter-dingtalk": ["@satorijs/adapter-dingtalk@2.4.2", "https://registry.npmmirror.com/@satorijs/adapter-dingtalk/-/adapter-dingtalk-2.4.2.tgz", { "peerDependencies": { "@satorijs/core": "4.2.10" } }, "sha512-9HkYFc6v0g+z7o9oTKFY1x9QppM/D4+CasvZs3Ow0zAMPXIovNcBD0lsZ/rms6rOwKgMh7g327ucvIMcAWWGTQ=="],
+    "@satorijs/adapter-dingtalk": ["@satorijs/adapter-dingtalk@2.5.0", "https://registry.npmmirror.com/@satorijs/adapter-dingtalk/-/adapter-dingtalk-2.5.0.tgz", { "peerDependencies": { "@satorijs/core": "^4.6.0" } }, "sha512-79MgwbkHjKKBMjv63SG7Wr2RnadD2pig//F3uVeB7NJgZUj6glFVdzneBRpl/r5aWBZysGyRr9Iel+IE6XGmNg=="],
 
     "@satorijs/adapter-discord": ["@satorijs/adapter-discord@4.5.10", "https://registry.npmmirror.com/@satorijs/adapter-discord/-/adapter-discord-4.5.10.tgz", { "peerDependencies": { "@satorijs/core": "^4.3.3" } }, "sha512-ac5Rt9b9bzKjx6+MNN+78Hwbw7+Jc/kal1cvR2BFnMCQFo7QwPx0yr5HSusTBe0gYree5KXMRPaAvfiA0CMGLg=="],
 
@@ -1494,8 +1494,6 @@
 
     "@puppeteer/browsers/tar-fs": ["tar-fs@3.1.1", "https://registry.npmmirror.com/tar-fs/-/tar-fs-3.1.1.tgz", { "dependencies": { "pump": "^3.0.0", "tar-stream": "^3.1.5" }, "optionalDependencies": { "bare-fs": "^4.0.1", "bare-path": "^3.0.0" } }, "sha512-LZA0oaPOc2fVo82Txf3gw+AkEd38szODlptMYejQUhndHMLQ9M059uXR+AfS7DNo0NpINvSqDsvyaCrBVkptWg=="],
 
-    "@satorijs/adapter-dingtalk/@satorijs/core": ["@satorijs/core@4.2.10", "https://registry.npmmirror.com/@satorijs/core/-/core-4.2.10.tgz", { "dependencies": { "@cordisjs/plugin-http": "0.6.3", "@satorijs/element": "3.1.7", "@satorijs/protocol": "1.4.2", "cosmokit": "1.6.3" }, "peerDependencies": { "cordis": "3.18.1" } }, "sha512-bruQufuoosE1UVqIZpBMtqkZEOMdY5uPVRDJfETXWbGpB5t2nzmWVUxQm0tShLlhnhfoa4Dbx81eEXr3aEA4BQ=="],
-
     "@satorijs/core/@satorijs/element": ["@satorijs/element@3.1.8", "https://registry.npmmirror.com/@satorijs/element/-/element-3.1.8.tgz", { "dependencies": { "cosmokit": "^1.7.2" } }, "sha512-Sm+YCO0GMKDtAsQ+JKZ6aJeJZYVeMehqmzk4EJr57MnvZt5kP9iqtN8vYOZc/idE69Y5nA/jxKNCSrgrm1yYrA=="],
 
     "@satorijs/core/cosmokit": ["cosmokit@1.8.0", "https://registry.npmmirror.com/cosmokit/-/cosmokit-1.8.0.tgz", {}, "sha512-iTnjvOdRKzmcZGSTamFW/pwlDLNBKkIEjk43Ew40YaxSayogY6OsCV40sSTb2dlvD3stR14bLh04qOoQZzX/0Q=="],
@@ -1637,8 +1635,6 @@
     "@oclif/plugin-warn-if-update-available/@oclif/core/js-yaml": ["js-yaml@3.14.1", "https://registry.npmmirror.com/js-yaml/-/js-yaml-3.14.1.tgz", { "dependencies": { "argparse": "1.0.10", "esprima": "4.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-okMH7OXXJ7YrN9Ok3/SXrnu4iX9yOk+25nqX4imS2npuvTYDmo/QEZoqwZkYaIDk3jVvBOTOIEgEhaLOynBS9g=="],
 
     "@puppeteer/browsers/tar-fs/tar-stream": ["tar-stream@3.1.7", "https://registry.npmmirror.com/tar-stream/-/tar-stream-3.1.7.tgz", { "dependencies": { "b4a": "1.6.7", "fast-fifo": "1.3.2", "streamx": "2.20.1" } }, "sha512-qJj60CXt7IU1Ffyc3NJMjh6EkuCFej46zUqJ4J7pqYlThyd9bO0XBTmcOIhSzZJVWfsLks0+nle/j538YAW9RQ=="],
-
-    "@satorijs/adapter-dingtalk/@satorijs/core/@satorijs/protocol": ["@satorijs/protocol@1.4.2", "https://registry.npmmirror.com/@satorijs/protocol/-/protocol-1.4.2.tgz", { "dependencies": { "@satorijs/element": "3.1.7", "cosmokit": "1.6.3" } }, "sha512-02YnG2aK0VB0E/PCm60lPH5Wn8j66qPDM9gLKkNldz538rlCh6SRrt8M38RFH0CRus6vHFLXhbCKnC23TtW5yQ=="],
 
     "@types/accepts/@types/node/undici-types": ["undici-types@6.21.0", "https://registry.npmmirror.com/undici-types/-/undici-types-6.21.0.tgz", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
