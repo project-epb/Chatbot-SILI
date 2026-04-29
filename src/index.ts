@@ -412,7 +412,7 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   }
   ctx.plugin(PluginLLM, {
     providers: parseLLMProviders(env),
-    maxTokens: env.LLM_MAX_TOKENS ? Number(env.LLM_MAX_TOKENS) : 4096,
+    maxTokens: env.LLM_MAX_TOKENS ? Number(env.LLM_MAX_TOKENS) : 16384,
     model: env.LLM_MODEL || 'gpt-4o',
     memoryModel: env.LLM_AGENT_MEMORY_MODEL,
   })

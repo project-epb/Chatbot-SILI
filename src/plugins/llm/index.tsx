@@ -32,7 +32,7 @@ import {
 } from './command-catalog'
 import { ToolRegistry, executeKoishiCommandHandler } from './tools'
 import { MemoryStore } from './memory'
-import { resolveThinkingLevel } from './thinking'
+import { clampThinkingBudget, resolveThinkingLevel } from './thinking'
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
 import { groupAndTrimHistory, type HistoryRow } from './history-filter'
@@ -491,12 +491,16 @@ export default class PluginLLM extends BasePlugin<Config> {
           this.config.model ||
           'gpt-4o-mini'
 
-        const { enableThinking, thinkingBudget } = resolveThinkingLevel(
-          options.think
-        )
-
         const maxTokens =
           providerConfig?.maxTokens ?? this.config.maxTokens ?? 1024
+
+        const { enableThinking: rawEnableThinking, thinkingBudget: rawBudget } =
+          resolveThinkingLevel(options.think)
+        const safeBudget = rawEnableThinking
+          ? clampThinkingBudget(rawBudget, maxTokens)
+          : 0
+        const enableThinking = rawEnableThinking && safeBudget > 0
+        const thinkingBudget = safeBudget
 
         const histories = await this.getChatHistoriesById(
           conversation_id,

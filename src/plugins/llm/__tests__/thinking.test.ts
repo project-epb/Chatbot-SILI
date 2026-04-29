@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveThinkingLevel } from '../thinking'
+import { clampThinkingBudget, resolveThinkingLevel } from '../thinking'
 
 describe('resolveThinkingLevel', () => {
   it('defaults to low when undefined', () => {
@@ -19,17 +19,17 @@ describe('resolveThinkingLevel', () => {
   it('is case-insensitive and trims whitespace', () => {
     expect(resolveThinkingLevel('  HIGH \n')).toEqual({
       enableThinking: true,
-      thinkingBudget: 4096,
+      thinkingBudget: 8192,
     })
   })
 
   it.each([
     ['low', 1024],
-    ['medium', 2048],
-    ['mid', 2048],
-    ['high', 4096],
-    ['xhigh', 8192],
-    ['max', 8192],
+    ['medium', 4096],
+    ['mid', 4096],
+    ['high', 8192],
+    ['xhigh', 16384],
+    ['max', 16384],
   ])('maps %s -> %d', (level, budget) => {
     expect(resolveThinkingLevel(level)).toEqual({
       enableThinking: true,
@@ -46,4 +46,32 @@ describe('resolveThinkingLevel', () => {
       })
     }
   )
+})
+
+describe('clampThinkingBudget', () => {
+  it('returns the budget when there is enough headroom', () => {
+    expect(clampThinkingBudget(4096, 16384)).toBe(4096)
+  })
+
+  it('clamps to maxTokens minus reserve', () => {
+    // 8192 - 512 reserve = 7680
+    expect(clampThinkingBudget(16384, 8192)).toBe(7680)
+  })
+
+  it('returns 0 when maxTokens is below the reserve', () => {
+    expect(clampThinkingBudget(1024, 256)).toBe(0)
+  })
+
+  it('returns 0 when maxTokens equals the reserve', () => {
+    expect(clampThinkingBudget(1024, 512)).toBe(0)
+  })
+
+  it('honors a custom reserve', () => {
+    expect(clampThinkingBudget(1024, 2048, 1024)).toBe(1024)
+    expect(clampThinkingBudget(2048, 2048, 1024)).toBe(1024)
+  })
+
+  it('floors a negative budget to 0', () => {
+    expect(clampThinkingBudget(-100, 4096)).toBe(0)
+  })
 })
