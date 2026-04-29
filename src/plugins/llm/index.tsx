@@ -100,6 +100,12 @@ export interface Config {
   memoryByteLimit?: number
   memoryUpdateInterval?: number
   memoryForkMaxRetries?: number
+  /**
+   * Override the model used for memory fork tasks (e.g. summarisation).
+   * Format: "providerName:modelName" or "providerName#modelName" or just "modelName".
+   * If unset or unresolvable, falls back to the default provider/model.
+   */
+  memoryModel?: string
 }
 export declare const Config: Config
 
@@ -728,9 +734,6 @@ export default class PluginLLM extends BasePlugin<Config> {
           userId,
           conversation_id,
           conversation_owner,
-          provider,
-          model,
-          maxTokens,
         }).catch((e) =>
           this.logger.warn('[memory-fork] schedule failed:', e)
         )
@@ -804,13 +807,6 @@ export default class PluginLLM extends BasePlugin<Config> {
           if (!conversation_id) {
             return '当前用户还没有任何对话记录，无法生成记忆。'
           }
-          const providerConfig = this.config.providers[0]
-          const provider = this.defaultProvider
-          const model =
-            providerConfig?.model || this.config.model || 'gpt-4o-mini'
-          const maxTokens =
-            providerConfig?.maxTokens ?? this.config.maxTokens ?? 1024
-
           await session.send('正在生成记忆，请稍候……')
           try {
             await this.maybeTriggerMemoryFork(
@@ -819,9 +815,6 @@ export default class PluginLLM extends BasePlugin<Config> {
                 userId,
                 conversation_id,
                 conversation_owner: session.user.id,
-                provider,
-                model,
-                maxTokens,
               },
               { force: true }
             )
@@ -981,15 +974,67 @@ export default class PluginLLM extends BasePlugin<Config> {
     })
   }
 
+  /**
+   * Resolve which (provider, model, maxTokens) to use for memory fork tasks.
+   * Honors `memoryModel` config, falling back to the default provider/model.
+   */
+  private resolveMemoryProvider(): {
+    provider: LLMProviderBase
+    model: string
+    maxTokens: number
+  } {
+    const defaultProviderConfig = this.config.providers[0]
+    const fallback = () => ({
+      provider: this.defaultProvider,
+      model:
+        defaultProviderConfig?.model || this.config.model || 'gpt-4o-mini',
+      maxTokens:
+        defaultProviderConfig?.maxTokens ?? this.config.maxTokens ?? 1024,
+    })
+
+    const spec = this.config.memoryModel?.trim()
+    if (!spec) return fallback()
+
+    const m = spec.match(/^([^#:]+)[#:](.+)$/)
+    let providerName: string | undefined
+    let model: string
+    if (m) {
+      providerName = m[1].trim()
+      model = m[2].trim()
+    } else {
+      model = spec
+    }
+
+    const providerConfig = providerName
+      ? this.config.providers.find((p) => p.name === providerName)
+      : defaultProviderConfig
+
+    if (providerName && !providerConfig) {
+      this.logger.warn(
+        '[memory] memoryModel provider %s not found, falling back to default',
+        providerName
+      )
+      return fallback()
+    }
+
+    const provider = providerName
+      ? this.useProvider(providerName)
+      : this.defaultProvider
+    const maxTokens =
+      providerConfig?.maxTokens ?? this.config.maxTokens ?? 1024
+    return {
+      provider,
+      model: model || providerConfig?.model || 'gpt-4o-mini',
+      maxTokens,
+    }
+  }
+
   private async maybeTriggerMemoryFork(
     args: {
       platform: string
       userId: string
       conversation_id: string
       conversation_owner: number
-      provider: LLMProviderBase
-      model: string
-      maxTokens: number
     },
     opts: { force?: boolean } = {}
   ) {
@@ -1015,14 +1060,16 @@ export default class PluginLLM extends BasePlugin<Config> {
     // 拉取对话上下文
     const history = await this.getChatHistoriesById(args.conversation_id, 50)
 
+    const { provider, model, maxTokens } = this.resolveMemoryProvider()
+
     const { maybeRunMemoryFork } = await import('./memory-fork')
     await maybeRunMemoryFork({
       ctx: this.ctx,
       logger: this.logger,
       store: this.memory,
-      provider: args.provider,
-      model: args.model,
-      maxTokens: args.maxTokens,
+      provider,
+      model,
+      maxTokens,
       byteLimit,
       maxRetries,
       platform: args.platform,
