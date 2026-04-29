@@ -50,6 +50,35 @@ describe('toOpenAIMessage', () => {
     expect(out.tool_calls).toHaveLength(1)
   })
 
+  it('forwards reasoning_content on assistant when present', () => {
+    const msg: ChatMessage = {
+      role: 'assistant',
+      content: 'reply',
+      reasoning_content: 'thinking trace',
+    }
+    expect(toOpenAIMessage(msg)).toEqual({
+      role: 'assistant',
+      content: 'reply',
+      reasoning_content: 'thinking trace',
+    })
+  })
+
+  it('forwards empty reasoning_content (DeepSeek thinking mode quirk)', () => {
+    const msg: ChatMessage = {
+      role: 'assistant',
+      content: 'reply',
+      reasoning_content: '',
+    }
+    const out = toOpenAIMessage(msg) as any
+    expect(out.reasoning_content).toBe('')
+  })
+
+  it('omits reasoning_content key when undefined', () => {
+    const msg: ChatMessage = { role: 'assistant', content: 'reply' }
+    const out = toOpenAIMessage(msg) as any
+    expect(out).not.toHaveProperty('reasoning_content')
+  })
+
   it('converts tool message', () => {
     const msg: ChatMessage = {
       role: 'tool',

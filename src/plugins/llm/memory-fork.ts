@@ -82,10 +82,20 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
     hardLimit
   )
 
-  // 复制原 history（去掉所有 system 角色，避免叠加），追加触发 user 消息
+  // 复制原 history（去掉所有 system 角色，避免叠加），追加触发 user 消息。
+  // 对每条 assistant 消息补齐 reasoning_content 字段（默认 ''）——DeepSeek
+  // thinking mode 要求历史中每条 assistant 都带这个字段，否则 400 报错。
+  const normalizedHistory = input.history
+    .filter((m) => m.role !== 'system')
+    .map((m): ChatMessage => {
+      if (m.role === 'assistant' && m.reasoning_content === undefined) {
+        return { ...m, reasoning_content: '' }
+      }
+      return m
+    })
   const messages: ChatMessage[] = [
     { role: 'system', content: systemPrompt },
-    ...input.history.filter((m) => m.role !== 'system'),
+    ...normalizedHistory,
     { role: 'user', content: '请基于以上对话更新记忆档案。' },
   ]
 

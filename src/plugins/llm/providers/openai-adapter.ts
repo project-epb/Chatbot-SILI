@@ -25,6 +25,11 @@ export function toOpenAIMessage(msg: ChatMessage): ChatCompletionMessageParam {
               })),
             }
           : {}),
+        // DeepSeek 等 thinking-capable 厂商在 thinking mode 下要求 echo back
+        // reasoning_content（即使为空字符串）。其他厂商对未知字段宽容。
+        ...(msg.reasoning_content !== undefined
+          ? { reasoning_content: msg.reasoning_content }
+          : {}),
       } as ChatCompletionMessageParam
     case 'user':
       return { role: 'user', content: msg.content }

@@ -1058,8 +1058,13 @@ export default class PluginLLM extends BasePlugin<Config> {
       if (since < interval) return
     }
 
-    // 拉取对话上下文
-    const history = await this.getChatHistoriesById(args.conversation_id, 50)
+    // 拉取对话上下文。fork 用的模型可能要求历史带 reasoning_content
+    // (DeepSeek thinking mode)，让 DB 里已有的字段透传过去。
+    const history = await this.getChatHistoriesById(
+      args.conversation_id,
+      50,
+      true
+    )
 
     const { provider, model, maxTokens } = this.resolveMemoryProvider()
 
