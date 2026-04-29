@@ -966,8 +966,11 @@ export default class PluginLLM extends BasePlugin<Config> {
           role: 'assistant',
           content: row.content,
           tool_calls,
-          ...(includesReasoning && row.reasoning_content
-            ? { reasoning_content: row.reasoning_content }
+          // DeepSeek thinking mode 要求历史里每条 assistant 都带 reasoning_content
+          // (空字符串也要)。所以一旦 includesReasoning，就永远加这个字段，
+          // DB 里没有就用 '' 顶替。
+          ...(includesReasoning
+            ? { reasoning_content: row.reasoning_content ?? '' }
             : {}),
         }
       }
