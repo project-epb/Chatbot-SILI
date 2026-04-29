@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { composeSystemPrompt } from '../session-manager'
+import { composeSystemPrompt, isSessionExpired } from '../session-manager'
 
 const CATALOG = '## 可用指令\n\nfoo — example command'
 const MEMORY = '- 喜欢吃热干面'
@@ -66,5 +66,43 @@ describe('composeSystemPrompt', () => {
       memory_snapshot: MEMORY,
     })
     expect(a).toBe(b)
+  })
+})
+
+describe('isSessionExpired', () => {
+  const NOW = 1_000_000_000_000
+  const HOUR = 60 * 60 * 1000
+  const TTL_12H = 12 * HOUR
+
+  it('returns false when last used right now', () => {
+    expect(isSessionExpired({ last_used_at: NOW }, TTL_12H, NOW)).toBe(false)
+  })
+
+  it('returns false at exactly the TTL boundary', () => {
+    expect(
+      isSessionExpired({ last_used_at: NOW - TTL_12H }, TTL_12H, NOW)
+    ).toBe(false)
+  })
+
+  it('returns true 1ms past the TTL', () => {
+    expect(
+      isSessionExpired({ last_used_at: NOW - TTL_12H - 1 }, TTL_12H, NOW)
+    ).toBe(true)
+  })
+
+  it('returns true when last used a day ago at 12h TTL', () => {
+    expect(
+      isSessionExpired({ last_used_at: NOW - 24 * HOUR }, TTL_12H, NOW)
+    ).toBe(true)
+  })
+
+  it('disables expiry when ttl is 0', () => {
+    expect(
+      isSessionExpired({ last_used_at: NOW - 365 * 24 * HOUR }, 0, NOW)
+    ).toBe(false)
+  })
+
+  it('disables expiry when ttl is negative', () => {
+    expect(isSessionExpired({ last_used_at: NOW }, -1, NOW)).toBe(false)
   })
 })

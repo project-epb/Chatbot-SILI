@@ -100,6 +100,12 @@ export interface Config {
   memoryUpdateInterval?: number
   memoryForkMaxRetries?: number
   /**
+   * Idle timeout (ms) for a chat session. After this many ms without a new
+   * user message, the next message rotates to a fresh session, picking up
+   * the latest command catalog and memory snapshot. 0 disables expiry.
+   */
+  sessionIdleTimeoutMs?: number
+  /**
    * Override the model used for memory fork tasks (e.g. summarisation).
    * Format: "providerName:modelName" or "providerName#modelName" or just "modelName".
    * If unset or unresolvable, falls back to the default provider/model.
@@ -163,6 +169,7 @@ export default class PluginLLM extends BasePlugin<Config> {
       memoryByteLimit: 3000,
       memoryUpdateInterval: 10,
       memoryForkMaxRetries: 3,
+      sessionIdleTimeoutMs: 12 * 60 * 60 * 1000, // 12h
       systemPrompt: {
         default: PluginLLM.readPromptFile('SILI-v5.prompt.md'),
       },
@@ -467,7 +474,7 @@ export default class PluginLLM extends BasePlugin<Config> {
 
         this.CONVERSATION_LOCKS.add(conversation_owner)
 
-        const conversation_id: string =
+        let conversation_id: string =
           (session.user.openai_last_conversation_id ||= crypto.randomUUID())
 
         if (options['no-prompt']) {
@@ -577,6 +584,8 @@ export default class PluginLLM extends BasePlugin<Config> {
         // 构造 system prompt。
         // - 标准路径：通过 SessionManager 拿到 frozen snapshot，整 session 内
         //   保持稳定，避免每次新消息都重算 prefix 击穿 prompt cache。
+        // - 距上次说话超过 idle TTL → 自动 rotate 一个新 session（新 conversation_id），
+        //   普通用户即便从不主动 reset 也能定期拿到最新 catalog/memory。
         // - --prompt 覆盖路径：高权限调试，绕过 session 直接合成；本来就预期
         //   每次破坏缓存。
         // Lazy-refresh catalog 以捕获 ready 之后才注册命令的插件
@@ -589,16 +598,39 @@ export default class PluginLLM extends BasePlugin<Config> {
             memory_snapshot: await this.memory.get(platform, userId),
           })
         } else {
-          const sessionRow = await this.sessions.getOrCreate({
-            conversationId: conversation_id,
-            conversationOwner: conversation_owner,
-            platform,
-            userId,
-            basePrompt: this.config.systemPrompt.default,
-            commandCatalog,
-            memorySnapshot: await this.memory.get(platform, userId),
-          })
-          systemPromptText = composeSystemPrompt(sessionRow)
+          const idleTtlMs =
+            this.config.sessionIdleTimeoutMs ?? 12 * 60 * 60 * 1000
+          const { session: existingSession, expired } =
+            await this.sessions.getActive(conversation_id, idleTtlMs)
+          if (existingSession) {
+            systemPromptText = composeSystemPrompt(existingSession)
+            this.sessions
+              .touch(existingSession.id)
+              .catch((e) => this.logger.warn('[session] touch failed:', e))
+          } else {
+            if (expired) {
+              // rotate: 老 session 留库作为历史，新 conversation_id 拍新照
+              const newId = crypto.randomUUID()
+              this.logger.info(
+                '[session] rotating idle session %s -> %s',
+                conversation_id,
+                newId
+              )
+              conversation_id = newId
+              session.user.openai_last_conversation_id = newId
+              await session.user.$update()
+            }
+            const newSession = await this.sessions.create({
+              conversationId: conversation_id,
+              conversationOwner: conversation_owner,
+              platform,
+              userId,
+              basePrompt: this.config.systemPrompt.default,
+              commandCatalog,
+              memorySnapshot: await this.memory.get(platform, userId),
+            })
+            systemPromptText = composeSystemPrompt(newSession)
+          }
         }
 
         chatMessages[0] = {

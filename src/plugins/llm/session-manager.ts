@@ -13,6 +13,9 @@ export interface OpenAISession {
   platform: string
   user_id: string
   started_at: number
+  /** Last time this session was used; the session is considered fresh until
+   *  now - last_used_at exceeds the configured idle timeout. */
+  last_used_at: number
   /** Snapshot of the role/persona prompt at session start. */
   base_prompt: string
   /** Snapshot of the rendered command catalog at session start. */
@@ -44,6 +47,7 @@ export class SessionManager {
         platform: 'string(64)',
         user_id: 'string(128)',
         started_at: 'unsigned(20)',
+        last_used_at: 'unsigned(20)',
         base_prompt: 'text',
         command_catalog: 'text',
         memory_snapshot: 'text',
@@ -65,12 +69,14 @@ export class SessionManager {
   }
 
   async create(input: CreateSessionInput): Promise<OpenAISession> {
+    const now = Date.now()
     const row = await this.ctx.database.create('openai_session', {
       conversation_id: input.conversationId,
       conversation_owner: input.conversationOwner,
       platform: input.platform,
       user_id: input.userId,
-      started_at: Date.now(),
+      started_at: now,
+      last_used_at: now,
       base_prompt: input.basePrompt,
       command_catalog: input.commandCatalog,
       memory_snapshot: input.memorySnapshot,
@@ -78,19 +84,44 @@ export class SessionManager {
     return row
   }
 
-  /**
-   * Look up an existing session by conversation_id, or create one with the
-   * provided snapshot. The session is frozen at creation; later writes to
-   * memory or rebuilds of the command catalog do not retroactively modify it.
-   * Users get a fresh snapshot by running `llm.reset` (which clears
-   * `user.openai_last_conversation_id`, so the next message lands here with
-   * no existing session and triggers a new create).
-   */
-  async getOrCreate(input: CreateSessionInput): Promise<OpenAISession> {
-    const existing = await this.get(input.conversationId)
-    if (existing) return existing
-    return this.create(input)
+  /** Bump last_used_at to "now" (fire-and-forget; failures are non-fatal). */
+  async touch(sessionRowId: number): Promise<void> {
+    await this.ctx.database.set(
+      'openai_session',
+      { id: sessionRowId },
+      { last_used_at: Date.now() }
+    )
   }
+
+  /**
+   * Fetch the active session for a conversation_id, honoring the idle
+   * timeout. Returns one of:
+   *   - { session, expired: false } — fresh session, safe to reuse
+   *   - { session: null, expired: true } — session exists but stale; caller
+   *     should rotate (issue a new conversation_id and create a new session)
+   *   - { session: null, expired: false } — no session at all yet
+   */
+  async getActive(
+    conversationId: string,
+    idleTtlMs: number
+  ): Promise<{ session: OpenAISession | null; expired: boolean }> {
+    const row = await this.get(conversationId)
+    if (!row) return { session: null, expired: false }
+    if (isSessionExpired(row, idleTtlMs)) {
+      return { session: null, expired: true }
+    }
+    return { session: row, expired: false }
+  }
+}
+
+/** Pure helper so it can be unit-tested without a koishi context. */
+export function isSessionExpired(
+  session: Pick<OpenAISession, 'last_used_at'>,
+  idleTtlMs: number,
+  now: number = Date.now()
+): boolean {
+  if (idleTtlMs <= 0) return false // 0 / negative disables expiry
+  return now - session.last_used_at > idleTtlMs
 }
 
 /** Subset needed to render a system prompt — accepts both DB rows and synthetic objects. */
