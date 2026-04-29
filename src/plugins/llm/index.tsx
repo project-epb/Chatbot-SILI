@@ -144,6 +144,13 @@ export default class PluginLLM extends BasePlugin<Config> {
   readonly tools: ToolRegistry = new ToolRegistry()
   private commandCatalog: CommandCatalogEntry[] = []
   private commandCatalogText: string = ''
+  /**
+   * Number of commands seen the last time the catalog was rebuilt. Used to
+   * detect plugins that registered commands after our `ready` hook fired
+   * (typical when a plugin gates on a service like puppeteer that comes up
+   * late). When the live count exceeds this, the catalog is rebuilt lazily.
+   */
+  private commandCatalogVersion: number = -1
 
   constructor(ctx: Context, config: Config) {
     const defaultConfigs: Partial<Config> = {
@@ -200,14 +207,10 @@ export default class PluginLLM extends BasePlugin<Config> {
     // 注册内建工具
     this.tools.register(executeKoishiCommandHandler)
 
-    // 启动后构建命令目录（吃 prompt cache）
+    // 启动后构建一次命令目录。延迟启动的插件（如 puppeteer 依赖的 wiki）
+    // 可能在 ready 之后才注册命令——getOrRefreshCommandCatalog 会按需懒重建。
     this.ctx.on('ready', () => {
-      this.commandCatalog = buildCommandCatalog(this.ctx)
-      this.commandCatalogText = renderCommandCatalog(this.commandCatalog)
-      this.logger.info(
-        '[llm] command catalog built, %d top-level commands',
-        this.commandCatalog.length
-      )
+      this.refreshCommandCatalog('ready')
     })
 
     this.ctx.set('llm', this)
@@ -576,11 +579,13 @@ export default class PluginLLM extends BasePlugin<Config> {
         //   保持稳定，避免每次新消息都重算 prefix 击穿 prompt cache。
         // - --prompt 覆盖路径：高权限调试，绕过 session 直接合成；本来就预期
         //   每次破坏缓存。
+        // Lazy-refresh catalog 以捕获 ready 之后才注册命令的插件
+        const commandCatalog = this.getOrRefreshCommandCatalog()
         let systemPromptText: string
         if (typeof options.prompt === 'string') {
           systemPromptText = composeSystemPrompt({
             base_prompt: options.prompt,
-            command_catalog: this.commandCatalogText,
+            command_catalog: commandCatalog,
             memory_snapshot: await this.memory.get(platform, userId),
           })
         } else {
@@ -590,7 +595,7 @@ export default class PluginLLM extends BasePlugin<Config> {
             platform,
             userId,
             basePrompt: this.config.systemPrompt.default,
-            commandCatalog: this.commandCatalogText,
+            commandCatalog,
             memorySnapshot: await this.memory.get(platform, userId),
           })
           systemPromptText = composeSystemPrompt(sessionRow)
@@ -756,6 +761,16 @@ export default class PluginLLM extends BasePlugin<Config> {
             </random>
           )
         }
+      })
+
+    this.ctx
+      .command('llm.catalog', 'Force-rebuild the agent command catalog', {
+        hidden: true,
+        authority: 3,
+      })
+      .action(() => {
+        this.refreshCommandCatalog('manual')
+        return `Catalog: ${this.commandCatalog.length} top-level / ${this.commandCatalogVersion} total. Note: existing sessions still hold their snapshot — run llm.reset to pick up changes.`
       })
 
     this.ctx
@@ -1079,6 +1094,35 @@ export default class PluginLLM extends BasePlugin<Config> {
       session.platform === 'onebot' ? 'qq' : session.platform || 'unknown'
     const userId = session.user?.id?.toString() || session.userId || 'anonymous'
     return { platform, userId }
+  }
+
+  /** Live count of registered commands (top-level + nested). */
+  private liveCommandCount(): number {
+    return (this.ctx as any).$commander?._commandList?.length ?? 0
+  }
+
+  private refreshCommandCatalog(trigger: string): void {
+    this.commandCatalog = buildCommandCatalog(this.ctx)
+    this.commandCatalogText = renderCommandCatalog(this.commandCatalog)
+    this.commandCatalogVersion = this.liveCommandCount()
+    this.logger.info(
+      '[llm] command catalog rebuilt (%s): %d top-level / %d total',
+      trigger,
+      this.commandCatalog.length,
+      this.commandCatalogVersion
+    )
+  }
+
+  /**
+   * Lazy-rebuild the catalog when more commands have appeared since the
+   * last snapshot — covers plugins that came up after our ready hook
+   * (e.g. ones gated on puppeteer/html services).
+   */
+  private getOrRefreshCommandCatalog(): string {
+    if (this.liveCommandCount() > this.commandCatalogVersion) {
+      this.refreshCommandCatalog('lazy-grow')
+    }
+    return this.commandCatalogText
   }
 
   /**
