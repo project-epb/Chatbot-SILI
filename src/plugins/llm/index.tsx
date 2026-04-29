@@ -107,15 +107,6 @@ export interface Config {
 }
 export declare const Config: Config
 
-/**
- * Whether the given model expects `reasoning_content` to be carried over in chat history.
- * Currently only DeepSeek V4 family relies on this for multi-turn thought continuity.
- */
-function modelNeedsReasoningContent(model: string): boolean {
-  return /deepseek-v4/i.test(model)
-}
-
-
 export default class PluginLLM extends BasePlugin<Config> {
   static inject: Inject = {
     database: { required: true },
@@ -504,8 +495,7 @@ export default class PluginLLM extends BasePlugin<Config> {
 
         const histories = await this.getChatHistoriesById(
           conversation_id,
-          this.config.historyMessageCount,
-          modelNeedsReasoningContent(model)
+          this.config.historyMessageCount
         )
         this.logger.info('[chat] user data', {
           conversation_owner,
@@ -918,8 +908,7 @@ export default class PluginLLM extends BasePlugin<Config> {
 
   async getChatHistoriesById(
     conversation_id: string,
-    limit = 10,
-    includesReasoning = false
+    limit = 10
   ): Promise<ChatMessage[]> {
     const userTurnLimit = Math.max(0, Math.floor(limit))
     if (!userTurnLimit) return []
@@ -948,7 +937,8 @@ export default class PluginLLM extends BasePlugin<Config> {
 
     const trimmed = groupAndTrimHistory(rowsAsc, userTurnLimit)
 
-    // 转回 ChatMessage 形态
+    // 转回 ChatMessage 形态。永远带上 reasoning_content（即便是空串）——
+    // provider 层会按模型决定是否保留这个字段。
     return trimmed.map((row): ChatMessage => {
       if (row.role === 'tool') {
         return {
@@ -966,12 +956,7 @@ export default class PluginLLM extends BasePlugin<Config> {
           role: 'assistant',
           content: row.content,
           tool_calls,
-          // DeepSeek thinking mode 要求历史里每条 assistant 都带 reasoning_content
-          // (空字符串也要)。所以一旦 includesReasoning，就永远加这个字段，
-          // DB 里没有就用 '' 顶替。
-          ...(includesReasoning
-            ? { reasoning_content: row.reasoning_content ?? '' }
-            : {}),
+          reasoning_content: row.reasoning_content ?? '',
         }
       }
       return { role: row.role as 'user' | 'system', content: row.content }
@@ -1061,13 +1046,8 @@ export default class PluginLLM extends BasePlugin<Config> {
       if (since < interval) return
     }
 
-    // 拉取对话上下文。fork 用的模型可能要求历史带 reasoning_content
-    // (DeepSeek thinking mode)，让 DB 里已有的字段透传过去。
-    const history = await this.getChatHistoriesById(
-      args.conversation_id,
-      50,
-      true
-    )
+    // 拉取对话上下文（reasoning_content 已在 getChatHistoriesById 默认带上）
+    const history = await this.getChatHistoriesById(args.conversation_id, 50)
 
     const { provider, model, maxTokens } = this.resolveMemoryProvider()
 

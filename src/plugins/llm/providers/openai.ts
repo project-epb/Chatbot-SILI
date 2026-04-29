@@ -9,7 +9,7 @@ import {
   StreamChatDelta,
   StreamFinishReason,
 } from './_base'
-import { OpenAIStreamAggregator, toOpenAIMessage } from './openai-adapter'
+import { OpenAIStreamAggregator, prepareOpenAIMessages } from './openai-adapter'
 
 function mapOpenAIFinishReason(reason: string | undefined): StreamFinishReason {
   switch (reason) {
@@ -120,7 +120,7 @@ export class OpenAIProvider extends LLMProviderBase {
 
     const body: Record<string, any> = {
       model: opts.model,
-      messages: messages.map(toOpenAIMessage),
+      messages: prepareOpenAIMessages(messages, opts.model),
       max_tokens: opts.maxTokens ?? 1024,
       temperature: opts.temperature ?? 0.8,
       top_p: opts.topP ?? 0.8,

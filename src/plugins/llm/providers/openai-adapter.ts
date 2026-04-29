@@ -26,7 +26,8 @@ export function toOpenAIMessage(msg: ChatMessage): ChatCompletionMessageParam {
             }
           : {}),
         // DeepSeek 等 thinking-capable 厂商在 thinking mode 下要求 echo back
-        // reasoning_content（即使为空字符串）。其他厂商对未知字段宽容。
+        // reasoning_content（即使为空字符串）。prepareOpenAIMessages 会按
+        // 模型决定加/剥这个字段，到这里时已经做完决策。
         ...(msg.reasoning_content !== undefined
           ? { reasoning_content: msg.reasoning_content }
           : {}),
@@ -36,6 +37,44 @@ export function toOpenAIMessage(msg: ChatMessage): ChatCompletionMessageParam {
     case 'system':
       return { role: 'system', content: msg.content }
   }
+}
+
+/**
+ * Whether the model expects every assistant message in history to carry a
+ * `reasoning_content` field (even if empty). DeepSeek's V4 thinking-mode
+ * endpoint enforces this, others ignore the field but it bloats payloads.
+ */
+export function modelExpectsReasoningContent(model: string): boolean {
+  return /deepseek-v4/i.test(model)
+}
+
+/**
+ * Convert ChatMessage[] to OpenAI SDK message params, applying any
+ * model-specific quirks before encoding. Currently:
+ * - DeepSeek V4 thinking mode → ensure every assistant has reasoning_content
+ *   (defaults to '' when missing).
+ * - All other models → strip reasoning_content (avoids large unknown-field
+ *   bytes shipped to vendors that ignore or reject it).
+ */
+export function prepareOpenAIMessages(
+  messages: ChatMessage[],
+  model: string
+): ChatCompletionMessageParam[] {
+  const expects = modelExpectsReasoningContent(model)
+  return messages.map((m) => {
+    if (m.role !== 'assistant') return toOpenAIMessage(m)
+    if (expects) {
+      if (m.reasoning_content === undefined) {
+        return toOpenAIMessage({ ...m, reasoning_content: '' })
+      }
+      return toOpenAIMessage(m)
+    }
+    if (m.reasoning_content !== undefined) {
+      const { reasoning_content: _stripped, ...rest } = m
+      return toOpenAIMessage(rest as ChatMessage)
+    }
+    return toOpenAIMessage(m)
+  })
 }
 
 interface OpenAIToolCallDelta {
