@@ -32,6 +32,7 @@ import {
 } from './command-catalog'
 import { ToolRegistry, executeKoishiCommandHandler } from './tools'
 import { MemoryStore } from './memory'
+import { SessionManager, composeSystemPrompt } from './session-manager'
 import { clampThinkingBudget, resolveThinkingLevel } from './thinking'
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
@@ -139,6 +140,7 @@ export default class PluginLLM extends BasePlugin<Config> {
   // 用户同时只能进行一个对话，防止在一次对话结束前发起新的对话
   readonly CONVERSATION_LOCKS = new Set<string | number>()
   readonly memory: MemoryStore = new MemoryStore(this.ctx)
+  readonly sessions: SessionManager = new SessionManager(this.ctx)
   readonly tools: ToolRegistry = new ToolRegistry()
   private commandCatalog: CommandCatalogEntry[] = []
   private commandCatalogText: string = ''
@@ -245,6 +247,7 @@ export default class PluginLLM extends BasePlugin<Config> {
       }
     )
     MemoryStore.initSchema(this.ctx)
+    SessionManager.initSchema(this.ctx)
   }
 
   #initCommands() {
@@ -565,39 +568,37 @@ export default class PluginLLM extends BasePlugin<Config> {
           60 * 1000
         )
 
-        // 加载用户记忆
+        // 解析记忆 key（platform/userId）
         const { platform, userId } = this.resolveMemoryKey(session)
-        const memoryContent = await this.memory.get(platform, userId)
 
-        // 重新构造 system prompt：原 prompt + 命令目录 + 用户记忆
-        const baseSystemPrompt =
-          typeof options.prompt === 'string'
-            ? options.prompt
-            : this.config.systemPrompt.default
-        const systemPromptParts = [baseSystemPrompt]
-        if (this.commandCatalogText) {
-          systemPromptParts.push(this.commandCatalogText)
-          systemPromptParts.push(
-            [
-              '## 调用工具',
-              '调用 `execute_koishi_command` 时传入 `name`、`args`、`options`。',
-              '调用前请确认指令存在于上述清单中。',
-            ].join('\n')
-          )
-        }
-        if (memoryContent) {
-          systemPromptParts.push(
-            [
-              '## 关于这个用户的长期记忆',
-              memoryContent,
-              '以上记忆由系统周期性自动维护，对话中可参考但不要主动更新。',
-            ].join('\n\n')
-          )
+        // 构造 system prompt。
+        // - 标准路径：通过 SessionManager 拿到 frozen snapshot，整 session 内
+        //   保持稳定，避免每次新消息都重算 prefix 击穿 prompt cache。
+        // - --prompt 覆盖路径：高权限调试，绕过 session 直接合成；本来就预期
+        //   每次破坏缓存。
+        let systemPromptText: string
+        if (typeof options.prompt === 'string') {
+          systemPromptText = composeSystemPrompt({
+            base_prompt: options.prompt,
+            command_catalog: this.commandCatalogText,
+            memory_snapshot: await this.memory.get(platform, userId),
+          })
+        } else {
+          const sessionRow = await this.sessions.getOrCreate({
+            conversationId: conversation_id,
+            conversationOwner: conversation_owner,
+            platform,
+            userId,
+            basePrompt: this.config.systemPrompt.default,
+            commandCatalog: this.commandCatalogText,
+            memorySnapshot: await this.memory.get(platform, userId),
+          })
+          systemPromptText = composeSystemPrompt(sessionRow)
         }
 
         chatMessages[0] = {
           role: 'system',
-          content: systemPromptParts.join('\n\n'),
+          content: systemPromptText,
         }
 
         // 逐字流给用户的 helper
