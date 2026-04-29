@@ -24,6 +24,14 @@ export interface AgentLoopOptions {
   onUserVisibleText: (text: string) => Promise<void>
   onAssistantRecord: (record: AssistantTurnRecord) => Promise<void>
   onToolRecord: (record: ToolTurnRecord) => Promise<void>
+  /**
+   * Called after each iteration's stream finishes consuming. Lets the
+   * caller force-flush any buffered visible text before tool execution
+   * starts, so the model's pre-tool "let me check..." line surfaces as
+   * its own message instead of getting concatenated with later turns'
+   * text into one wall.
+   */
+  onTurnEnd?: (info: { hadToolCalls: boolean }) => Promise<void>
 }
 
 export interface AssistantTurnRecord {
@@ -119,6 +127,9 @@ export async function runAgentLoop(
       time: Date.now(),
     })
 
+    // 让 caller 把这一轮的可见文本作为独立消息发出，避免和后续轮次拼成一坨
+    await opts.onTurnEnd?.({ hadToolCalls: collectedToolCalls.length > 0 })
+
     if (collectedToolCalls.length === 0) {
       lastFullContent = currentContent
       break
@@ -134,8 +145,15 @@ export async function runAgentLoop(
     // 串行执行所有工具
     for (const tc of collectedToolCalls) {
       if (opts.showToolCallNotice) {
+        // tc.name 是 LLM 工具名（execute_koishi_command），对用户没意义；
+        // 显示真实 koishi 命令名（tc.arguments.name）更友好。
+        const args = tc.arguments as any
+        const displayName =
+          tc.name === 'execute_koishi_command' && args?.name
+            ? args.name
+            : tc.name
         await opts.session
-          .send(<>[正在执行: {tc.name}]</>)
+          .send(<>[正在执行: {displayName}]</>)
           .catch(() => {})
       }
       opts.logger.info('[agent] tool call:', tc.name, tc.arguments)

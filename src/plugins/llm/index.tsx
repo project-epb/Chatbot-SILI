@@ -719,6 +719,11 @@ export default class PluginLLM extends BasePlugin<Config> {
                 time: record.time,
               } as any)
             },
+            onTurnEnd: async () => {
+              // 强制把这一轮累积的可见文本发出，作为一条独立消息——
+              // 否则多轮工具调用之间的 prelude 都被攒到最后一股脑发出
+              await flushVisibleText(true)
+            },
           })
         } catch (e) {
           this.logger.error('[chat] agent loop error:', e)
