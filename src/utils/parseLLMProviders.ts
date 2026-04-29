@@ -12,6 +12,10 @@ import type { ProviderConfig } from '~/llm'
  *   LLM_PROVIDER_{N}_REASONING_MODEL — default reasoning model override
  *   LLM_PROVIDER_{N}_MAX_TOKENS      — default max tokens override
  *
+ *   LLM_DEFAULT_PROVIDER — name of the provider to use as default. If set and
+ *     matched, that provider is moved to index 0 so PluginLLM picks it up as
+ *     the default. Unmatched values fall back to the original parse order.
+ *
  * Indexes must be contiguous starting from 0.
  */
 export function parseLLMProviders(
@@ -58,6 +62,19 @@ export function parseLLMProviders(
           ...(apiKey && { apiKey }),
         },
       })
+    }
+  }
+
+  const defaultName = env.LLM_DEFAULT_PROVIDER?.trim()
+  if (defaultName) {
+    const idx = providers.findIndex((p) => p.name === defaultName)
+    if (idx > 0) {
+      const [picked] = providers.splice(idx, 1)
+      providers.unshift(picked)
+    } else if (idx < 0 && providers.length > 0) {
+      console.warn(
+        `[parseLLMProviders] LLM_DEFAULT_PROVIDER="${defaultName}" not found among configured providers; using parse order.`
+      )
     }
   }
 
