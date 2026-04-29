@@ -147,16 +147,17 @@ export function composeSystemPrompt(session: SessionSnapshot): string {
         '调用前请确认指令存在于上述清单中。',
         '',
         '**清单只是概览**，没有列出每条指令的参数和选项。要看具体用法，先用 `help` 查询：',
-        '- `execute_koishi_command(name="help", args=["指令名"])` → 返回该指令的参数说明、选项列表、子命令等详情',
+        '- `execute_koishi_command(name="help", args=["指令名"])` → 返回该指令的描述、参数、选项、别名、子指令',
+        '- help 的输出由系统直接渲染，子指令会以**点号命名**呈现，请按返回的 `name` 调用',
         '- 不熟悉的指令**先 help 再调用**，避免参数出错',
         '',
         '**指令命名规则**（Koishi 把"分类"和"命名空间"用不同符号区分）：',
-        '- `foo.bar` （**点号** = 命名空间）：实际 `name` 就是 `"foo.bar"`，整体是命令的唯一名',
-        '- `foo/bar` （**斜杠** = 分类）：实际 `name` 仅是 `"bar"`，斜杠前的部分只是用来在清单里分组显示，不属于 `name`',
+        '- `foo.bar` （**点号** = 命名空间）：调用时 `name: "foo.bar"`',
+        '- `foo/bar` （**斜杠** = 分类）：调用时 `name: "bar"`（斜杠前的 foo 只用于分组）',
         '',
-        '示例：',
-        '- 清单里 `pixiv.illust` → 调用 `name: "pixiv.illust"`',
-        '- 清单里 `tools/homo` → 调用 `name: "homo"`（不要传 `"tools/homo"`，否则会找不到）',
+        '清单里看到的就是调用时该传的 `name`，不要做额外加工：',
+        '- 看到 `pixiv.illust` → `name: "pixiv.illust"`',
+        '- 看到 `homo`（清单顶级）→ `name: "homo"`',
       ].join('\n')
     )
   }

@@ -1133,6 +1133,11 @@ export default class PluginLLM extends BasePlugin<Config> {
     return { platform, userId }
   }
 
+  /** Public read access to the cached agent command catalog (for tools.ts). */
+  getCatalog(): readonly CommandCatalogEntry[] {
+    return this.commandCatalog
+  }
+
   /** Live count of registered commands (top-level + nested). */
   private liveCommandCount(): number {
     return (this.ctx as any).$commander?._commandList?.length ?? 0

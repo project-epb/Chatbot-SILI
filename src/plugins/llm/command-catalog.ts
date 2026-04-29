@@ -72,6 +72,80 @@ export function renderCommandCatalog(entries: CommandCatalogEntry[]): string {
 }
 
 /**
+ * Find an entry in the catalog by exact name (recurses into children).
+ */
+export function findCatalogEntry(
+  entries: readonly CommandCatalogEntry[],
+  name: string
+): CommandCatalogEntry | null {
+  for (const e of entries) {
+    if (e.name === name) return e
+    const found = findCatalogEntry(e.children, name)
+    if (found) return found
+  }
+  return null
+}
+
+/**
+ * Detailed rendering for a single entry, written for the agent. Crucially
+ * different from koishi's native `help`: child commands are listed with
+ * their real dot-namespaced names (e.g. `wiki.connect`) so the agent
+ * cannot misread space-separated paths as separate commands.
+ */
+export function renderCatalogEntryDetail(entry: CommandCatalogEntry): string {
+  const lines: string[] = []
+  const argSig = entry.args
+    .map((a) => (a.required ? `<${a.name}>` : `[${a.name}]`))
+    .join(' ')
+  const heading = [entry.name, argSig].filter(Boolean).join(' ')
+
+  lines.push(`# ${heading}`)
+  lines.push('')
+  lines.push(entry.description?.trim() || '(无描述)')
+
+  if (entry.args.length) {
+    lines.push('')
+    lines.push('## 参数')
+    for (const a of entry.args) {
+      const tags = [a.required ? '必需' : '可选', `类型: ${a.type}`].join(', ')
+      const desc = a.description ? ' — ' + a.description : ''
+      lines.push(`- \`${a.name}\` (${tags})${desc}`)
+    }
+  }
+
+  if (entry.options.length) {
+    lines.push('')
+    lines.push('## 选项')
+    for (const o of entry.options) {
+      const desc = o.description ? ' — ' + o.description : ''
+      lines.push(`- \`--${o.name}\`${desc}`)
+    }
+  }
+
+  if (entry.aliases.length) {
+    lines.push('')
+    lines.push(`## 别名`)
+    lines.push(entry.aliases.map((a) => `\`${a}\``).join(', '))
+  }
+
+  if (entry.children.length) {
+    lines.push('')
+    lines.push('## 子指令')
+    lines.push(
+      '（注意：调用子指令时使用**点号**命名，例如 `name="' +
+        entry.children[0].name +
+        '"`）'
+    )
+    for (const c of entry.children) {
+      const desc = c.description?.trim() || '(无描述)'
+      lines.push(`- \`${c.name}\` — ${desc}`)
+    }
+  }
+
+  return lines.join('\n')
+}
+
+/**
  * Compact rendering for the agent's system prompt: only top-level commands,
  * one line each (`name — description`), no args/options/aliases/children.
  *

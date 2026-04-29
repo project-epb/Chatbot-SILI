@@ -1,5 +1,10 @@
 import type { Context, Logger, Session } from 'koishi'
 
+import {
+  type CommandCatalogEntry,
+  findCatalogEntry,
+  renderCatalogEntryDetail,
+} from './command-catalog'
 import type { ToolDefinition } from './providers/_base'
 
 export interface ToolContext {
@@ -79,9 +84,34 @@ export function isForbiddenAgentCommand(name: string): boolean {
   return false
 }
 
+/**
+ * Render an agent-friendly help payload. Pure — takes the catalog directly.
+ * - No args: list top-level commands (one line each).
+ * - First arg = command name: render that entry's full detail.
+ * - Unknown command: returns an error message asking the agent to retry.
+ */
+export function renderAgentHelp(
+  catalog: readonly CommandCatalogEntry[],
+  queryName?: string
+): string {
+  if (!queryName) {
+    if (!catalog.length) return '(暂无可用指令)'
+    const lines = catalog.map(
+      (e) => `- \`${e.name}\` — ${e.description?.trim() || '(无描述)'}`
+    )
+    return ['# 可用指令（顶级）', '', ...lines].join('\n')
+  }
+  const entry = findCatalogEntry(catalog, queryName)
+  if (!entry) {
+    return `Error: command "${queryName}" not found in catalog. 可用指令名见上文清单；不要传 \`foo bar\` 这种带空格的形式（应为 \`foo.bar\` 或仅 \`bar\`）。`
+  }
+  return renderCatalogEntryDetail(entry)
+}
+
 async function runExecuteKoishiCommand(
   session: Session,
-  input: ExecuteKoishiCommandInput
+  input: ExecuteKoishiCommandInput,
+  ctx: Context
 ): Promise<string> {
   if (!input?.name || typeof input.name !== 'string') {
     return 'Error: tool input missing required field "name"'
@@ -89,6 +119,18 @@ async function runExecuteKoishiCommand(
   if (isForbiddenAgentCommand(input.name)) {
     return `Error: command "${input.name}" is reserved for direct user control and cannot be invoked from agent context.`
   }
+
+  // 拦截 help: koishi 原生 help 把 wiki.connect 显示成 "wiki connect"，
+  // 把 llm/chat 也显示成 "llm chat"，AI 无法分辨命名空间和分类。我们用
+  // 自己的 catalog 数据按真实 name 渲染，避免误导。
+  if (input.name === 'help') {
+    const llm = (ctx as any).llm as
+      | { getCatalog?: () => readonly CommandCatalogEntry[] }
+      | undefined
+    const catalog = llm?.getCatalog?.() ?? []
+    return renderAgentHelp(catalog, input.args?.[0])
+  }
+
   try {
     const result = await session.execute(
       {
@@ -107,7 +149,11 @@ async function runExecuteKoishiCommand(
 
 export const executeKoishiCommandHandler: ToolHandler = {
   definition: EXECUTE_KOISHI_COMMAND_TOOL,
-  async execute(args, { session }) {
-    return runExecuteKoishiCommand(session, args as ExecuteKoishiCommandInput)
+  async execute(args, { ctx, session }) {
+    return runExecuteKoishiCommand(
+      session,
+      args as ExecuteKoishiCommandInput,
+      ctx
+    )
   },
 }
