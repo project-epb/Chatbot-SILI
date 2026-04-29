@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ToolRegistry, type ToolHandler } from '../tools'
+import { ToolRegistry, isForbiddenAgentCommand, type ToolHandler } from '../tools'
 
 const fakeHandler = (name: string, result = 'ok'): ToolHandler => ({
   definition: {
@@ -51,5 +51,26 @@ describe('ToolRegistry', () => {
     r.register(fakeHandler('b'))
     r.register(fakeHandler('c'))
     expect(r.listDefinitions().map((d) => d.name)).toEqual(['a', 'b', 'c'])
+  })
+})
+
+describe('isForbiddenAgentCommand', () => {
+  it.each(['chat', 'llm', 'llm.reset', 'llm.memory', 'llm.catalog', 'llm.providers'])(
+    'forbids %s',
+    (name) => {
+      expect(isForbiddenAgentCommand(name)).toBe(true)
+    }
+  )
+
+  it.each(['pixiv.illust', 'homo', 'sticker', 'help', 'mediawiki', 'llmm', 'chat-history'])(
+    'allows %s',
+    (name) => {
+      expect(isForbiddenAgentCommand(name)).toBe(false)
+    }
+  )
+
+  it('does not match substrings (only prefix)', () => {
+    expect(isForbiddenAgentCommand('foo.llm.bar')).toBe(false)
+    expect(isForbiddenAgentCommand('not-llm.x')).toBe(false)
   })
 })

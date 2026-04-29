@@ -145,6 +145,14 @@ export function composeSystemPrompt(session: SessionSnapshot): string {
         '## 调用工具',
         '调用 `execute_koishi_command` 时传入 `name`、`args`、`options`。',
         '调用前请确认指令存在于上述清单中。',
+        '',
+        '**指令命名规则**（Koishi 把"分类"和"命名空间"用不同符号区分）：',
+        '- `foo.bar` （**点号** = 命名空间）：实际 `name` 就是 `"foo.bar"`，整体是命令的唯一名',
+        '- `foo/bar` （**斜杠** = 分类）：实际 `name` 仅是 `"bar"`，斜杠前的部分只是用来在清单里分组显示，不属于 `name`',
+        '',
+        '示例：',
+        '- 清单里 `pixiv.illust <id>` → 调用 `name: "pixiv.illust"`',
+        '- 清单里 `tools/homo <input>` → 调用 `name: "homo"`（不要传 `"tools/homo"`，否则会找不到）',
       ].join('\n')
     )
   }

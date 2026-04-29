@@ -66,12 +66,28 @@ export interface ExecuteKoishiCommandInput {
   options?: Record<string, any>
 }
 
+/**
+ * Commands the agent must not invoke. These are user-facing controls over
+ * the agent itself (chat would recurse; llm.* manage memory/sessions/
+ * providers and the user — not the AI — should drive them).
+ */
+const FORBIDDEN_AGENT_COMMANDS = new Set(['chat', 'llm'])
+
+export function isForbiddenAgentCommand(name: string): boolean {
+  if (FORBIDDEN_AGENT_COMMANDS.has(name)) return true
+  if (name.startsWith('llm.')) return true
+  return false
+}
+
 async function runExecuteKoishiCommand(
   session: Session,
   input: ExecuteKoishiCommandInput
 ): Promise<string> {
   if (!input?.name || typeof input.name !== 'string') {
     return 'Error: tool input missing required field "name"'
+  }
+  if (isForbiddenAgentCommand(input.name)) {
+    return `Error: command "${input.name}" is reserved for direct user control and cannot be invoked from agent context.`
   }
   try {
     const result = await session.execute(
