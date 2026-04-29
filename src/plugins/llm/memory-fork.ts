@@ -1,5 +1,8 @@
 import { Context, Logger } from 'koishi'
 
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import {
   MemoryStore,
   NO_UPDATE_MAGIC,
@@ -7,10 +10,23 @@ import {
   isNoUpdateMagic,
 } from './memory'
 import type {
+  ChatCompletionFeatures,
   ChatCompletionOptions,
   ChatMessage,
   LLMProviderBase,
 } from './providers/_base'
+import { clampThinkingBudget } from './thinking'
+
+const MEMORY_FORK_PROMPT_TEMPLATE = (() => {
+  try {
+    return readFileSync(
+      resolve(__dirname, './prompts/memory-fork.prompt.md'),
+      'utf-8'
+    )
+  } catch {
+    return ''
+  }
+})()
 
 export interface MemoryForkInput {
   ctx: Context
@@ -80,11 +96,19 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
     topP: 0.9,
   }
 
+  // memory fork 是反思任务，开 thinking 让模型先权衡再下笔
+  const thinkingBudget = clampThinkingBudget(4096, input.maxTokens)
+  const features: ChatCompletionFeatures = {
+    enableThinking: thinkingBudget > 0,
+    thinkingBudget,
+  }
+
   for (let attempt = 1; attempt <= input.maxRetries; attempt++) {
     let collected = ''
     for await (const delta of input.provider.streamChatCompletion(
       messages,
-      options
+      options,
+      features
     )) {
       if (delta.kind === 'content') collected += delta.content
       if (delta.kind === 'error') throw delta.error
@@ -172,31 +196,26 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
   )
 }
 
-function buildMemoryForkSystemPrompt(
+export function buildMemoryForkSystemPrompt(
   existingMemory: string,
   softLimit: number,
   hardLimit: number
 ): string {
-  return [
-    '你的任务：基于用户的对话记录，更新其个人记忆档案。',
-    '',
-    '【当前记忆档案】',
-    existingMemory || '(空)',
-    '',
-    '【容量规则】',
-    `- 目标长度：${softLimit} 字节以内（UTF-8）`,
-    `- 硬上限：${hardLimit} 字节（超出会被拒绝并要求重写）`,
-    '- 容量是硬约束。当对话信息量超出预算，必须主动遗忘不重要的内容——',
-    '  只保留会影响未来对话方向、或长期有意义的事实',
-    '- 不要让记忆无限增殖',
-    '',
-    '【保留什么】',
-    '- 用户画像（昵称、身份、长期偏好）',
-    '- 重要事项（正在进行的事、未解决的话题）',
-    '- 互动模式（用户的沟通习惯、雷区）',
-    '',
-    '【输出规则】',
-    `1. 如果对话相比当前记忆没有任何值得保留的新增信息，**只输出魔法值** ${NO_UPDATE_MAGIC}，不要输出其他任何字符`,
-    '2. 否则直接输出完整的新记忆内容（markdown 格式），不要包裹代码块、不要解释、不要前后缀',
-  ].join('\n')
+  const tpl = MEMORY_FORK_PROMPT_TEMPLATE
+  if (!tpl) {
+    // 兜底：模板文件读取失败时使用最小可用提示，避免任务直接挂
+    return [
+      '你的任务：基于刚才的对话记录，决定是否更新用户的长期记忆。',
+      `如果没有值得保留的新信息，只输出 ${NO_UPDATE_MAGIC}。`,
+      `否则输出完整的新记忆内容（markdown），不超过 ${softLimit} 字节，硬上限 ${hardLimit}。`,
+      '',
+      '当前记忆：',
+      existingMemory || '(空)',
+    ].join('\n')
+  }
+  return tpl
+    .replace(/\{\{EXISTING_MEMORY\}\}/g, existingMemory || '(空)')
+    .replace(/\{\{SOFT_LIMIT\}\}/g, String(softLimit))
+    .replace(/\{\{HARD_LIMIT\}\}/g, String(hardLimit))
+    .replace(/\{\{NO_UPDATE_MAGIC\}\}/g, NO_UPDATE_MAGIC)
 }
