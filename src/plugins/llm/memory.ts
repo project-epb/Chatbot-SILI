@@ -24,21 +24,6 @@ export function byteLength(s: string): number {
   return Buffer.byteLength(s, 'utf8')
 }
 
-export function truncateToByteLimit(s: string, limit: number): string {
-  if (limit <= 0) return ''
-  if (byteLength(s) <= limit) return s
-  // 逐字符累积，直到超限
-  let acc = ''
-  let used = 0
-  for (const ch of s) {
-    const w = byteLength(ch)
-    if (used + w > limit) break
-    acc += ch
-    used += w
-  }
-  return acc
-}
-
 export function isNoUpdateMagic(text: string): boolean {
   return text.trim() === NO_UPDATE_MAGIC
 }
@@ -88,10 +73,8 @@ export class MemoryStore {
     platform: string,
     userId: string,
     content: string,
-    byteLimit: number,
     currentMessageCount: number
   ): Promise<void> {
-    const truncated = truncateToByteLimit(content, byteLimit)
     const now = Date.now()
     const existing = await this.getMeta(platform, userId)
     if (existing) {
@@ -99,8 +82,8 @@ export class MemoryStore {
         'openai_user_memory',
         { id: existing.id },
         {
-          content: truncated,
-          byte_size: byteLength(truncated),
+          content,
+          byte_size: byteLength(content),
           last_updated_at: now,
           last_check_at: now,
           update_count: existing.update_count + 1,
@@ -111,8 +94,8 @@ export class MemoryStore {
       await this.ctx.database.create('openai_user_memory', {
         platform,
         user_id: userId,
-        content: truncated,
-        byte_size: byteLength(truncated),
+        content,
+        byte_size: byteLength(content),
         last_updated_at: now,
         last_check_at: now,
         update_count: 1,

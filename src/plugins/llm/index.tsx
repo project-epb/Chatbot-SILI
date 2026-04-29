@@ -99,6 +99,7 @@ export interface Config {
   showToolCallNotice?: boolean
   memoryByteLimit?: number
   memoryUpdateInterval?: number
+  memoryForkMaxRetries?: number
 }
 export declare const Config: Config
 
@@ -155,8 +156,9 @@ export default class PluginLLM extends BasePlugin<Config> {
       enableAgent: true,
       maxToolIterations: 5,
       showToolCallNotice: true,
-      memoryByteLimit: 8192,
+      memoryByteLimit: 3000,
       memoryUpdateInterval: 10,
+      memoryForkMaxRetries: 3,
       systemPrompt: {
         default: PluginLLM.readPromptFile('SILI-v5.prompt.md'),
       },
@@ -907,7 +909,8 @@ export default class PluginLLM extends BasePlugin<Config> {
     maxTokens: number
   }) {
     const interval = this.config.memoryUpdateInterval ?? 10
-    const byteLimit = this.config.memoryByteLimit ?? 8192
+    const byteLimit = this.config.memoryByteLimit ?? 3000
+    const maxRetries = this.config.memoryForkMaxRetries ?? 3
 
     const meta = await this.memory.getMeta(args.platform, args.userId)
     const userMessages = await this.ctx.database.get(
@@ -934,6 +937,7 @@ export default class PluginLLM extends BasePlugin<Config> {
       model: args.model,
       maxTokens: args.maxTokens,
       byteLimit,
+      maxRetries,
       platform: args.platform,
       userId: args.userId,
       conversationId: args.conversation_id,
