@@ -94,11 +94,16 @@ export class AnthropicProvider extends LLMProviderBase {
         case 'content_block_delta': {
           const delta = event.delta as any
           if (delta.type === 'text_delta') {
-            const text = delta.text?.trim()
-            if (text) yield { kind: 'content', content: text }
+            // 不 trim — chunk 边界的空格不能丢
+            const text = delta.text
+            if (typeof text === 'string' && text.length > 0) {
+              yield { kind: 'content', content: text }
+            }
           } else if (delta.type === 'thinking_delta') {
-            const text = delta.thinking?.trim()
-            if (text) yield { kind: 'reasoning_content', content: text }
+            const text = delta.thinking
+            if (typeof text === 'string' && text.length > 0) {
+              yield { kind: 'reasoning_content', content: text }
+            }
           } else if (delta.type === 'input_json_delta') {
             aggregator.appendInputJson(event.index, delta.partial_json ?? '')
           }

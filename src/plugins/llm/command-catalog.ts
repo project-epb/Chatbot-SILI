@@ -1,5 +1,7 @@
 import { Context } from 'koishi'
 
+import { isForbiddenAgentCommand } from './tools'
+
 export interface CommandCatalogArg {
   name: string
   type: string
@@ -76,6 +78,9 @@ export function buildCommandCatalog(ctx: Context): CommandCatalogEntry[] {
   const visit = (cmd: any): CommandCatalogEntry | null => {
     if (!cmd || visited.has(cmd)) return null
     if (cmd.config?.hidden) return null
+    // 同时过滤掉 agent 不允许调用的命令——既不在 catalog 里出现，也不会被
+    // dispatchTool 调到（双层防御）。
+    if (isForbiddenAgentCommand(cmd.name)) return null
     visited.add(cmd)
 
     const description: string =

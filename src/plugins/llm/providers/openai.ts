@@ -185,11 +185,17 @@ export class OpenAIProvider extends LLMProviderBase {
         continue
       }
 
-      const reasoning = delta.reasoning_content?.trim?.()
-      if (reasoning) yield { kind: 'reasoning_content', content: reasoning }
+      // 不要 trim — chunk 边界的空格会被吃掉，拼起来就丢空格。
+      // 用 typeof 显式判断，避免 ''.trim() truthy 检查的副作用。
+      const reasoning = delta.reasoning_content
+      if (typeof reasoning === 'string' && reasoning.length > 0) {
+        yield { kind: 'reasoning_content', content: reasoning }
+      }
 
-      const content = delta.content?.trim?.()
-      if (content) yield { kind: 'content', content }
+      const content = delta.content
+      if (typeof content === 'string' && content.length > 0) {
+        yield { kind: 'content', content }
+      }
 
       if (delta.tool_calls) aggregator.absorbToolCallDeltas(delta.tool_calls)
 
