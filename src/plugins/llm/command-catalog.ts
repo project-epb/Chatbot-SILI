@@ -71,6 +71,26 @@ export function renderCommandCatalog(entries: CommandCatalogEntry[]): string {
   return header + '\n' + body
 }
 
+/**
+ * Compact rendering for the agent's system prompt: only top-level commands,
+ * one line each (`name — description`), no args/options/aliases/children.
+ *
+ * The agent is told to call `help <command>` when it actually needs a
+ * command's details. Most commands are dead weight in casual chat, so this
+ * keeps the system prompt small and the prompt cache cheap.
+ */
+export function renderCompactCatalog(entries: CommandCatalogEntry[]): string {
+  const header = '## 可用指令（概览）'
+  if (!entries.length) {
+    return header + '\n\n（暂无可用指令）'
+  }
+  const lines = entries.map((e) => {
+    const desc = e.description?.trim() || '(无描述)'
+    return `- \`${e.name}\` — ${desc}`
+  })
+  return header + '\n\n' + lines.join('\n')
+}
+
 export function buildCommandCatalog(ctx: Context): CommandCatalogEntry[] {
   const list = (ctx as any).$commander?._commandList ?? []
   const visited = new WeakSet()
