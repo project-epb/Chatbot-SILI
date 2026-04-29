@@ -104,6 +104,13 @@ export class MemoryStore {
     }
   }
 
+  async delete(platform: string, userId: string): Promise<boolean> {
+    const existing = await this.getMeta(platform, userId)
+    if (!existing) return false
+    await this.ctx.database.remove('openai_user_memory', { id: existing.id })
+    return true
+  }
+
   async markChecked(
     platform: string,
     userId: string,

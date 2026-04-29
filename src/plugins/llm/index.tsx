@@ -569,10 +569,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         )
 
         // 加载用户记忆
-        const platform =
-          session.platform === 'onebot' ? 'qq' : session.platform || 'unknown'
-        const userId =
-          session.user.id?.toString() || session.userId || 'anonymous'
+        const { platform, userId } = this.resolveMemoryKey(session)
         const memoryContent = await this.memory.get(platform, userId)
 
         // 重新构造 system prompt：原 prompt + 命令目录 + 用户记忆
@@ -765,6 +762,91 @@ export default class PluginLLM extends BasePlugin<Config> {
           )
         }
       })
+
+    this.ctx
+      .command('llm.memory', 'Manage long-term memory for the current user', {
+        hidden: true,
+      })
+      .option('read', '-r Show the current memory document')
+      .option('write', '-w Force a memory update from this session right now')
+      .option('reset', '-x Erase the current memory (requires confirmation)')
+      .userFields(['id', 'openai_last_conversation_id'])
+      .action(async ({ session, options }) => {
+        const flags = [options.read, options.write, options.reset].filter(
+          Boolean
+        ).length
+        if (flags === 0) {
+          return 'Usage: llm.memory --read | --write | --reset'
+        }
+        if (flags > 1) {
+          return 'Use only one of --read / --write / --reset at a time.'
+        }
+
+        const { platform, userId } = this.resolveMemoryKey(session)
+
+        if (options.read) {
+          const meta = await this.memory.getMeta(platform, userId)
+          if (!meta || !meta.content) return '(空)'
+          const updatedAt = meta.last_updated_at
+            ? new Date(meta.last_updated_at).toLocaleString('sv', {
+                timeZone: 'Asia/Shanghai',
+              })
+            : '从未更新'
+          return [
+            `更新时间: ${updatedAt} | 字节: ${meta.byte_size} | 累计更新: ${meta.update_count}`,
+            '',
+            meta.content,
+          ].join('\n')
+        }
+
+        if (options.write) {
+          const conversation_id = session.user.openai_last_conversation_id
+          if (!conversation_id) {
+            return '当前用户还没有任何对话记录，无法生成记忆。'
+          }
+          const providerConfig = this.config.providers[0]
+          const provider = this.defaultProvider
+          const model =
+            providerConfig?.model || this.config.model || 'gpt-4o-mini'
+          const maxTokens =
+            providerConfig?.maxTokens ?? this.config.maxTokens ?? 1024
+
+          await session.send('正在生成记忆，请稍候……')
+          try {
+            await this.maybeTriggerMemoryFork(
+              {
+                platform,
+                userId,
+                conversation_id,
+                conversation_owner: session.user.id,
+                provider,
+                model,
+                maxTokens,
+              },
+              { force: true }
+            )
+          } catch (e: any) {
+            this.logger.error('[llm.memory --write] failed:', e)
+            return `生成失败: ${e?.message || String(e)}`
+          }
+          const meta = await this.memory.getMeta(platform, userId)
+          return `Done. 当前记忆 ${meta?.byte_size ?? 0} 字节，累计更新 ${meta?.update_count ?? 0} 次。`
+        }
+
+        if (options.reset) {
+          const meta = await this.memory.getMeta(platform, userId)
+          if (!meta) return '当前用户没有记忆记录，无需清空。'
+          await session.send(
+            `即将清空当前记忆（${meta.byte_size} 字节）。如果确认，请回复 y。`
+          )
+          const reply = await session.prompt(30 * 1000)
+          if (reply?.trim().toLowerCase() !== 'y') {
+            return '已取消。'
+          }
+          const removed = await this.memory.delete(platform, userId)
+          return removed ? '记忆已清空。' : '记忆已不存在。'
+        }
+      })
   }
 
   /**
@@ -899,15 +981,18 @@ export default class PluginLLM extends BasePlugin<Config> {
     })
   }
 
-  private async maybeTriggerMemoryFork(args: {
-    platform: string
-    userId: string
-    conversation_id: string
-    conversation_owner: number
-    provider: LLMProviderBase
-    model: string
-    maxTokens: number
-  }) {
+  private async maybeTriggerMemoryFork(
+    args: {
+      platform: string
+      userId: string
+      conversation_id: string
+      conversation_owner: number
+      provider: LLMProviderBase
+      model: string
+      maxTokens: number
+    },
+    opts: { force?: boolean } = {}
+  ) {
     const interval = this.config.memoryUpdateInterval ?? 10
     const byteLimit = this.config.memoryByteLimit ?? 3000
     const maxRetries = this.config.memoryForkMaxRetries ?? 3
@@ -922,8 +1007,10 @@ export default class PluginLLM extends BasePlugin<Config> {
       { fields: ['id'] }
     )
     const userMessageCount = userMessages?.length ?? 0
-    const since = userMessageCount - (meta?.message_count_at_update ?? 0)
-    if (since < interval) return
+    if (!opts.force) {
+      const since = userMessageCount - (meta?.message_count_at_update ?? 0)
+      if (since < interval) return
+    }
 
     // 拉取对话上下文
     const history = await this.getChatHistoriesById(args.conversation_id, 50)
@@ -944,6 +1031,17 @@ export default class PluginLLM extends BasePlugin<Config> {
       currentMessageCount: userMessageCount,
       history,
     })
+  }
+
+  /**
+   * Resolve the (platform, userId) pair the memory store keys on for a session.
+   * Same logic as the chat action — keep them in sync.
+   */
+  private resolveMemoryKey(session: any): { platform: string; userId: string } {
+    const platform =
+      session.platform === 'onebot' ? 'qq' : session.platform || 'unknown'
+    const userId = session.user?.id?.toString() || session.userId || 'anonymous'
+    return { platform, userId }
   }
 
   /**
