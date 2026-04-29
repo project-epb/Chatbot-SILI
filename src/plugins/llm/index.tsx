@@ -32,6 +32,7 @@ import {
 } from './command-catalog'
 import { ToolRegistry, executeKoishiCommandHandler } from './tools'
 import { MemoryStore } from './memory'
+import { resolveThinkingLevel } from './thinking'
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
 import { groupAndTrimHistory, type HistoryRow } from './history-filter'
@@ -69,7 +70,6 @@ export type ProviderConfig =
       type: 'openai'
       options: ClientOptions
       model?: string
-      reasoningModel?: string
       maxTokens?: number
     }
   | {
@@ -77,14 +77,12 @@ export type ProviderConfig =
       type: 'anthropic'
       options: AnthropicClientOptions
       model?: string
-      reasoningModel?: string
       maxTokens?: number
     }
 
 export interface Config {
   providers: ProviderConfig[]
   model?: string
-  reasoningModel?: string
   historyMessageCount?: number
   maxTokens?: number
   systemPrompt?: Partial<{
@@ -116,6 +114,7 @@ export declare const Config: Config
 function modelNeedsReasoningContent(model: string): boolean {
   return /deepseek-v4/i.test(model)
 }
+
 
 export default class PluginLLM extends BasePlugin<Config> {
   static inject: Inject = {
@@ -156,7 +155,6 @@ export default class PluginLLM extends BasePlugin<Config> {
   constructor(ctx: Context, config: Config) {
     const defaultConfigs: Partial<Config> = {
       model: 'gpt-4o-mini',
-      reasoningModel: 'gpt-o1-mini',
       maxTokens: 8192,
       historyMessageCount: 10,
       enableAgent: true,
@@ -278,7 +276,6 @@ export default class PluginLLM extends BasePlugin<Config> {
         <th style="padding: 6px 10px; border: 1px solid #ddd;">Name</th>
         <th style="padding: 6px 10px; border: 1px solid #ddd;">Type</th>
         <th style="padding: 6px 10px; border: 1px solid #ddd;">Model</th>
-        <th style="padding: 6px 10px; border: 1px solid #ddd;">Reasoning</th>
       </tr>
     </thead>
     <tbody>
@@ -289,7 +286,6 @@ export default class PluginLLM extends BasePlugin<Config> {
           <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.name}${i === 0 ? ' <span style="color: #888; font-size: 11px;">default</span>' : ''}</td>
           <td style="padding: 4px 10px; border: 1px solid #ddd;">${p.type}</td>
           <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.model || '-'}</td>
-          <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.reasoningModel || '-'}</td>
         </tr>`
         )
         .join('')}
@@ -401,16 +397,16 @@ export default class PluginLLM extends BasePlugin<Config> {
         maxUsage: 10,
         bypassAuthority: 2,
       })
-      .shortcut(/(.+)[\?？]$/, {
-        args: ['$1'],
-        prefix: true,
-      })
       .shortcut(/(.+)[\?？][\!！]$/, {
         args: ['$1'],
         prefix: true,
         options: {
-          thinking: true,
+          think: 'high',
         },
+      })
+      .shortcut(/(.+)[\?？]$/, {
+        args: ['$1'],
+        prefix: true,
       })
       .option('no-prompt', '-P Disable system prompts', {
         type: 'boolean',
@@ -424,10 +420,9 @@ export default class PluginLLM extends BasePlugin<Config> {
         hidden: true,
         authority: 2,
       })
-      .option('thinking', '-t Enable reasoning mode', {
-        type: 'boolean',
+      .option('think', '-t <level:string> Reasoning level (low|medium|high|xhigh|max|no)', {
         hidden: true,
-        fallback: false,
+        fallback: 'low',
       })
       .option('search', '-s Enable web search', {
         type: 'boolean',
@@ -492,11 +487,13 @@ export default class PluginLLM extends BasePlugin<Config> {
 
         const model =
           options.model ||
-          (options.thinking
-            ? providerConfig?.reasoningModel ||
-              this.config.reasoningModel ||
-              'deepseek-r1'
-            : providerConfig?.model || this.config.model || 'gpt-4o-mini')
+          providerConfig?.model ||
+          this.config.model ||
+          'gpt-4o-mini'
+
+        const { enableThinking, thinkingBudget } = resolveThinkingLevel(
+          options.think
+        )
 
         const maxTokens =
           providerConfig?.maxTokens ?? this.config.maxTokens ?? 1024
@@ -646,8 +643,8 @@ export default class PluginLLM extends BasePlugin<Config> {
               topP: 0.8,
             },
             features: {
-              enableThinking: !!options.thinking,
-              thinkingBudget: maxTokens,
+              enableThinking,
+              thinkingBudget,
               enableSearch,
             },
             registry: effectiveRegistry,
