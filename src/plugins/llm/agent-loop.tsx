@@ -8,22 +8,16 @@ import type {
   ChatMessage,
   ToolCall,
 } from './providers/_base'
-import { CHUNK_BREAK_MARKER } from './stream-splitter'
+import { PROTOCOL_MARKERS } from './protocol'
 import { ToolRegistry } from './tools'
 
-/** Magic string the agent emits to choose silence (typically when the user
- *  said "shut up" / "stop talking"). Stream output is suppressed and the
- *  whole turn is dropped from history (see runAgentLoop result.silentChosen). */
-const SILENT_MARKER = '<silent/>'
-/** Appended to assistant content when the turn was cut short by user
- *  interrupt. Lets the model read history and understand "I was talking,
- *  user cut me off". */
-const INTERRUPTED_MARKER = '<interrupted/>'
+const { SILENT: SILENT_MARKER, INTERRUPTED: INTERRUPTED_MARKER, MSG_BREAK: MSG_BREAK_MARKER } =
+  PROTOCOL_MARKERS
 
 /**
  * Compute what to persist when the assistant turn is interrupted.
  *
- * If the agent had emitted any `<chunk_break/>` markers, the user has
+ * If the agent had emitted any `<msg_break/>` markers, the user has
  * already seen everything up to the last marker (splitContent flushes at
  * each marker). Truncate at that marker and replace it with
  * `<interrupted/>` so history reflects exactly what the user saw, no
@@ -35,7 +29,7 @@ const INTERRUPTED_MARKER = '<interrupted/>'
  */
 function buildInterruptedContent(content: string): string {
   if (!content) return ''
-  const lastMarker = content.lastIndexOf(CHUNK_BREAK_MARKER)
+  const lastMarker = content.lastIndexOf(MSG_BREAK_MARKER)
   if (lastMarker !== -1) {
     return content.slice(0, lastMarker) + INTERRUPTED_MARKER
   }

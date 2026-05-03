@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { CHUNK_BREAK_MARKER, splitContent } from '../stream-splitter'
+import { PROTOCOL_MARKERS } from '../protocol'
+import { splitContent } from '../stream-splitter'
+
+const CHUNK_BREAK_MARKER = PROTOCOL_MARKERS.MSG_BREAK
 
 describe('splitContent', () => {
   it('returns empty for short buffer with no marker', () => {
@@ -10,7 +13,7 @@ describe('splitContent', () => {
     })
   })
 
-  it('cuts at AI <chunk_break/> marker', () => {
+  it('cuts at AI <msg_break/> marker', () => {
     const buf = 'first part' + CHUNK_BREAK_MARKER + 'second'
     const out = splitContent(buf, 0)
     expect(out.text).toBe('first part' + CHUNK_BREAK_MARKER)
@@ -43,8 +46,8 @@ describe('splitContent', () => {
   })
 
   it('returns empty when only marker prefix is present (incomplete tag)', () => {
-    // streaming 中 marker 可能被切到中间：'<chunk_break' 还差 '/>'
-    expect(splitContent('hello <chunk_break', 0).text).toBe('')
+    // streaming 中 marker 可能被切到中间：'<msg_break' 还差 '/>'
+    expect(splitContent('hello <msg_break', 0).text).toBe('')
   })
 
   describe('long-content fallback', () => {
