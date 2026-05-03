@@ -16,12 +16,9 @@ export interface OpenAISession {
   /** Last time this session was used; the session is considered fresh until
    *  now - last_used_at exceeds the configured idle timeout. */
   last_used_at: number
-  /** Snapshot of the role/persona prompt at session start. */
-  base_prompt: string
-  /** Snapshot of the rendered command catalog at session start. */
-  command_catalog: string
-  /** Snapshot of the user's long-term memory at session start. */
-  memory_snapshot: string
+  /** First user utterance (up to 30 codepoints) — used as a label when the
+   *  user wants to resume / pick between past conversations. */
+  user_first_msg: string
 }
 
 export interface CreateSessionInput {
@@ -29,9 +26,19 @@ export interface CreateSessionInput {
   conversationOwner: number
   platform: string
   userId: string
-  basePrompt: string
-  commandCatalog: string
-  memorySnapshot: string
+  userFirstMsg: string
+}
+
+const FIRST_MSG_MAX_CODEPOINTS = 30
+
+/** Take the first N codepoints of a string (emoji/中文 safe). */
+export function truncateFirstMsg(text: string): string {
+  const trimmed = (text ?? '').trim()
+  if (!trimmed) return ''
+  const points = [...trimmed]
+  return points.length <= FIRST_MSG_MAX_CODEPOINTS
+    ? trimmed
+    : points.slice(0, FIRST_MSG_MAX_CODEPOINTS).join('')
 }
 
 export class SessionManager {
@@ -48,9 +55,7 @@ export class SessionManager {
         user_id: 'string(128)',
         started_at: 'unsigned(20)',
         last_used_at: 'unsigned(20)',
-        base_prompt: 'text',
-        command_catalog: 'text',
-        memory_snapshot: 'text',
+        user_first_msg: 'string(255)',
       },
       {
         primary: 'id',
@@ -77,9 +82,7 @@ export class SessionManager {
       user_id: input.userId,
       started_at: now,
       last_used_at: now,
-      base_prompt: input.basePrompt,
-      command_catalog: input.commandCatalog,
-      memory_snapshot: input.memorySnapshot,
+      user_first_msg: truncateFirstMsg(input.userFirstMsg),
     })
     return row
   }
@@ -122,53 +125,4 @@ export function isSessionExpired(
 ): boolean {
   if (idleTtlMs <= 0) return false // 0 / negative disables expiry
   return now - session.last_used_at > idleTtlMs
-}
-
-/** Subset needed to render a system prompt — accepts both DB rows and synthetic objects. */
-export interface SessionSnapshot {
-  base_prompt: string
-  command_catalog: string
-  memory_snapshot: string
-}
-
-/**
- * Render a session's frozen snapshot into a complete system prompt text.
- * Pure function — same input always produces the same output, which is the
- * whole point of the frozen-snapshot design (preserves prefix cache).
- */
-export function composeSystemPrompt(session: SessionSnapshot): string {
-  const parts: string[] = [session.base_prompt]
-  if (session.command_catalog) {
-    parts.push(session.command_catalog)
-    parts.push(
-      [
-        '## 调用工具',
-        '调用 `execute_koishi_command` 时传入 `name`、`args`、`options`。',
-        '调用前请确认指令存在于上述清单中。',
-        '',
-        '**清单只是概览**，没有列出每条指令的参数和选项。要看具体用法，先用 `help` 查询：',
-        '- `execute_koishi_command(name="help", args=["指令名"])` → 返回该指令的描述、参数、选项、别名、子指令',
-        '- help 的输出由系统直接渲染，子指令会以**点号命名**呈现，请按返回的 `name` 调用',
-        '- 不熟悉的指令**先 help 再调用**，避免参数出错',
-        '',
-        '**指令命名规则**（Koishi 把"分类"和"命名空间"用不同符号区分）：',
-        '- `foo.bar` （**点号** = 命名空间）：调用时 `name: "foo.bar"`',
-        '- `foo/bar` （**斜杠** = 分类）：调用时 `name: "bar"`（斜杠前的 foo 只用于分组）',
-        '',
-        '清单里看到的就是调用时该传的 `name`，不要做额外加工：',
-        '- 看到 `pixiv.illust` → `name: "pixiv.illust"`',
-        '- 看到 `homo`（清单顶级）→ `name: "homo"`',
-      ].join('\n')
-    )
-  }
-  if (session.memory_snapshot) {
-    parts.push(
-      [
-        '## 关于这个用户的长期记忆',
-        session.memory_snapshot,
-        '以上记忆由系统周期性自动维护，对话中可参考但不要主动更新。',
-      ].join('\n\n')
-    )
-  }
-  return parts.join('\n\n')
 }

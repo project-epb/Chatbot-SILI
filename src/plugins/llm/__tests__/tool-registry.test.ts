@@ -3,6 +3,7 @@ import {
   ToolRegistry,
   isForbiddenAgentCommand,
   renderAgentHelp,
+  runReadUserMemory,
   type ToolHandler,
 } from '../tools'
 import type { CommandCatalogEntry } from '../command-catalog'
@@ -138,5 +139,43 @@ describe('renderAgentHelp', () => {
 
   it('returns placeholder when catalog is empty and no arg', () => {
     expect(renderAgentHelp([])).toBe('(暂无可用指令)')
+  })
+})
+
+describe('runReadUserMemory', () => {
+  const makeMemory = (table: Record<string, string>) => ({
+    async get(platform: string, userId: string) {
+      return table[`${platform}/${userId}`] ?? ''
+    },
+  })
+
+  it('returns the memory text when present', async () => {
+    const memory = makeMemory({ 'qq/u1': '- 喜欢吃热干面' })
+    const out = await runReadUserMemory(memory, 'qq', 'u1')
+    expect(out).toBe('- 喜欢吃热干面')
+  })
+
+  it('returns the placeholder when memory is empty string', async () => {
+    const memory = makeMemory({ 'qq/u1': '' })
+    const out = await runReadUserMemory(memory, 'qq', 'u1')
+    expect(out).toBe('(暂无长期记忆)')
+  })
+
+  it('returns the placeholder when memory is whitespace only', async () => {
+    const memory = makeMemory({ 'qq/u1': '   \n  \t ' })
+    const out = await runReadUserMemory(memory, 'qq', 'u1')
+    expect(out).toBe('(暂无长期记忆)')
+  })
+
+  it('keys on (platform, userId) — no cross-user leak', async () => {
+    const memory = makeMemory({
+      'qq/u1': 'mine',
+      'qq/u2': 'theirs',
+    })
+    expect(await runReadUserMemory(memory, 'qq', 'u1')).toBe('mine')
+    expect(await runReadUserMemory(memory, 'qq', 'u2')).toBe('theirs')
+    expect(await runReadUserMemory(memory, 'discord', 'u1')).toBe(
+      '(暂无长期记忆)'
+    )
   })
 })

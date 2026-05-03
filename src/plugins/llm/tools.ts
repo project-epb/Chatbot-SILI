@@ -5,6 +5,8 @@ import {
   findCatalogEntry,
   renderCatalogEntryDetail,
 } from './command-catalog'
+import type { ImageReferenceCache } from './image-cache'
+import type { MemoryStore } from './memory'
 import type { ToolDefinition } from './providers/_base'
 
 export interface ToolContext {
@@ -131,6 +133,55 @@ async function runExecuteKoishiCommand(
     return renderAgentHelp(catalog, input.args?.[0])
   }
 
+  // 部分 koishi 插件违反开发规范，在 action 里直接 session.send 而不是
+  // return string（典型例子：mediawiki 插件）。我们在工具执行窗口内劫持
+  // send / sendQueued 把这些"侧通道"产出收集起来，合并到工具返回值里——
+  // agent 拿到完整结果，由 agent 决定怎么呈现给用户；用户也不会看到
+  // 来自插件的原始未加工输出。窗口严格限制在 session.execute 这一行，
+  // try/finally 还原，避免影响 agent 自己的流式 sendQueued 输出。
+  // 部分 koishi 插件违反开发规范，在 action 里直接调 session.send 而不是
+  // return string（典型例子：mediawiki 插件）。我们在底层 bot.sendMessage
+  // 这一层劫持——session.send / sendQueued 最终都会走到这里——把这些
+  // "侧通道"产出收集起来，合并到工具返回值里，让 agent 拿到完整结果。
+  //
+  // 为什么不在 session.send 层劫持：cordis 的 service mixin 用 accessor +
+  // Proxy 实现，instance 层 own property override 看似生效但实际调用
+  // 仍走 service routing，拦不到。bot 是普通 Bot class instance，没有
+  // service 装饰，own property override 100% 可靠。
+  //
+  // 精准条件：只拦 options.session === currentSession 的发送，避免影响
+  // 同时间内别的并发用户/会话。窗口严格在 session.execute 调用前后，
+  // try/finally 还原。
+  const captured: string[] = []
+  const stringifyFragment = (content: unknown): string => {
+    if (content == null) return ''
+    if (typeof content === 'string') return content
+    // koishi fragment is usually Element[] — concat-toString instead of the
+    // default Array.toString which inserts commas between elements.
+    if (Array.isArray(content)) return content.map((e) => String(e)).join('')
+    return String(content)
+  }
+  const collect = (content: unknown) => {
+    const text = stringifyFragment(content)
+    if (text) captured.push(text)
+  }
+  const bot = (session as any).bot
+  const originalBotSendMessage = bot?.sendMessage?.bind(bot)
+  if (originalBotSendMessage) {
+    bot.sendMessage = async function (
+      channelId: string,
+      content: unknown,
+      referrer?: unknown,
+      options?: any
+    ) {
+      if (options?.session === session) {
+        collect(content)
+        return [] as string[]
+      }
+      return originalBotSendMessage(channelId, content, referrer, options)
+    }
+  }
+
   try {
     const result = await session.execute(
       {
@@ -140,10 +191,25 @@ async function runExecuteKoishiCommand(
       },
       true
     )
-    if (typeof result === 'string') return result || '(指令未返回任何输出)'
-    return result == null ? '(指令未返回任何输出)' : String(result)
+    const returned = stringifyFragment(result)
+    const rawAggregated = [captured.join('\n'), returned]
+      .filter((s) => s && s.trim())
+      .join('\n')
+      .trim()
+    if (!rawAggregated) return '(指令未返回任何输出)'
+    // Token-saving: collapse inline base64 image data URIs into short refs
+    // before handing the result to the agent. Refs are restored to the
+    // original src on the way back out (see flushVisibleText).
+    const imageRefs = (ctx as any).llm?.imageRefs as
+      | ImageReferenceCache
+      | undefined
+    return imageRefs
+      ? await imageRefs.replaceDataUrisWithRefs(rawAggregated)
+      : rawAggregated
   } catch (e: any) {
     return `Error: ${e?.message || String(e)}`
+  } finally {
+    if (originalBotSendMessage) bot.sendMessage = originalBotSendMessage
   }
 }
 
@@ -156,4 +222,29 @@ export const executeKoishiCommandHandler: ToolHandler = {
       ctx
     )
   },
+}
+
+// 内建工具：read_user_memory
+export const READ_USER_MEMORY_TOOL: ToolDefinition = {
+  name: 'read_user_memory',
+  description:
+    '读取当前用户的长期记忆文档，按需调用：当话题涉及用户偏好、过往互动、或个人化判断时使用；闲聊和常识问答不需要调用。返回纯文本（多行 markdown），若无记忆返回 "(暂无长期记忆)"。',
+  parameters: {
+    type: 'object',
+    properties: {},
+    additionalProperties: false,
+  },
+}
+
+/**
+ * Pure helper for the read_user_memory tool — exists separately so it can be
+ * unit-tested without spinning up a koishi context.
+ */
+export async function runReadUserMemory(
+  memory: Pick<MemoryStore, 'get'>,
+  platform: string,
+  userId: string
+): Promise<string> {
+  const text = await memory.get(platform, userId)
+  return text?.trim() ? text : '(暂无长期记忆)'
 }
