@@ -32,6 +32,7 @@ import {
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
 import { SessionManager } from './session-manager'
+import { ActiveChatRegistry } from './services/active-chats'
 import { ChatHistoryService } from './services/chat-history'
 import { CommandCatalogService } from './services/command-catalog'
 import { SystemPromptBuilder } from './services/system-prompt'
@@ -155,34 +156,6 @@ export default class PluginLLM extends BasePlugin<Config> {
     </random>
   )
   readonly MODEL_ALIASES: Record<string, string> = {}
-  /**
-   * 当前每个用户正在进行中的 chat 会话句柄。第二次 `;chat` 进来时不再硬拒，
-   * 而是按 sendFromIndex 分两种打断场景：
-   *   - sendFromIndex.value === 0（pre-stream，用户还没看到任何东西）→
-   *     abort 旧的，把两句拼接成一句重新起轮
-   *   - sendFromIndex.value > 0（mid-stream，用户已看到部分文本）→
-   *     abort 旧的（已发部分会被持久化为 `<interrupted/>` 标记），新一轮
-   *     的 user message envelope 注入 `<interrupt_notice>` 临时提示块
-   *
-   * `completion` 是该会话的"什么时候真的退出"Promise，让二次进入能 await
-   * 旧会话彻底 unwind 后再起新的，避免数据库写入竞态。
-   */
-  readonly ACTIVE_SESSIONS = new Map<
-    string | number,
-    {
-      abort: AbortController
-      sendFromIndex: { value: number }
-      pendingUserPrompt: string
-      completion: Promise<void>
-      /**
-       * 老 session 当前在写哪个 conversation_id。打断进来时直接复用，
-       * 避免依赖 user.openai_last_conversation_id（在老 action 退出前
-       * 还没 persist，新 action 拉 user 会读到旧值，触发误生成新 UUID +
-       * 覆盖 persist 的 race condition）。
-       */
-      conversationId: string
-    }
-  >()
   readonly memory: MemoryStore = new MemoryStore(this.ctx)
   readonly sessions: SessionManager = new SessionManager(this.ctx)
   readonly tools: ToolRegistry = new ToolRegistry()
@@ -196,6 +169,7 @@ export default class PluginLLM extends BasePlugin<Config> {
     () => this.config.systemPrompt.default ?? ''
   )
   readonly chatHistory: ChatHistoryService = new ChatHistoryService(this.ctx)
+  readonly activeChats: ActiveChatRegistry = new ActiveChatRegistry(this.logger)
   readonly catalog: CommandCatalogService = new CommandCatalogService(
     this.ctx,
     this.logger
@@ -548,7 +522,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         let interruptScenario: 'fresh' | 'pre-stream' | 'mid-stream' = 'fresh'
         let interruptedOldPrompt = ''
         let inheritedConversationId: string | null = null
-        const existingSession = this.ACTIVE_SESSIONS.get(conversation_owner)
+        const existingSession = this.activeChats.get(conversation_owner)
         if (existingSession) {
           interruptScenario =
             existingSession.sendFromIndex.value === 0
@@ -588,7 +562,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         const completion = new Promise<void>((res) => {
           resolveCompletion = res
         })
-        this.ACTIVE_SESSIONS.set(conversation_owner, {
+        this.activeChats.register(conversation_owner, {
           abort: abortController,
           sendFromIndex: sendFromIndexRef,
           pendingUserPrompt: userPrompt ?? '',
@@ -703,7 +677,7 @@ export default class PluginLLM extends BasePlugin<Config> {
 
         // 用于流式逐字输出的累积缓冲，emoji reaction 检测它非空后停止
         let sendBuffer = ''
-        // sendFromIndex 同时挂在 ACTIVE_SESSIONS entry 上，让二次进入能读到
+        // sendFromIndex 同时挂在 activeChats entry 上，让二次进入能读到
         const sendFromIndex = sendFromIndexRef
         let lastMessageId: string = session.messageId
 
@@ -764,9 +738,9 @@ export default class PluginLLM extends BasePlugin<Config> {
               conversation_id = newId
               session.user.openai_last_conversation_id = newId
               await session.user.$update()
-              // ACTIVE_SESSIONS entry 上挂的 id 也同步更新，避免后续打断
+              // activeChats entry 上挂的 id 也同步更新，避免后续打断
               // 进来读到老 id 又分歧
-              const active = this.ACTIVE_SESSIONS.get(conversation_owner)
+              const active = this.activeChats.get(conversation_owner)
               if (active) active.conversationId = newId
             }
             await this.sessions.create({
@@ -878,7 +852,7 @@ export default class PluginLLM extends BasePlugin<Config> {
           })
         } catch (e) {
           this.logger.error('[chat] agent loop error:', e)
-          this.ACTIVE_SESSIONS.delete(conversation_owner)
+          this.activeChats.unregister(conversation_owner)
           resolveCompletion()
           stopEmojiReaction()
           return (
@@ -894,7 +868,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         // 把"用户让我闭嘴 + 我闭了"当作系统控制信号处理，等价于 llm.stop。
         if (agentResult.silentChosen) {
           this.logger.info('[chat] silent chosen by agent')
-          this.ACTIVE_SESSIONS.delete(conversation_owner)
+          this.activeChats.unregister(conversation_owner)
           resolveCompletion()
           stopEmojiReaction()
           session?.setReaction?.('🤐').catch(() => {})
@@ -939,8 +913,8 @@ export default class PluginLLM extends BasePlugin<Config> {
         } as any)
 
         // 被打断时对方的 abort 已经触发（abort 早于这里）；正常完成时
-        // 释放 ACTIVE_SESSIONS 让下次 chat 能继续。
-        this.ACTIVE_SESSIONS.delete(conversation_owner)
+        // 释放 activeChats 让下次 chat 能继续。
+        this.activeChats.unregister(conversation_owner)
         resolveCompletion()
 
         // 异步触发 memory fork（不阻塞主对话）
@@ -962,7 +936,7 @@ export default class PluginLLM extends BasePlugin<Config> {
       .action(async ({ session }) => {
         // 如果当前还在说话，先掐断；否则即便清了 conversation_id 也会被
         // 后续 sendQueued 继续发出来，UX 错乱。
-        this.abortActiveSession(session.user.id, 'user-reset')
+        this.activeChats.abort(session.user.id, 'user-reset')
         if (!session.user.openai_last_conversation_id) {
           return (
             <random>
@@ -990,7 +964,7 @@ export default class PluginLLM extends BasePlugin<Config> {
       .command('llm.stop', 'Stop SILI from talking right now', { hidden: true })
       .userFields(['id'])
       .action(async ({ session }) => {
-        const aborted = this.abortActiveSession(session.user.id, 'user-stop')
+        const aborted = this.activeChats.abort(session.user.id, 'user-stop')
         if (aborted) {
           session?.setReaction?.('🤐').catch(() => {})
         }
@@ -1277,28 +1251,6 @@ export default class PluginLLM extends BasePlugin<Config> {
   getCatalog(): readonly CommandCatalogEntry[] {
     return this.catalog.list()
   }
-
-  /**
-   * Abort the user's currently-active chat session if any, returning whether
-   * something was actually aborted. Shared entry point for both `llm.stop`
-   * (user-driven explicit stop) and `llm.reset` (which must also stop the
-   * stream, since after a reset the in-flight reply has nowhere to land).
-   *
-   * Does NOT delete from ACTIVE_SESSIONS — that's owned by the chat action's
-   * finally block, which still has cleanup to do (resolveCompletion, emoji
-   * reaction, etc.).
-   */
-  abortActiveSession(
-    userId: string | number,
-    reason: 'user-stop' | 'user-reset' | 'user-interrupt'
-  ): boolean {
-    const active = this.ACTIVE_SESSIONS.get(userId)
-    if (!active) return false
-    this.logger.info('[chat] abort active session: reason=%s', reason)
-    active.abort.abort(reason)
-    return true
-  }
-
 
   /**
    * DeepSeek V4 对 system prompt 的指令遵循度较低
