@@ -24,7 +24,6 @@ import {
   buildCommandCatalog,
   renderCompactCatalog,
 } from './command-catalog'
-import { type HistoryRow, groupAndTrimHistory } from './history-filter'
 import { ImageReferenceCache } from './image-cache'
 import { MemoryStore } from './memory'
 import { sanitizeAgentOutput } from './output-filter'
@@ -37,6 +36,7 @@ import {
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
 import { SessionManager } from './session-manager'
+import { ChatHistoryService } from './services/chat-history'
 import { SystemPromptBuilder } from './services/system-prompt'
 import { clampThinkingBudget, resolveThinkingLevel } from './thinking'
 import {
@@ -207,6 +207,7 @@ export default class PluginLLM extends BasePlugin<Config> {
   readonly systemPrompt: SystemPromptBuilder = new SystemPromptBuilder(
     () => this.config.systemPrompt.default ?? ''
   )
+  readonly chatHistory: ChatHistoryService = new ChatHistoryService(this.ctx)
 
   constructor(ctx: Context, config: Config) {
     const defaultConfigs: Partial<Config> = {
@@ -329,7 +330,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         primary: 'id',
         autoInc: true,
         indexes: [
-          // getChatHistoriesById
+          // ChatHistoryService.getById
           ['conversation_id', 'time'],
           // 通过用户查找记录
           ['conversation_owner', 'time'],
@@ -632,7 +633,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         const enableThinking = rawEnableThinking && safeBudget > 0
         const thinkingBudget = safeBudget
 
-        const histories = await this.getChatHistoriesById(
+        const histories = await this.chatHistory.getById(
           conversation_id,
           this.config.historyMessageCount
         )
@@ -1163,62 +1164,6 @@ export default class PluginLLM extends BasePlugin<Config> {
     }
   }
 
-  async getChatHistoriesById(
-    conversation_id: string,
-    limit = 10
-  ): Promise<ChatMessage[]> {
-    const userTurnLimit = Math.max(0, Math.floor(limit))
-    if (!userTurnLimit) return []
-
-    // 一个回合最多 1 user + N assistant(tool_calls) + N tool + 1 final assistant
-    const queryLimit = Math.min(200, userTurnLimit * 8 + 20)
-
-    const raw = (await this.ctx.database.get(
-      'openai_chat',
-      { conversation_id },
-      {
-        sort: { time: 'desc' },
-        limit: queryLimit,
-        fields: [
-          'content',
-          'role',
-          'reasoning_content',
-          'tool_calls',
-          'tool_call_id',
-          'tool_name',
-        ],
-      }
-    )) as Array<HistoryRow & { reasoning_content?: string }> | null
-
-    const rowsAsc = (raw ?? []).slice().reverse()
-
-    const trimmed = groupAndTrimHistory(rowsAsc, userTurnLimit)
-
-    // 转回 ChatMessage 形态。永远带上 reasoning_content（即便是空串）——
-    // provider 层会按模型决定是否保留这个字段。
-    return trimmed.map((row): ChatMessage => {
-      if (row.role === 'tool') {
-        return {
-          role: 'tool',
-          tool_call_id: row.tool_call_id ?? '',
-          tool_name: row.tool_name ?? '',
-          content: row.content,
-        }
-      }
-      if (row.role === 'assistant') {
-        const tool_calls = row.tool_calls
-          ? (JSON.parse(row.tool_calls) as ToolCall[])
-          : undefined
-        return {
-          role: 'assistant',
-          content: row.content,
-          tool_calls,
-          reasoning_content: row.reasoning_content ?? '',
-        }
-      }
-      return { role: row.role as 'user' | 'system', content: row.content }
-    })
-  }
 
   /**
    * Resolve which (provider, model, maxTokens) to use for memory fork tasks.
@@ -1301,8 +1246,8 @@ export default class PluginLLM extends BasePlugin<Config> {
       if (since < interval) return
     }
 
-    // 拉取对话上下文（reasoning_content 已在 getChatHistoriesById 默认带上）
-    const history = await this.getChatHistoriesById(args.conversation_id, 50)
+    // 拉取对话上下文（reasoning_content 已在 ChatHistoryService 默认带上）
+    const history = await this.chatHistory.getById(args.conversation_id, 50)
 
     const { provider, model, maxTokens } = this.resolveMemoryProvider()
 
