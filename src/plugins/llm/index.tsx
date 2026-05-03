@@ -20,6 +20,7 @@ import type { ClientOptions } from 'openai'
 
 import { runAgentLoop } from './agent-loop'
 import { type CommandCatalogEntry } from './command-catalog'
+import AdminCommands from './commands/admin'
 import { ImageReferenceCache } from './image-cache'
 import { MemoryStore } from './memory'
 import { sanitizeAgentOutput } from './output-filter'
@@ -226,6 +227,9 @@ export default class PluginLLM extends BasePlugin<Config> {
 
     this.#initDatabase()
     this.#initCommands()
+    // 子插件：admin 命令集合（providers/models/reset/stop/catalog/memory）。
+    // 子插件随父插件 dispose 自动卸载，命令注销 + 副作用清理由 koishi 保证。
+    ctx.plugin(AdminCommands)
     if (config.modelAliases) {
       this.MODEL_ALIASES = config.modelAliases
     }
@@ -313,138 +317,6 @@ export default class PluginLLM extends BasePlugin<Config> {
 
   #initCommands() {
     this.ctx.command('llm', 'Make ChatBot Great Again')
-
-    this.ctx
-      .command('llm.providers', 'List configured providers', { authority: 3 })
-      .action(async () => {
-        const providers = this.config.providers
-        if (!providers.length) return 'No providers configured.'
-
-        const html = this.ctx.get('html')
-        if (html) {
-          const tableHtml = `
-<div style="padding: 16px; max-width: 600px;">
-  <h3 style="margin: 0 0 12px;">LLM Providers (${providers.length})</h3>
-  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-    <thead>
-      <tr style="background: #f0f0f0; text-align: left;">
-        <th style="padding: 6px 10px; border: 1px solid #ddd;">Name</th>
-        <th style="padding: 6px 10px; border: 1px solid #ddd;">Type</th>
-        <th style="padding: 6px 10px; border: 1px solid #ddd;">Model</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${providers
-        .map(
-          (p, i) => `
-        <tr style="background: ${i % 2 ? '#fafafa' : '#fff'};">
-          <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.name}${i === 0 ? ' <span style="color: #888; font-size: 11px;">default</span>' : ''}</td>
-          <td style="padding: 4px 10px; border: 1px solid #ddd;">${p.type}</td>
-          <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.model || '-'}</td>
-        </tr>`
-        )
-        .join('')}
-    </tbody>
-  </table>
-</div>`
-          const img = await html.html(tableHtml, 'div')
-          if (img) return h.image(img, 'image/jpeg')
-        }
-
-        // Fallback: plain text
-        return providers
-          .map((p, i) => {
-            const def = i === 0 ? ' (default)' : ''
-            return `${p.name} [${p.type}]${def}${p.model ? ` model=${p.model}` : ''}`
-          })
-          .join('\n')
-      })
-
-    this.ctx
-      .command('llm.models <provider:string>', 'List available models', {
-        authority: 3,
-      })
-      .action(async (_, providerName) => {
-        const name = providerName || this.config.providers[0]?.name
-        if (!name) return 'No providers configured.'
-
-        const provider = this.providers.get(name)
-        if (!provider) return `Provider "${name}" not found.`
-
-        const models = await provider.listModels()
-        if (!models.length) {
-          return `Provider "${name}" does not support model listing.`
-        }
-
-        const hasPricing = models.some(
-          (m) => m.inputPrice != null || m.outputPrice != null
-        )
-        const hasName = models.some((m) => m.name)
-        const hasContext = models.some((m) => m.contextLength)
-
-        const formatPrice = (v?: number) =>
-          v != null ? `$${v.toFixed(2)}` : '-'
-        const formatContext = (v?: number) => {
-          if (v == null) return '-'
-          if (v >= 1_000_000)
-            return `${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`
-          if (v >= 1_000)
-            return `${(v / 1_000).toFixed(v % 1_000 === 0 ? 0 : 1)}k`
-          return String(v)
-        }
-
-        const th = (text: string) =>
-          `<th style="padding: 6px 10px; border: 1px solid #ddd;">${text}</th>`
-        const td = (text: string, mono = false) =>
-          `<td style="padding: 4px 10px; border: 1px solid #ddd;${mono ? ' font-family: monospace;' : ''}">${text}</td>`
-
-        const html = this.ctx.get('html')
-        if (html) {
-          const tableHtml = `
-<div style="padding: 16px; max-width: 900px;">
-  <h3 style="margin: 0 0 12px;">Models from ${name} (${models.length})</h3>
-  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-    <thead>
-      <tr style="background: #f0f0f0; text-align: left;">
-        ${th('ID')}
-        ${hasName ? th('Name') : ''}
-        ${hasContext ? th('Context') : ''}
-        ${hasPricing ? th('Input $/M') + th('Output $/M') : ''}
-      </tr>
-    </thead>
-    <tbody>
-      ${models
-        .map(
-          (m, i) => `
-        <tr style="background: ${i % 2 ? '#fafafa' : '#fff'};">
-          ${td(m.id, true)}
-          ${hasName ? td(m.name || '-') : ''}
-          ${hasContext ? td(formatContext(m.contextLength)) : ''}
-          ${hasPricing ? td(formatPrice(m.inputPrice)) + td(formatPrice(m.outputPrice)) : ''}
-        </tr>`
-        )
-        .join('')}
-    </tbody>
-  </table>
-</div>`
-          const img = await html.html(tableHtml, 'div')
-          if (img) return h.image(img, 'image/jpeg')
-        }
-
-        // Fallback: plain text
-        return (
-          `Models from ${name} (${models.length}):\n` +
-          models
-            .map((m) => {
-              const parts = [m.id]
-              if (m.name) parts.push(`(${m.name})`)
-              if (m.contextLength)
-                parts.push(`[${formatContext(m.contextLength)}]`)
-              return parts.join(' ')
-            })
-            .join('\n')
-        )
-      })
 
     this.ctx
       .command('llm/chat <content:text>', "I'm talking!", {
@@ -927,137 +799,6 @@ export default class PluginLLM extends BasePlugin<Config> {
           conversation_owner,
         }).catch((e) => this.logger.warn('[memory-fork] schedule failed:', e))
       })
-
-    this.ctx
-      .command('llm.reset', '开始新的对话')
-      .userFields(['id', 'openai_last_conversation_id'])
-      .shortcut('聊点别的', {
-        prefix: true,
-        fuzzy: false,
-      })
-      .action(async ({ session }) => {
-        // 如果当前还在说话，先掐断；否则即便清了 conversation_id 也会被
-        // 后续 sendQueued 继续发出来，UX 错乱。
-        this.activeChats.abort(session.user.id, 'user-reset')
-        if (!session.user.openai_last_conversation_id) {
-          return (
-            <random>
-              <>嗯……我们好像还没聊过什么呀……</>
-              <>咦？你还没有和SILI分享过你的故事呢！</>
-              <>欸？SILI好像还没和你讨论过什么哦。</>
-            </random>
-          )
-        } else {
-          session.user.openai_last_conversation_id = ''
-          await session.user.$update()
-          return (
-            <random>
-              <>让我们开始新话题吧！</>
-              <>嗯……那我们聊点别的吧！</>
-              <>好吧，那我就不提之前的事了。</>
-              <>你有更好的点子和SILI分享吗？</>
-              <>咦？是还有其他问题吗？</>
-            </random>
-          )
-        }
-      })
-
-    this.ctx
-      .command('llm.stop', 'Stop SILI from talking right now', { hidden: true })
-      .userFields(['id'])
-      .action(async ({ session }) => {
-        const aborted = this.activeChats.abort(session.user.id, 'user-stop')
-        if (aborted) {
-          session?.setReaction?.('🤐').catch(() => {})
-        }
-        // 没在说话就静默无反应——避免被滥用刷屏
-      })
-
-    this.ctx
-      .command('llm.catalog', 'Force-rebuild the agent command catalog', {
-        hidden: true,
-        authority: 3,
-      })
-      .action(() => {
-        this.catalog.refresh('manual')
-        const { topLevel, total } = this.catalog.stats()
-        return `Catalog: ${topLevel} top-level / ${total} total. New text picked up on the next chat turn (system prompt is process-wide cached and re-derives when catalog changes).`
-      })
-
-    this.ctx
-      .command('llm.memory', 'Manage long-term memory for the current user', {
-        hidden: true,
-      })
-      .option('read', '-r Show the current memory document')
-      .option('write', '-w Force a memory update from this session right now')
-      .option('reset', '-x Erase the current memory (requires confirmation)')
-      .userFields(['id', 'openai_last_conversation_id'])
-      .action(async ({ session, options }) => {
-        const flags = [options.read, options.write, options.reset].filter(
-          Boolean
-        ).length
-        if (flags === 0) {
-          return 'Usage: llm.memory --read | --write | --reset'
-        }
-        if (flags > 1) {
-          return 'Use only one of --read / --write / --reset at a time.'
-        }
-
-        const { platform, userId } = this.resolveMemoryKey(session)
-
-        if (options.read) {
-          const meta = await this.memory.getMeta(platform, userId)
-          if (!meta || !meta.content) return '(空)'
-          const updatedAt = meta.last_updated_at
-            ? new Date(meta.last_updated_at).toLocaleString('sv', {
-                timeZone: 'Asia/Shanghai',
-              })
-            : '从未更新'
-          return [
-            `更新时间: ${updatedAt} | 字节: ${meta.byte_size} | 累计更新: ${meta.update_count}`,
-            '',
-            meta.content,
-          ].join('\n')
-        }
-
-        if (options.write) {
-          const conversation_id = session.user.openai_last_conversation_id
-          if (!conversation_id) {
-            return '当前用户还没有任何对话记录，无法生成记忆。'
-          }
-          await session.send('正在生成记忆，请稍候……')
-          try {
-            await this.memoryFork.maybeTrigger(
-              {
-                platform,
-                userId,
-                conversation_id,
-                conversation_owner: session.user.id,
-              },
-              { force: true }
-            )
-          } catch (e: any) {
-            this.logger.error('[llm.memory --write] failed:', e)
-            return `生成失败: ${e?.message || String(e)}`
-          }
-          const meta = await this.memory.getMeta(platform, userId)
-          return `Done. 当前记忆 ${meta?.byte_size ?? 0} 字节，累计更新 ${meta?.update_count ?? 0} 次。`
-        }
-
-        if (options.reset) {
-          const meta = await this.memory.getMeta(platform, userId)
-          if (!meta) return '当前用户没有记忆记录，无需清空。'
-          await session.send(
-            `即将清空当前记忆（${meta.byte_size} 字节）。如果确认，请回复 y。`
-          )
-          const reply = await session.prompt(30 * 1000)
-          if (reply?.trim().toLowerCase() !== 'y') {
-            return '已取消。'
-          }
-          const removed = await this.memory.delete(platform, userId)
-          return removed ? '记忆已清空。' : '记忆已不存在。'
-        }
-      })
   }
 
   /**
@@ -1135,9 +876,10 @@ export default class PluginLLM extends BasePlugin<Config> {
 
   /**
    * Resolve the (platform, userId) pair the memory store keys on for a session.
-   * Same logic as the chat action — keep them in sync.
+   * Same logic as the chat action — keep them in sync. Public so subplugins
+   * (commands/admin, commands/chat) can use it via ctx.llm.
    */
-  private resolveMemoryKey(session: any): { platform: string; userId: string } {
+  resolveMemoryKey(session: any): { platform: string; userId: string } {
     const platform =
       session.platform === 'onebot' ? 'qq' : session.platform || 'unknown'
     const userId = session.user?.id?.toString() || session.userId || 'anonymous'
