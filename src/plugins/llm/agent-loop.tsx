@@ -8,6 +8,7 @@ import type {
   ChatMessage,
   ToolCall,
 } from './providers/_base'
+import { CHUNK_BREAK_MARKER } from './stream-splitter'
 import { ToolRegistry } from './tools'
 
 /** Magic string the agent emits to choose silence (typically when the user
@@ -18,6 +19,28 @@ const SILENT_MARKER = '<silent/>'
  *  interrupt. Lets the model read history and understand "I was talking,
  *  user cut me off". */
 const INTERRUPTED_MARKER = '<interrupted/>'
+
+/**
+ * Compute what to persist when the assistant turn is interrupted.
+ *
+ * If the agent had emitted any `<chunk_break/>` markers, the user has
+ * already seen everything up to the last marker (splitContent flushes at
+ * each marker). Truncate at that marker and replace it with
+ * `<interrupted/>` so history reflects exactly what the user saw, no
+ * speculatively-streamed-but-unflushed tail.
+ *
+ * If no marker, append `<interrupted/>` to the raw content. This still
+ * over-records by the maxLen-fallback split point (rare), but is the
+ * best agent-loop can do without coupling to chat.tsx's sendFromIndex.
+ */
+function buildInterruptedContent(content: string): string {
+  if (!content) return ''
+  const lastMarker = content.lastIndexOf(CHUNK_BREAK_MARKER)
+  if (lastMarker !== -1) {
+    return content.slice(0, lastMarker) + INTERRUPTED_MARKER
+  }
+  return content + '\n' + INTERRUPTED_MARKER
+}
 
 export interface AgentLoopOptions {
   ctx: Context
@@ -170,7 +193,7 @@ export async function runAgentLoop(
     if (streamAborted) {
       if (currentContent) {
         await opts.onAssistantRecord({
-          content: currentContent + '\n' + INTERRUPTED_MARKER,
+          content: buildInterruptedContent(currentContent),
           reasoningContent: currentReasoning,
           toolCalls: undefined,
           usage,
@@ -266,7 +289,7 @@ export async function runAgentLoop(
       // results. History stays well-formed: user → assistant<interrupted/>.
       if (currentContent) {
         await opts.onAssistantRecord({
-          content: currentContent + '\n' + INTERRUPTED_MARKER,
+          content: buildInterruptedContent(currentContent),
           reasoningContent: currentReasoning,
           toolCalls: undefined,
           usage,
