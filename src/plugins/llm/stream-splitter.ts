@@ -6,10 +6,17 @@
  *
  *   1. **AI 显式标记** `<msg_break/>`：模型在合适处插入，看到就切。
  *      标记在 sanitize 阶段被丢弃（PROTOCOL_ONLY_ELEMENT_TYPES）。
- *   2. **超长 + 多行兜底**：buffer 超过 maxChunkLen 且至少出现一个
- *      `\n` 时，切到第一个 `\n` —— 哪怕 `\n` 出现在 maxLen 之后，
- *      也意味着"前面那行已经写了至少 maxLen 个字符，发出去了"。
- *      整段没换行 → 继续等 stream 结束 force-flush，不在句子中间硬切。
+ *   2. **超长 + 多行兜底**：仅在 agent **整段从未输出过任何 marker**
+ *      的前提下生效。buffer 超过 maxChunkLen 且出现 `\n` 时切第一个
+ *      `\n`，避免 agent 完全不切的情况下用户死等。
+ *
+ *      一旦 agent 出过任何一个 marker，就认为它已经接管了分段决策，
+ *      系统不再兜底干预——典型场景是「先解释一段 + `<msg_break/>` +
+ *      然后 \`\`\`js 长示例代码块\`\`\`」，代码块容易超过 500 字但绝
+ *      对不该被切到中间。
+ *
+ *      整段没换行（一连串没 \n 的长文）也不切，让 stream 完成时
+ *      force-flush。永远不在句子中间硬切。
  */
 
 import { PROTOCOL_MARKERS } from './protocol'
@@ -53,8 +60,11 @@ export function splitContent(
     }
   }
 
-  // 2. 超长 + 多行兜底
-  if (rest.length >= maxLen) {
+  // 2. 超长 + 多行兜底——**仅当** agent 整段从未输出过 marker 才触发。
+  // 一旦它表态过想分段（哪怕只一次），就让它接管：当前可能在写代码块
+  // 等不该被切的内容，系统不再插手。
+  const agentOptedIn = buffer.indexOf(MARKER) !== -1
+  if (!agentOptedIn && rest.length >= maxLen) {
     const nl = rest.indexOf('\n')
     if (nl >= 0) {
       const cut = nl + 1

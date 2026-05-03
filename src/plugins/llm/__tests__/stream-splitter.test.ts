@@ -83,5 +83,26 @@ describe('splitContent', () => {
       const out = splitContent(buf, 0, { maxChunkLen: 200 })
       expect(out.text).toBe('a' + CHUNK_BREAK_MARKER)
     })
+
+    it('disables fallback once agent has emitted any marker (later in same turn)', () => {
+      // 模拟"先解释 + marker + 长代码块"场景：
+      //  - 第一次 splitContent 时 buffer 含 marker，cut 到 marker 后
+      //  - fromIndex 推进到 marker 之后；之后流入的代码块即便超长也
+      //    不该被兜底切，等下一个 marker 或 force flush
+      const buf =
+        'intro paragraph' + CHUNK_BREAK_MARKER + 'a'.repeat(400) + '\n' + 'b'.repeat(400)
+      const afterMarker = 'intro paragraph'.length + CHUNK_BREAK_MARKER.length
+      const out = splitContent(buf, afterMarker, { maxChunkLen: 200 })
+      // rest 长 800 + 1 \n，超过 maxLen 200 也有 \n，按老逻辑会切；
+      // 新逻辑发现 agent 已 opted in（buffer 含过 marker）→ 不切
+      expect(out.text).toBe('')
+    })
+
+    it('still triggers fallback when agent has not used any marker', () => {
+      // 整段无 marker，超长有 \n → 兜底切第一个 \n
+      const buf = 'a'.repeat(500) + '\n' + 'b'.repeat(50)
+      const out = splitContent(buf, 0, { maxChunkLen: 200 })
+      expect(out.text).toBe('a'.repeat(500) + '\n')
+    })
   })
 })
