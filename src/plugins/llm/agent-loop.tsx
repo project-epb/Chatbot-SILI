@@ -10,6 +10,15 @@ import type {
 } from './providers/_base'
 import { ToolRegistry } from './tools'
 
+/** Magic string the agent emits to choose silence (typically when the user
+ *  said "shut up" / "stop talking"). Stream output is suppressed and the
+ *  whole turn is dropped from history (see runAgentLoop result.silentChosen). */
+const SILENT_MARKER = '<silent/>'
+/** Appended to assistant content when the turn was cut short by user
+ *  interrupt. Lets the model read history and understand "I was talking,
+ *  user cut me off". */
+const INTERRUPTED_MARKER = '<interrupted/>'
+
 export interface AgentLoopOptions {
   ctx: Context
   provider: LLMProviderBase
@@ -21,6 +30,10 @@ export interface AgentLoopOptions {
   showToolCallNotice: boolean
   session: Session
   logger: Logger
+  /** Optional signal to interrupt mid-loop. Aborts the in-flight LLM stream,
+   *  bails out of subsequent iterations, and skews input/output bookkeeping
+   *  so partial assistant text is preserved with an `<interrupted/>` marker. */
+  signal?: AbortSignal
   onUserVisibleText: (text: string) => Promise<void>
   onAssistantRecord: (record: AssistantTurnRecord) => Promise<void>
   onToolRecord: (record: ToolTurnRecord) => Promise<void>
@@ -54,6 +67,11 @@ export interface AgentLoopResult {
   fullContent: string
   totalUsage?: ChatCompletionUsage
   iterations: number
+  /** True if the loop bailed because of opts.signal.aborted. */
+  aborted: boolean
+  /** True if the agent emitted SILENT_MARKER as its full response — caller
+   *  should suppress UI output AND skip writing this turn's user message. */
+  silentChosen: boolean
 }
 
 export async function runAgentLoop(
@@ -63,10 +81,13 @@ export async function runAgentLoop(
   let iterations = 0
   let lastFullContent = ''
   let totalUsage: ChatCompletionUsage | undefined
+  let silentChosen = false
 
   const allTools = opts.registry.listDefinitions()
+  const isAborted = () => opts.signal?.aborted === true
 
-  while (iterations < opts.maxIterations) {
+  outer: while (iterations < opts.maxIterations) {
+    if (isAborted()) break
     iterations++
     const isLastAllowed = iterations >= opts.maxIterations
 
@@ -79,7 +100,7 @@ export async function runAgentLoop(
     const stream = opts.provider.streamChatCompletion(
       messages,
       callOptions,
-      opts.features
+      { ...opts.features, signal: opts.signal }
     )
 
     let currentContent = ''
@@ -87,66 +108,117 @@ export async function runAgentLoop(
     const collectedToolCalls: ToolCall[] = []
     let lastError: Error | undefined
     let usage: ChatCompletionUsage | undefined
+    let streamAborted = false
 
-    for await (const delta of stream) {
-      switch (delta.kind) {
-        case 'reasoning_content':
-          currentReasoning += delta.content
+    try {
+      for await (const delta of stream) {
+        if (isAborted()) {
+          streamAborted = true
           break
-        case 'content':
-          currentContent += delta.content
-          await opts.onUserVisibleText(delta.content)
-          break
-        case 'tool_call':
-          collectedToolCalls.push(delta.toolCall)
-          break
-        case 'usage':
-          usage = delta.usage
-          break
-        case 'error':
-          lastError = delta.error
-          break
-        case 'finish':
-          break
+        }
+        switch (delta.kind) {
+          case 'reasoning_content':
+            currentReasoning += delta.content
+            break
+          case 'content':
+            currentContent += delta.content
+            await opts.onUserVisibleText(delta.content)
+            break
+          case 'tool_call':
+            collectedToolCalls.push(delta.toolCall)
+            break
+          case 'usage':
+            usage = delta.usage
+            break
+          case 'error':
+            lastError = delta.error
+            break
+          case 'finish':
+            break
+        }
+      }
+    } catch (e: any) {
+      // SDKs throw AbortError when the upstream signal fires — treat as
+      // graceful interrupt rather than a failure to surface.
+      if (isAborted() || e?.name === 'AbortError') {
+        streamAborted = true
+      } else {
+        throw e
       }
     }
 
-    if (lastError) throw lastError
+    if (lastError && !streamAborted) throw lastError
 
-    if (usage) {
-      totalUsage = mergeUsage(totalUsage, usage)
-    }
+    if (usage) totalUsage = mergeUsage(totalUsage, usage)
 
-    // 持久化 assistant 这一轮的记录
-    await opts.onAssistantRecord({
-      content: currentContent,
-      reasoningContent: currentReasoning,
-      toolCalls: collectedToolCalls.length ? collectedToolCalls : undefined,
-      usage,
-      model: opts.options.model,
-      time: Date.now(),
-    })
-
-    // 让 caller 把这一轮的可见文本作为独立消息发出，避免和后续轮次拼成一坨
-    await opts.onTurnEnd?.({ hadToolCalls: collectedToolCalls.length > 0 })
-
-    if (collectedToolCalls.length === 0) {
+    // ---- Stream-level abort: bail before considering tool calls ----
+    if (streamAborted) {
+      if (currentContent) {
+        await opts.onAssistantRecord({
+          content: currentContent + '\n' + INTERRUPTED_MARKER,
+          reasoningContent: currentReasoning,
+          toolCalls: undefined,
+          usage,
+          model: opts.options.model,
+          time: Date.now(),
+        })
+      }
       lastFullContent = currentContent
       break
     }
 
-    // 把 assistant(tool_calls) 加入下一轮的消息历史
+    // ---- SILENT marker: agent chose to stay quiet ----
+    // Skip persistence so history doesn't carry this non-conversation; the
+    // caller will also drop the current user message.
+    if (currentContent.trim() === SILENT_MARKER) {
+      silentChosen = true
+      lastFullContent = ''
+      break
+    }
+
+    // ---- No tool calls: normal terminal turn ----
+    if (collectedToolCalls.length === 0) {
+      await opts.onAssistantRecord({
+        content: currentContent,
+        reasoningContent: currentReasoning,
+        toolCalls: undefined,
+        usage,
+        model: opts.options.model,
+        time: Date.now(),
+      })
+      await opts.onTurnEnd?.({ hadToolCalls: false })
+      lastFullContent = currentContent
+      break
+    }
+
+    // ---- Tool calls present ----
+    // Defer assistant record persistence until we know whether the tools
+    // complete: if abort fires during tool execution we want to write the
+    // turn as `<interrupted/>` (no tool_calls) so history stays well-formed.
+    await opts.onTurnEnd?.({ hadToolCalls: true })
+
+    // Push assistant turn to in-memory messages so subsequent tool messages
+    // form a valid OpenAI/Anthropic conversation when we DO continue.
     messages.push({
       role: 'assistant',
       content: currentContent,
       tool_calls: collectedToolCalls,
     })
 
-    // 串行执行所有工具
+    const completedToolMessages: Array<{
+      tc: ToolCall
+      resultText: string
+      time: number
+    }> = []
+
     for (const tc of collectedToolCalls) {
+      if (isAborted()) {
+        // Don't even start more tools after abort.
+        break
+      }
       if (opts.showToolCallNotice) {
-        // tc.name 是 LLM 工具名（execute_koishi_command），对用户没意义；
-        // 显示真实 koishi 命令名（tc.arguments.name）更友好。
+        // tc.name is the LLM tool name (execute_koishi_command), opaque to
+        // users; show the real koishi command name from arguments instead.
         const args = tc.arguments as any
         const displayName =
           tc.name === 'execute_koishi_command' && args?.name
@@ -163,17 +235,55 @@ export async function runAgentLoop(
         tc.name,
         resultText.slice(0, 200)
       )
+      // Check abort AFTER tool finishes. We can't cancel a running koishi
+      // command — let it finish, then drop the result if user has moved on.
+      if (isAborted()) break
+      completedToolMessages.push({
+        tc,
+        resultText,
+        time: Date.now(),
+      })
+    }
+
+    if (isAborted()) {
+      // Tool round-trip didn't complete cleanly. Persist assistant as
+      // interrupted (no tool_calls field) and drop the partial tool
+      // results. History stays well-formed: user → assistant<interrupted/>.
+      if (currentContent) {
+        await opts.onAssistantRecord({
+          content: currentContent + '\n' + INTERRUPTED_MARKER,
+          reasoningContent: currentReasoning,
+          toolCalls: undefined,
+          usage,
+          model: opts.options.model,
+          time: Date.now(),
+        })
+      }
+      lastFullContent = currentContent
+      break outer
+    }
+
+    // ---- All tools finished cleanly; persist the full turn ----
+    await opts.onAssistantRecord({
+      content: currentContent,
+      reasoningContent: currentReasoning,
+      toolCalls: collectedToolCalls,
+      usage,
+      model: opts.options.model,
+      time: Date.now(),
+    })
+    for (const m of completedToolMessages) {
       messages.push({
         role: 'tool',
-        tool_call_id: tc.id,
-        tool_name: tc.name,
-        content: resultText,
+        tool_call_id: m.tc.id,
+        tool_name: m.tc.name,
+        content: m.resultText,
       })
       await opts.onToolRecord({
-        toolCallId: tc.id,
-        toolName: tc.name,
-        content: resultText,
-        time: Date.now(),
+        toolCallId: m.tc.id,
+        toolName: m.tc.name,
+        content: m.resultText,
+        time: m.time,
       })
     }
     lastFullContent = currentContent
@@ -183,6 +293,8 @@ export async function runAgentLoop(
     fullContent: lastFullContent,
     totalUsage,
     iterations,
+    aborted: isAborted(),
+    silentChosen,
   }
 }
 

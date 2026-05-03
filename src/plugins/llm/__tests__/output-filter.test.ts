@@ -136,4 +136,25 @@ describe('sanitizeAgentOutput', () => {
     expect(out).toContain('href="https://example.com"')
     expect(out).toContain('看这里')
   })
+
+  it('strips internal protocol elements entirely (no children kept)', () => {
+    // chat_info / user_message / interrupt_notice / interrupted / silent
+    expect(
+      sanitizeAgentOutput('<chat_info>{"user_id":1}</chat_info>')
+    ).toBe('')
+    expect(
+      sanitizeAgentOutput('hi <user_message>secret</user_message> there')
+    ).not.toContain('secret')
+    expect(
+      sanitizeAgentOutput('text <interrupt_notice>...</interrupt_notice>')
+    ).not.toContain('interrupt_notice')
+    expect(sanitizeAgentOutput('a<interrupted/>b')).toBe('ab')
+    expect(sanitizeAgentOutput('<silent/>')).toBe('')
+  })
+
+  it('strips <silent/> mid-stream chunks too', () => {
+    // 多模型流式分片可能让 <silent/> 出现在不同位置
+    expect(sanitizeAgentOutput('hello<silent/>')).toBe('hello')
+    expect(sanitizeAgentOutput('<silent/>tail')).toBe('tail')
+  })
 })

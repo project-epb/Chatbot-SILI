@@ -31,6 +31,25 @@ export const ALLOWED_OUTGOING_ELEMENT_TYPES: ReadonlySet<string> = new Set([
 ])
 
 /**
+ * Internal protocol element types — these flow between system and agent
+ * but must never reach the user. If the model mimics emitting any of
+ * these, drop them entirely (children too, no fallback text). Keeps any
+ * accidental leak of orchestration details out of user-visible output.
+ *
+ * - chat_info / user_message: per-turn envelope wrapping user input
+ * - interrupt_notice: one-shot block telling agent it was interrupted
+ * - interrupted: assistant-history marker for partial replies
+ * - silent: agent's "I choose to stay quiet" magic token
+ */
+const INTERNAL_PROTOCOL_TYPES: ReadonlySet<string> = new Set([
+  'chat_info',
+  'user_message',
+  'interrupt_notice',
+  'interrupted',
+  'silent',
+])
+
+/**
  * URL schemes accepted in `<img src="...">` and `<a href="...">`. We do **not**
  * allow:
  * - `file://` — would read host filesystem, classic LFI
@@ -61,6 +80,8 @@ export function sanitizeAgentOutput(text: string): string {
   try {
     const elements = h.parse(text)
     const filtered = h.transform(elements, (e) => {
+      // Internal protocol elements: drop without preserving children
+      if (INTERNAL_PROTOCOL_TYPES.has(e.type)) return []
       if (e.type === 'img') {
         const attrs = (e.attrs ?? {}) as Record<string, unknown>
         const ref = typeof attrs.ref === 'string' ? attrs.ref : undefined

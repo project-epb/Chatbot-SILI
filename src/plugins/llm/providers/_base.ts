@@ -39,6 +39,13 @@ export interface ChatCompletionFeatures {
   enableThinking?: boolean
   thinkingBudget?: number
   enableSearch?: boolean
+  /**
+   * AbortSignal for cancelling an in-flight request. When the caller wants
+   * to interrupt mid-stream (user typed a new message before the bot
+   * finished), aborting via this signal terminates the underlying SDK
+   * fetch — no more deltas arrive on the generator.
+   */
+  signal?: AbortSignal
 }
 
 export interface ChatCompletionUsage {

@@ -160,7 +160,7 @@ export class OpenAIProvider extends LLMProviderBase {
 
     const stream = await this.client.chat.completions.create(
       body as OpenAI.ChatCompletionCreateParams & { stream: true },
-      { timeout: 90 * 1000 }
+      { timeout: 90 * 1000, signal: features?.signal }
     )
 
     const aggregator = new OpenAIStreamAggregator()

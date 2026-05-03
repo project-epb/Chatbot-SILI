@@ -75,7 +75,9 @@ export class AnthropicProvider extends LLMProviderBase {
       }
     }
 
-    const stream = this.client.messages.stream(body)
+    const stream = this.client.messages.stream(body, {
+      signal: features?.signal,
+    })
     const aggregator = new AnthropicStreamAggregator()
     let stopReason: string | undefined
 
