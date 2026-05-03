@@ -26,7 +26,7 @@ export default class MessagesLogger extends BasePlugin {
       )
     })
 
-    ctx.on('send', (session) => {
+    ctx.before('send', (session) => {
       const content = this.toSlimContent(
         session.content ?? session.elements?.join('') ?? '[UNKNOWN]'
       )
