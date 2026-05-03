@@ -19,11 +19,7 @@ import { Inject } from 'cordis'
 import type { ClientOptions } from 'openai'
 
 import { runAgentLoop } from './agent-loop'
-import {
-  type CommandCatalogEntry,
-  buildCommandCatalog,
-  renderCompactCatalog,
-} from './command-catalog'
+import { type CommandCatalogEntry } from './command-catalog'
 import { ImageReferenceCache } from './image-cache'
 import { MemoryStore } from './memory'
 import { sanitizeAgentOutput } from './output-filter'
@@ -37,6 +33,7 @@ import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
 import { SessionManager } from './session-manager'
 import { ChatHistoryService } from './services/chat-history'
+import { CommandCatalogService } from './services/command-catalog'
 import { SystemPromptBuilder } from './services/system-prompt'
 import { clampThinkingBudget, resolveThinkingLevel } from './thinking'
 import {
@@ -195,19 +192,14 @@ export default class PluginLLM extends BasePlugin<Config> {
     ttlMs: this.config.imageCacheTtlMs,
     maxImageBytes: this.config.imageCacheMaxImageBytes,
   })
-  private commandCatalog: CommandCatalogEntry[] = []
-  private commandCatalogText: string = ''
-  /**
-   * Number of commands seen the last time the catalog was rebuilt. Used to
-   * detect plugins that registered commands after our `ready` hook fired
-   * (typical when a plugin gates on a service like puppeteer that comes up
-   * late). When the live count exceeds this, the catalog is rebuilt lazily.
-   */
-  private commandCatalogVersion: number = -1
   readonly systemPrompt: SystemPromptBuilder = new SystemPromptBuilder(
     () => this.config.systemPrompt.default ?? ''
   )
   readonly chatHistory: ChatHistoryService = new ChatHistoryService(this.ctx)
+  readonly catalog: CommandCatalogService = new CommandCatalogService(
+    this.ctx,
+    this.logger
+  )
 
   constructor(ctx: Context, config: Config) {
     const defaultConfigs: Partial<Config> = {
@@ -272,10 +264,10 @@ export default class PluginLLM extends BasePlugin<Config> {
       },
     })
 
-    // 启动后构建一次命令目录。延迟启动的插件（如 puppeteer 依赖的 wiki）
-    // 可能在 ready 之后才注册命令——getOrRefreshCommandCatalog 会按需懒重建。
+    // catalog 自己挂 ready hook，rebuild 时机一致；之后每次 chat turn
+    // getOrRefresh 会按需懒重建（覆盖 ready 后才 register 的延迟插件）
+    this.catalog.bind()
     this.ctx.on('ready', () => {
-      this.refreshCommandCatalog('ready')
       // 启动时清一次过期的图片缓存；之后每小时再扫一次（ctx.setInterval
       // 在 plugin dispose 时自动清理）。
       this.imageRefs
@@ -744,7 +736,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         //   缓存自然失效。
         // - --prompt 覆盖路径：旁路缓存，每次合成。
         // - Memory 不再写进 prompt：模型按需调 read_user_memory tool 获取。
-        const commandCatalog = this.getOrRefreshCommandCatalog()
+        const commandCatalog = this.catalog.getOrRefresh()
         let systemPromptText: string
         if (typeof options.prompt === 'string') {
           systemPromptText = this.systemPrompt.buildWithBase(
@@ -1011,8 +1003,9 @@ export default class PluginLLM extends BasePlugin<Config> {
         authority: 3,
       })
       .action(() => {
-        this.refreshCommandCatalog('manual')
-        return `Catalog: ${this.commandCatalog.length} top-level / ${this.commandCatalogVersion} total. New text picked up on the next chat turn (system prompt is process-wide cached and re-derives when catalog changes).`
+        this.catalog.refresh('manual')
+        const { topLevel, total } = this.catalog.stats()
+        return `Catalog: ${topLevel} top-level / ${total} total. New text picked up on the next chat turn (system prompt is process-wide cached and re-derives when catalog changes).`
       })
 
     this.ctx
@@ -1282,7 +1275,7 @@ export default class PluginLLM extends BasePlugin<Config> {
 
   /** Public read access to the cached agent command catalog (for tools.ts). */
   getCatalog(): readonly CommandCatalogEntry[] {
-    return this.commandCatalog
+    return this.catalog.list()
   }
 
   /**
@@ -1304,35 +1297,6 @@ export default class PluginLLM extends BasePlugin<Config> {
     this.logger.info('[chat] abort active session: reason=%s', reason)
     active.abort.abort(reason)
     return true
-  }
-
-  /** Live count of registered commands (top-level + nested). */
-  private liveCommandCount(): number {
-    return (this.ctx as any).$commander?._commandList?.length ?? 0
-  }
-
-  private refreshCommandCatalog(trigger: string): void {
-    this.commandCatalog = buildCommandCatalog(this.ctx)
-    this.commandCatalogText = renderCompactCatalog(this.commandCatalog)
-    this.commandCatalogVersion = this.liveCommandCount()
-    this.logger.info(
-      '[llm] command catalog rebuilt (%s): %d top-level / %d total',
-      trigger,
-      this.commandCatalog.length,
-      this.commandCatalogVersion
-    )
-  }
-
-  /**
-   * Lazy-rebuild the catalog when more commands have appeared since the
-   * last snapshot — covers plugins that came up after our ready hook
-   * (e.g. ones gated on puppeteer/html services).
-   */
-  private getOrRefreshCommandCatalog(): string {
-    if (this.liveCommandCount() > this.commandCatalogVersion) {
-      this.refreshCommandCatalog('lazy-grow')
-    }
-    return this.commandCatalogText
   }
 
 
