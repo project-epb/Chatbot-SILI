@@ -11,6 +11,7 @@ import { getUserNickFromSession } from '$utils/formatSession'
 import { runAgentLoop } from '../agent-loop'
 import { sanitizeAgentOutput } from '../output-filter'
 import type { ChatMessage } from '../providers/_base'
+import { splitContent } from '../stream-splitter'
 import { clampThinkingBudget, resolveThinkingLevel } from '../thinking'
 import { ToolRegistry } from '../tools'
 
@@ -57,53 +58,6 @@ export default class ChatCommand extends BasePlugin {
 
   #shouldEnableSearch(content: string): boolean {
     return this.ENABLE_SEARCH_KEYWORDS.some((k) => content.includes(k))
-  }
-
-  /**
-   * Sentence-aware streaming chunker.
-   * Drops content before fromIndex; tries to split the rest on `splitChars`
-   * into `expectParts` segments. Falls back to fewer parts when the rest
-   * is shorter than maxLength, eventually returning the whole tail.
-   * Returns the chunk to flush plus the new fromIndex (in absolute terms).
-   */
-  private splitContent(
-    fullText: string,
-    fromIndex: number = 0,
-    splitChars: string[] = ['。', '？', '！', '\n'],
-    expectParts: number = 5,
-    maxLength: number = 300
-  ): { text: string; nextIndex: number } {
-    if (fromIndex >= fullText.length) {
-      return { text: '', nextIndex: fullText.length }
-    }
-    if (expectParts === 0) {
-      return { text: fullText.slice(fromIndex), nextIndex: fullText.length }
-    }
-    const rest = fullText.slice(fromIndex)
-    if (rest.length > maxLength) {
-      return this.splitContent(
-        fullText,
-        fromIndex,
-        splitChars,
-        expectParts - 1,
-        maxLength
-      )
-    }
-    const splitIndexes = rest
-      .split('')
-      .reduce(
-        (acc, char, index) =>
-          splitChars.includes(char) ? [...acc, index] : acc,
-        [] as number[]
-      )
-    if (splitIndexes.length >= expectParts) {
-      const nextIndex = splitIndexes[expectParts - 1] + fromIndex + 1
-      return {
-        text: fullText.slice(fromIndex, nextIndex),
-        nextIndex,
-      }
-    }
-    return { text: '', nextIndex: fromIndex }
   }
 
   #registerChat(ctx: Context) {
@@ -404,7 +358,7 @@ export default class ChatCommand extends BasePlugin {
                 text: sendBuffer.slice(sendFromIndex.value),
                 nextIndex: sendBuffer.length,
               }
-            : this.splitContent(sendBuffer, sendFromIndex.value)
+            : splitContent(sendBuffer, sendFromIndex.value)
           if (next.text) {
             stopEmojiReaction()
             // 输出层处理：先按白名单过滤 element（防止 agent 乱用 <at> 等
