@@ -109,6 +109,15 @@ export async function runAgentLoop(
     let lastError: Error | undefined
     let usage: ChatCompletionUsage | undefined
     let streamAborted = false
+    /**
+     * Time the assistant turn finished streaming (or was aborted). Captured
+     * here — not at write-to-db time — so the persisted `time` field reflects
+     * actual stream order, not the moment we *finished waiting for tools*.
+     * Without this, an assistant message that defers persistence until tools
+     * complete ends up with a `time` LATER than the tool results' `time`,
+     * which breaks groupAndTrimHistory's turn ordering on read-back.
+     */
+    let assistantTurnTime = 0
 
     try {
       for await (const delta of stream) {
@@ -151,6 +160,12 @@ export async function runAgentLoop(
 
     if (usage) totalUsage = mergeUsage(totalUsage, usage)
 
+    // Pin assistant turn time NOW — before any tool dispatch. If we wait
+    // until persistence (which happens after all tools complete), the
+    // assistant `time` ends up later than the tool results' `time` and
+    // history sort puts tool before assistant.
+    assistantTurnTime = Date.now()
+
     // ---- Stream-level abort: bail before considering tool calls ----
     if (streamAborted) {
       if (currentContent) {
@@ -160,7 +175,7 @@ export async function runAgentLoop(
           toolCalls: undefined,
           usage,
           model: opts.options.model,
-          time: Date.now(),
+          time: assistantTurnTime,
         })
       }
       lastFullContent = currentContent
@@ -184,7 +199,7 @@ export async function runAgentLoop(
         toolCalls: undefined,
         usage,
         model: opts.options.model,
-        time: Date.now(),
+        time: assistantTurnTime,
       })
       await opts.onTurnEnd?.({ hadToolCalls: false })
       lastFullContent = currentContent
@@ -256,7 +271,7 @@ export async function runAgentLoop(
           toolCalls: undefined,
           usage,
           model: opts.options.model,
-          time: Date.now(),
+          time: assistantTurnTime,
         })
       }
       lastFullContent = currentContent
@@ -270,7 +285,7 @@ export async function runAgentLoop(
       toolCalls: collectedToolCalls,
       usage,
       model: opts.options.model,
-      time: Date.now(),
+      time: assistantTurnTime,
     })
     for (const m of completedToolMessages) {
       messages.push({

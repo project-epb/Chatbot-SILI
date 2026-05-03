@@ -29,11 +29,15 @@ export class ChatHistoryService {
     // 一个回合最多 1 user + N assistant(tool_calls) + N tool + 1 final assistant
     const queryLimit = Math.min(200, userTurnLimit * 8 + 20)
 
+    // 关键：相同 time 的 assistant(tool_calls) 和 tool result 必须按入库
+    // 顺序排（assistant 先，tool 后），否则 groupAndTrimHistory 会把 tool
+    // 当孤儿 → 整个 turn 被判 invalid。time 在两条相邻入库时常碰撞到同一
+    // 毫秒，所以加 `id`（auto-increment）作为稳定的 tie-break。
     const raw = (await this.ctx.database.get(
       'openai_chat',
       { conversation_id },
       {
-        sort: { time: 'desc' },
+        sort: { time: 'desc', id: 'desc' },
         limit: queryLimit,
         fields: [
           'content',
