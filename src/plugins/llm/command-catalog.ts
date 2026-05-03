@@ -134,7 +134,9 @@ export function renderCatalogEntryDetail(entry: CommandCatalogEntry): string {
     lines.push(
       '（注意：调用子指令时使用**点号**命名，例如 `name="' +
         entry.children[0].name +
-        '"`）'
+        '"`。子指令可能有自己的参数，建议调用前查看帮助，例如 `help ' +
+        entry.children[0].name +
+        '`）'
     )
     for (const c of entry.children) {
       const desc = c.description?.trim() || '(无描述)'
