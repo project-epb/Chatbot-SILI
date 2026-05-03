@@ -358,7 +358,9 @@ export default class ChatCommand extends BasePlugin {
                 text: sendBuffer.slice(sendFromIndex.value),
                 nextIndex: sendBuffer.length,
               }
-            : splitContent(sendBuffer, sendFromIndex.value)
+            : splitContent(sendBuffer, sendFromIndex.value, {
+                maxChunkLen: 500,
+              })
           if (next.text) {
             stopEmojiReaction()
             // 输出层处理：先按白名单过滤 element（防止 agent 乱用 <at> 等

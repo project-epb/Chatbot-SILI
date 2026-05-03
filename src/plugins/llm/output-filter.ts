@@ -47,6 +47,7 @@ const INTERNAL_PROTOCOL_TYPES: ReadonlySet<string> = new Set([
   'interrupt_notice',
   'interrupted',
   'silent',
+  'chunk_break',
 ])
 
 /**
