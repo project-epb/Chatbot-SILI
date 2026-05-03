@@ -48,16 +48,21 @@ describe('splitContent', () => {
   })
 
   describe('long-content fallback', () => {
-    it('cuts at last \\n when buffer over maxLen and has newlines', () => {
-      const buf =
-        'a'.repeat(100) + '\n' + 'b'.repeat(100) + '\n' + 'c'.repeat(400)
-      const out = splitContent(buf, 0, { maxChunkLen: 250 })
-      // maxLen 250 内最后一个 \n 在位置 201（'a'×100 + \n + 'b'×100）
-      expect(out.text).toBe('a'.repeat(100) + '\n' + 'b'.repeat(100) + '\n')
+    it('cuts at first \\n when buffer over maxLen', () => {
+      const buf = 'a'.repeat(150) + '\n' + 'b'.repeat(50)
+      const out = splitContent(buf, 0, { maxChunkLen: 100 })
+      expect(out.text).toBe('a'.repeat(150) + '\n')
     })
 
-    it('does NOT cut a single-line long buffer (waits for force flush)', () => {
-      // 整段没换行，再长也不切——避免句子中间硬切
+    it('cuts even when \\n appears AFTER maxLen (first line >> maxLen)', () => {
+      // 第一行 500 字超过 maxLen 200，\n 出现在 500 → 立即切发第一行
+      const buf = 'a'.repeat(500) + '\n' + 'b'.repeat(50)
+      const out = splitContent(buf, 0, { maxChunkLen: 200 })
+      expect(out.text).toBe('a'.repeat(500) + '\n')
+    })
+
+    it('does NOT cut a single-line long buffer (no \\n at all)', () => {
+      // 整段没换行 → 等 force flush，不切
       const buf = 'a'.repeat(800)
       const out = splitContent(buf, 0, { maxChunkLen: 200 })
       expect(out.text).toBe('')

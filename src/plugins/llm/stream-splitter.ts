@@ -56,13 +56,15 @@ export function splitContent(
   }
 
   // 2. 超长 + 多行兜底
+  // buffer 已经超过 maxLen，看到换行就切：哪怕 \n 出现在 maxLen 之后，
+  // 也意味着"前面那行已经写了至少 maxLen 个字符，是时候发出去了"。
+  // 整段没换行 → 继续等（不在句子中间硬切，宁可慢）。
   if (rest.length >= maxLen) {
-    const nl = rest.lastIndexOf('\n', maxLen - 1)
+    const nl = rest.indexOf('\n')
     if (nl >= 0) {
       const cut = nl + 1
       return { text: rest.slice(0, cut), nextIndex: fromIndex + cut }
     }
-    // 没换行 → 继续等（让 AI 完成整段，宁可慢点也别在句子中间硬切）
   }
 
   return { text: '', nextIndex: fromIndex }
