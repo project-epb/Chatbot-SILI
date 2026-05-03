@@ -152,4 +152,38 @@ describe('splitContent', () => {
     const out = splitContent('abc', 10)
     expect(out).toEqual({ text: '', nextIndex: 3 })
   })
+
+  it('eats trailing closing quote after sentence end (no orphan 」)', () => {
+    // `！` 后紧跟 `」` 是同一句子，不该切到两片
+    const buf = 'a'.repeat(80) + '！」' + 'b'.repeat(80)
+    const out = splitContent(buf, 0, { targetChunkLen: 100 })
+    expect(out.text).toBe('a'.repeat(80) + '！」')
+    expect(out.nextIndex).toBe(82)
+  })
+
+  it('eats trailing 》/）/】/" too', () => {
+    expect(
+      splitContent('a'.repeat(80) + '！）' + 'b'.repeat(80), 0, {
+        targetChunkLen: 100,
+      }).text
+    ).toBe('a'.repeat(80) + '！）')
+    expect(
+      splitContent('a'.repeat(80) + '?"' + 'b'.repeat(80), 0, {
+        targetChunkLen: 100,
+      }).text
+    ).toBe('a'.repeat(80) + '?"')
+  })
+
+  it('does not cut when sentence end is at the very buffer tail (waiting for ])', () => {
+    // buffer 末尾是 `！`，可能 `」` 还在路上 → 等下个 token，避免单独发 `」`
+    const buf = 'a'.repeat(120) + '！'
+    const out = splitContent(buf, 0, { targetChunkLen: 100 })
+    expect(out.text).toBe('') // 等
+  })
+
+  it('cuts once trailing 」 arrives', () => {
+    const buf = 'a'.repeat(120) + '！」'
+    const out = splitContent(buf, 0, { targetChunkLen: 100 })
+    expect(out.text).toBe('a'.repeat(120) + '！」')
+  })
 })
