@@ -35,6 +35,7 @@ import { SessionManager } from './session-manager'
 import { ActiveChatRegistry } from './services/active-chats'
 import { ChatHistoryService } from './services/chat-history'
 import { CommandCatalogService } from './services/command-catalog'
+import { MemoryForkScheduler } from './services/memory-fork-scheduler'
 import { SystemPromptBuilder } from './services/system-prompt'
 import { clampThinkingBudget, resolveThinkingLevel } from './thinking'
 import {
@@ -174,6 +175,7 @@ export default class PluginLLM extends BasePlugin<Config> {
     this.ctx,
     this.logger
   )
+  readonly memoryFork: MemoryForkScheduler = new MemoryForkScheduler(this)
 
   constructor(ctx: Context, config: Config) {
     const defaultConfigs: Partial<Config> = {
@@ -918,7 +920,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         resolveCompletion()
 
         // 异步触发 memory fork（不阻塞主对话）
-        this.maybeTriggerMemoryFork({
+        this.memoryFork.maybeTrigger({
           platform,
           userId,
           conversation_id,
@@ -1025,7 +1027,7 @@ export default class PluginLLM extends BasePlugin<Config> {
           }
           await session.send('正在生成记忆，请稍候……')
           try {
-            await this.maybeTriggerMemoryFork(
+            await this.memoryFork.maybeTrigger(
               {
                 platform,
                 userId,
@@ -1129,111 +1131,6 @@ export default class PluginLLM extends BasePlugin<Config> {
     } catch (e) {
       return ''
     }
-  }
-
-
-  /**
-   * Resolve which (provider, model, maxTokens) to use for memory fork tasks.
-   * Honors `memoryModel` config, falling back to the default provider/model.
-   */
-  private resolveMemoryProvider(): {
-    provider: LLMProviderBase
-    model: string
-    maxTokens: number
-  } {
-    const defaultProviderConfig = this.config.providers[0]
-    const fallback = () => ({
-      provider: this.defaultProvider,
-      model: defaultProviderConfig?.model || this.config.model || 'gpt-4o-mini',
-      maxTokens:
-        defaultProviderConfig?.maxTokens ?? this.config.maxTokens ?? 1024,
-    })
-
-    const spec = this.config.memoryModel?.trim()
-    if (!spec) return fallback()
-
-    const m = spec.match(/^([^#:]+)[#:](.+)$/)
-    let providerName: string | undefined
-    let model: string
-    if (m) {
-      providerName = m[1].trim()
-      model = m[2].trim()
-    } else {
-      model = spec
-    }
-
-    const providerConfig = providerName
-      ? this.config.providers.find((p) => p.name === providerName)
-      : defaultProviderConfig
-
-    if (providerName && !providerConfig) {
-      this.logger.warn(
-        '[memory] memoryModel provider %s not found, falling back to default',
-        providerName
-      )
-      return fallback()
-    }
-
-    const provider = providerName
-      ? this.useProvider(providerName)
-      : this.defaultProvider
-    const maxTokens = providerConfig?.maxTokens ?? this.config.maxTokens ?? 1024
-    return {
-      provider,
-      model: model || providerConfig?.model || 'gpt-4o-mini',
-      maxTokens,
-    }
-  }
-
-  private async maybeTriggerMemoryFork(
-    args: {
-      platform: string
-      userId: string
-      conversation_id: string
-      conversation_owner: number
-    },
-    opts: { force?: boolean } = {}
-  ) {
-    const interval = this.config.memoryUpdateInterval ?? 10
-    const byteLimit = this.config.memoryByteLimit ?? 3000
-    const maxRetries = this.config.memoryForkMaxRetries ?? 3
-
-    const meta = await this.memory.getMeta(args.platform, args.userId)
-    const userMessages = await this.ctx.database.get(
-      'openai_chat',
-      {
-        conversation_owner: args.conversation_owner,
-        role: 'user',
-      },
-      { fields: ['id'] }
-    )
-    const userMessageCount = userMessages?.length ?? 0
-    if (!opts.force) {
-      const since = userMessageCount - (meta?.message_count_at_update ?? 0)
-      if (since < interval) return
-    }
-
-    // 拉取对话上下文（reasoning_content 已在 ChatHistoryService 默认带上）
-    const history = await this.chatHistory.getById(args.conversation_id, 50)
-
-    const { provider, model, maxTokens } = this.resolveMemoryProvider()
-
-    const { maybeRunMemoryFork } = await import('./memory-fork')
-    await maybeRunMemoryFork({
-      ctx: this.ctx,
-      logger: this.logger,
-      store: this.memory,
-      provider,
-      model,
-      maxTokens,
-      byteLimit,
-      maxRetries,
-      platform: args.platform,
-      userId: args.userId,
-      conversationId: args.conversation_id,
-      currentMessageCount: userMessageCount,
-      history,
-    })
   }
 
   /**
