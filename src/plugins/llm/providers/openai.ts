@@ -7,7 +7,23 @@ import {
   LLMProviderBase,
   ModelInfo,
   StreamChatDelta,
+  StreamFinishReason,
 } from './_base'
+import { OpenAIStreamAggregator, prepareOpenAIMessages } from './openai-adapter'
+
+function mapOpenAIFinishReason(reason: string | undefined): StreamFinishReason {
+  switch (reason) {
+    case 'stop':
+      return 'stop'
+    case 'tool_calls':
+    case 'function_call':
+      return 'tool_calls'
+    case 'length':
+      return 'length'
+    default:
+      return 'other'
+  }
+}
 
 export class OpenAIProvider extends LLMProviderBase {
   private client: OpenAI
@@ -104,12 +120,26 @@ export class OpenAIProvider extends LLMProviderBase {
 
     const body: Record<string, any> = {
       model: opts.model,
-      messages,
+      messages: prepareOpenAIMessages(messages, opts.model),
       max_tokens: opts.maxTokens ?? 1024,
       temperature: opts.temperature ?? 0.8,
       top_p: opts.topP ?? 0.8,
       stream: true,
       stream_options: { include_usage: true },
+    }
+
+    if (opts.tools?.length) {
+      body.tools = opts.tools.map((t) => ({
+        type: 'function',
+        function: {
+          name: t.name,
+          description: t.description,
+          parameters: t.parameters,
+        },
+      }))
+      if (opts.toolChoice && opts.toolChoice !== 'auto') {
+        body.tool_choice = opts.toolChoice
+      }
     }
 
     if (features?.enableThinking) {
@@ -123,18 +153,18 @@ export class OpenAIProvider extends LLMProviderBase {
         search_context_size: 'medium',
         user_location: {
           type: 'approximate',
-          approximate: {
-            country: 'CN',
-            timezone: 'Asia/Shanghai',
-          },
+          approximate: { country: 'CN', timezone: 'Asia/Shanghai' },
         },
       }
     }
 
     const stream = await this.client.chat.completions.create(
       body as OpenAI.ChatCompletionCreateParams & { stream: true },
-      { timeout: 90 * 1000 }
+      { timeout: 90 * 1000, signal: features?.signal }
     )
+
+    const aggregator = new OpenAIStreamAggregator()
+    let finishReason: string | undefined
 
     for await (const chunk of stream) {
       if (chunk.usage) {
@@ -148,18 +178,42 @@ export class OpenAIProvider extends LLMProviderBase {
         }
       }
 
-      const delta = (chunk as any).choices?.[0]?.delta
-      if (!delta) continue
+      const choice = (chunk as any).choices?.[0]
+      const delta = choice?.delta
+      if (!delta) {
+        if (choice?.finish_reason) finishReason = choice.finish_reason
+        continue
+      }
 
-      const reasoning = delta.reasoning_content?.trim()
-      if (reasoning) {
+      // 不要 trim — chunk 边界的空格会被吃掉，拼起来就丢空格。
+      // 用 typeof 显式判断，避免 ''.trim() truthy 检查的副作用。
+      const reasoning = delta.reasoning_content
+      if (typeof reasoning === 'string' && reasoning.length > 0) {
         yield { kind: 'reasoning_content', content: reasoning }
       }
 
-      const content = delta.content?.trim()
-      if (content) {
+      const content = delta.content
+      if (typeof content === 'string' && content.length > 0) {
         yield { kind: 'content', content }
       }
+
+      if (delta.tool_calls) aggregator.absorbToolCallDeltas(delta.tool_calls)
+
+      if (choice.finish_reason) finishReason = choice.finish_reason
+    }
+
+    // 流结束后输出聚合的 tool_calls
+    try {
+      for (const tc of aggregator.finalizeToolCalls()) {
+        yield { kind: 'tool_call', toolCall: tc }
+      }
+    } catch (e: any) {
+      yield { kind: 'error', error: e instanceof Error ? e : new Error(String(e)) }
+    }
+
+    yield {
+      kind: 'finish',
+      reason: mapOpenAIFinishReason(finishReason),
     }
   }
 }

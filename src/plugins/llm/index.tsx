@@ -3,28 +3,37 @@
  * @author dragon-fish
  * @license MIT
  */
-import { Context, Time, h } from 'koishi'
+import { Context } from 'koishi'
 
-import crypto from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { cancellableInterval } from '@/utils/cancellableDefferred'
-
 import BasePlugin from '~/_boilerplate'
 
-import { getUserNickFromSession } from '$utils/formatSession'
 import type { ClientOptions as AnthropicClientOptions } from '@anthropic-ai/sdk'
 import { Inject } from 'cordis'
 import type { ClientOptions } from 'openai'
 
-import {
-  ChatCompletionUsage,
-  ChatMessage,
-  LLMProviderBase,
-} from './providers/_base'
+import { type CommandCatalogEntry } from './command-catalog'
+import AdminCommands from './commands/admin'
+import ChatCommand from './commands/chat'
+import { ImageReferenceCache } from './image-cache'
+import { MemoryStore } from './memory'
+import { ChatCompletionUsage, LLMProviderBase } from './providers/_base'
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
+import { SessionManager } from './session-manager'
+import { ActiveChatRegistry } from './services/active-chats'
+import { ChatHistoryService } from './services/chat-history'
+import { CommandCatalogService } from './services/command-catalog'
+import { MemoryForkScheduler } from './services/memory-fork-scheduler'
+import { SystemPromptBuilder } from './services/system-prompt'
+import {
+  READ_USER_MEMORY_TOOL,
+  ToolRegistry,
+  executeKoishiCommandHandler,
+  runReadUserMemory,
+} from './tools'
 
 declare module 'koishi' {
   export interface Tables {
@@ -42,8 +51,12 @@ interface OpenAIConversationLog {
   id: number
   conversation_id: string
   conversation_owner: number
-  role: 'system' | 'user' | 'assistant'
+  role: 'system' | 'user' | 'assistant' | 'tool'
   content: string
+  reasoning_content: string
+  tool_calls?: string // JSON 序列化的 ToolCall[]
+  tool_call_id?: string // tool 角色填
+  tool_name?: string // tool 角色填，便于日志
   usage?: ChatCompletionUsage
   model?: string
   time: number
@@ -55,7 +68,6 @@ export type ProviderConfig =
       type: 'openai'
       options: ClientOptions
       model?: string
-      reasoningModel?: string
       maxTokens?: number
     }
   | {
@@ -63,20 +75,46 @@ export type ProviderConfig =
       type: 'anthropic'
       options: AnthropicClientOptions
       model?: string
-      reasoningModel?: string
       maxTokens?: number
     }
 
 export interface Config {
   providers: ProviderConfig[]
   model?: string
-  reasoningModel?: string
+  historyMessageCount?: number
   maxTokens?: number
   systemPrompt?: Partial<{
     default: string
     [key: string]: string
   }>
   modelAliases?: Record<string, string>
+
+  // Agent 改造新增
+  enableAgent?: boolean
+  maxToolIterations?: number
+  showToolCallNotice?: boolean
+  memoryByteLimit?: number
+  memoryUpdateInterval?: number
+  memoryForkMaxRetries?: number
+  /**
+   * Idle timeout (ms) for a chat session. After this many ms without a new
+   * user message, the next message rotates to a fresh conversation_id —
+   * primarily a length cap on chat history, since system prompt is now
+   * derived per-process and no longer frozen per-session. 0 disables expiry.
+   */
+  sessionIdleTimeoutMs?: number
+  /**
+   * Override the model used for memory fork tasks (e.g. summarisation).
+   * Format: "providerName:modelName" or "providerName#modelName" or just "modelName".
+   * If unset or unresolvable, falls back to the default provider/model.
+   */
+  memoryModel?: string
+  /** Total disk usage cap for the inline-image cache (bytes). Default 500MB. */
+  imageCacheMaxBytes?: number
+  /** Per-file TTL for the inline-image cache (ms). Default 4h. */
+  imageCacheTtlMs?: number
+  /** Max bytes per image; oversized images skip cache + show placeholder. Default 8MB. */
+  imageCacheMaxImageBytes?: number
 }
 export declare const Config: Config
 
@@ -100,23 +138,39 @@ export default class PluginLLM extends BasePlugin<Config> {
     return p
   }
 
-  readonly RANDOM_ERROR_MSG = (
-    <random>
-      <template>SILI不知道喔。</template>
-      <template>这道题SILI不会，长大后在学习~</template>
-      <template>SILI的头好痒，不会要长脑子了吧？！</template>
-      <template>锟斤拷锟斤拷锟斤拷</template>
-    </random>
-  )
   readonly MODEL_ALIASES: Record<string, string> = {}
-  // 用户同时只能进行一个对话，防止在一次对话结束前发起新的对话
-  readonly CONVERSATION_LOCKS = new Set<string | number>()
+  readonly memory: MemoryStore = new MemoryStore(this.ctx)
+  readonly sessions: SessionManager = new SessionManager(this.ctx)
+  readonly tools: ToolRegistry = new ToolRegistry()
+  readonly imageRefs: ImageReferenceCache = new ImageReferenceCache({
+    dir: resolve(this.ctx.baseDir, 'data', 'llm', 'image-cache'),
+    maxBytes: this.config.imageCacheMaxBytes,
+    ttlMs: this.config.imageCacheTtlMs,
+    maxImageBytes: this.config.imageCacheMaxImageBytes,
+  })
+  readonly systemPrompt: SystemPromptBuilder = new SystemPromptBuilder(
+    () => this.config.systemPrompt.default ?? ''
+  )
+  readonly chatHistory: ChatHistoryService = new ChatHistoryService(this.ctx)
+  readonly activeChats: ActiveChatRegistry = new ActiveChatRegistry(this.logger)
+  readonly catalog: CommandCatalogService = new CommandCatalogService(
+    this.ctx,
+    this.logger
+  )
+  readonly memoryFork: MemoryForkScheduler = new MemoryForkScheduler(this)
 
   constructor(ctx: Context, config: Config) {
     const defaultConfigs: Partial<Config> = {
       model: 'gpt-4o-mini',
-      reasoningModel: 'gpt-o1-mini',
       maxTokens: 8192,
+      historyMessageCount: 10,
+      enableAgent: true,
+      maxToolIterations: 5,
+      showToolCallNotice: true,
+      memoryByteLimit: 3000,
+      memoryUpdateInterval: 10,
+      memoryForkMaxRetries: 3,
+      sessionIdleTimeoutMs: 3 * 24 * 60 * 60 * 1000, // 3 days
       systemPrompt: {
         default: PluginLLM.readPromptFile('SILI-v5.prompt.md'),
       },
@@ -153,10 +207,55 @@ export default class PluginLLM extends BasePlugin<Config> {
     }
 
     this.#initDatabase()
-    this.#initCommands()
+    // 顶层命令（仅声明 namespace，子命令由子插件注册）
+    ctx.command('llm', 'Make ChatBot Great Again')
+    // 子插件：每个负责一组命令，随父插件 dispose 自动卸载。
+    ctx.plugin(AdminCommands)
+    ctx.plugin(ChatCommand)
     if (config.modelAliases) {
       this.MODEL_ALIASES = config.modelAliases
     }
+
+    // 注册内建工具
+    this.tools.register(executeKoishiCommandHandler)
+    this.tools.register({
+      definition: READ_USER_MEMORY_TOOL,
+      execute: async (_args, { session }) => {
+        const { platform, userId } = this.resolveMemoryKey(session)
+        return runReadUserMemory(this.memory, platform, userId)
+      },
+    })
+
+    // catalog 自己挂 ready hook，rebuild 时机一致；之后每次 chat turn
+    // getOrRefresh 会按需懒重建（覆盖 ready 后才 register 的延迟插件）
+    this.catalog.bind()
+    this.ctx.on('ready', () => {
+      // 启动时清一次过期的图片缓存；之后每小时再扫一次（ctx.setInterval
+      // 在 plugin dispose 时自动清理）。
+      this.imageRefs
+        .cleanup()
+        .then((r) =>
+          this.logger.info(
+            '[image-cache] startup cleanup: removed=%d kept=%d totalBytes=%d',
+            r.removed,
+            r.kept,
+            r.totalBytes
+          )
+        )
+        .catch((e) =>
+          this.logger.warn('[image-cache] startup cleanup failed:', e)
+        )
+      this.ctx.setInterval(
+        () => {
+          this.imageRefs
+            .cleanup()
+            .catch((e) =>
+              this.logger.warn('[image-cache] periodic cleanup failed:', e)
+            )
+        },
+        60 * 60 * 1000
+      )
+    })
 
     this.ctx.set('llm', this)
   }
@@ -172,7 +271,11 @@ export default class PluginLLM extends BasePlugin<Config> {
         conversation_id: 'string',
         conversation_owner: 'integer',
         role: 'string',
-        content: 'string',
+        content: 'text',
+        reasoning_content: 'text',
+        tool_calls: 'text',
+        tool_call_id: 'string',
+        tool_name: 'string',
         usage: 'json',
         model: 'string',
         time: 'integer',
@@ -181,7 +284,7 @@ export default class PluginLLM extends BasePlugin<Config> {
         primary: 'id',
         autoInc: true,
         indexes: [
-          // getChatHistoriesById
+          // ChatHistoryService.getById
           ['conversation_id', 'time'],
           // 通过用户查找记录
           ['conversation_owner', 'time'],
@@ -190,553 +293,10 @@ export default class PluginLLM extends BasePlugin<Config> {
         ],
       }
     )
+    MemoryStore.initSchema(this.ctx)
+    SessionManager.initSchema(this.ctx)
   }
 
-  #initCommands() {
-    this.ctx.command('llm', 'Make ChatBot Great Again')
-
-    this.ctx
-      .command('llm.providers', 'List configured providers', { authority: 3 })
-      .action(async () => {
-        const providers = this.config.providers
-        if (!providers.length) return 'No providers configured.'
-
-        const html = this.ctx.get('html')
-        if (html) {
-          const tableHtml = `
-<div style="padding: 16px; max-width: 600px;">
-  <h3 style="margin: 0 0 12px;">LLM Providers (${providers.length})</h3>
-  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-    <thead>
-      <tr style="background: #f0f0f0; text-align: left;">
-        <th style="padding: 6px 10px; border: 1px solid #ddd;">Name</th>
-        <th style="padding: 6px 10px; border: 1px solid #ddd;">Type</th>
-        <th style="padding: 6px 10px; border: 1px solid #ddd;">Model</th>
-        <th style="padding: 6px 10px; border: 1px solid #ddd;">Reasoning</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${providers
-        .map(
-          (p, i) => `
-        <tr style="background: ${i % 2 ? '#fafafa' : '#fff'};">
-          <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.name}${i === 0 ? ' <span style="color: #888; font-size: 11px;">default</span>' : ''}</td>
-          <td style="padding: 4px 10px; border: 1px solid #ddd;">${p.type}</td>
-          <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.model || '-'}</td>
-          <td style="padding: 4px 10px; border: 1px solid #ddd; font-family: monospace;">${p.reasoningModel || '-'}</td>
-        </tr>`
-        )
-        .join('')}
-    </tbody>
-  </table>
-</div>`
-          const img = await html.html(tableHtml, 'div')
-          if (img) return h.image(img, 'image/jpeg')
-        }
-
-        // Fallback: plain text
-        return providers
-          .map((p, i) => {
-            const def = i === 0 ? ' (default)' : ''
-            return `${p.name} [${p.type}]${def}${p.model ? ` model=${p.model}` : ''}`
-          })
-          .join('\n')
-      })
-
-    this.ctx
-      .command('llm.models <provider:string>', 'List available models', {
-        authority: 3,
-      })
-      .action(async (_, providerName) => {
-        const name = providerName || this.config.providers[0]?.name
-        if (!name) return 'No providers configured.'
-
-        const provider = this.providers.get(name)
-        if (!provider) return `Provider "${name}" not found.`
-
-        const models = await provider.listModels()
-        if (!models.length) {
-          return `Provider "${name}" does not support model listing.`
-        }
-
-        const hasPricing = models.some(
-          (m) => m.inputPrice != null || m.outputPrice != null
-        )
-        const hasName = models.some((m) => m.name)
-        const hasContext = models.some((m) => m.contextLength)
-
-        const formatPrice = (v?: number) =>
-          v != null ? `$${v.toFixed(2)}` : '-'
-        const formatContext = (v?: number) => {
-          if (v == null) return '-'
-          if (v >= 1_000_000)
-            return `${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`
-          if (v >= 1_000)
-            return `${(v / 1_000).toFixed(v % 1_000 === 0 ? 0 : 1)}k`
-          return String(v)
-        }
-
-        const th = (text: string) =>
-          `<th style="padding: 6px 10px; border: 1px solid #ddd;">${text}</th>`
-        const td = (text: string, mono = false) =>
-          `<td style="padding: 4px 10px; border: 1px solid #ddd;${mono ? ' font-family: monospace;' : ''}">${text}</td>`
-
-        const html = this.ctx.get('html')
-        if (html) {
-          const tableHtml = `
-<div style="padding: 16px; max-width: 900px;">
-  <h3 style="margin: 0 0 12px;">Models from ${name} (${models.length})</h3>
-  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-    <thead>
-      <tr style="background: #f0f0f0; text-align: left;">
-        ${th('ID')}
-        ${hasName ? th('Name') : ''}
-        ${hasContext ? th('Context') : ''}
-        ${hasPricing ? th('Input $/M') + th('Output $/M') : ''}
-      </tr>
-    </thead>
-    <tbody>
-      ${models
-        .map(
-          (m, i) => `
-        <tr style="background: ${i % 2 ? '#fafafa' : '#fff'};">
-          ${td(m.id, true)}
-          ${hasName ? td(m.name || '-') : ''}
-          ${hasContext ? td(formatContext(m.contextLength)) : ''}
-          ${hasPricing ? td(formatPrice(m.inputPrice)) + td(formatPrice(m.outputPrice)) : ''}
-        </tr>`
-        )
-        .join('')}
-    </tbody>
-  </table>
-</div>`
-          const img = await html.html(tableHtml, 'div')
-          if (img) return h.image(img, 'image/jpeg')
-        }
-
-        // Fallback: plain text
-        return (
-          `Models from ${name} (${models.length}):\n` +
-          models
-            .map((m) => {
-              const parts = [m.id]
-              if (m.name) parts.push(`(${m.name})`)
-              if (m.contextLength)
-                parts.push(`[${formatContext(m.contextLength)}]`)
-              return parts.join(' ')
-            })
-            .join('\n')
-        )
-      })
-
-    this.ctx
-      .command('llm/chat <content:text>', "I'm talking!", {
-        minInterval: 1 * Time.minute,
-        maxUsage: 10,
-        bypassAuthority: 2,
-      })
-      .shortcut(/(.+)[\?？]$/, {
-        args: ['$1'],
-        prefix: true,
-      })
-      .shortcut(/(.+)[\?？][\!！]$/, {
-        args: ['$1'],
-        prefix: true,
-        options: {
-          thinking: true,
-        },
-      })
-      .option('no-prompt', '-P Disable system prompts', {
-        type: 'boolean',
-        hidden: true,
-      })
-      .option('prompt', '-p <prompt:string>', {
-        hidden: true,
-        authority: 2,
-      })
-      .option('model', '-m <model:string>', {
-        hidden: true,
-        authority: 2,
-      })
-      .option('thinking', '-t Enable reasoning mode', {
-        type: 'boolean',
-        hidden: true,
-        fallback: false,
-      })
-      .option('search', '-s Enable web search', {
-        type: 'boolean',
-        hidden: true,
-        fallback: false,
-      })
-      .option('debug', '-d', { type: 'boolean', hidden: true, authority: 2 })
-      .option('provider', '<provider:string> AI service to use', {
-        hidden: true,
-        authority: 2,
-      })
-      .userFields(['id', 'name', 'openai_last_conversation_id', 'authority'])
-      .check((_, content) => {
-        if (!content?.trim()) {
-          return ''
-        }
-      })
-      .check(({ options }) => {
-        if (options.model) {
-          const maybeRealModel = this.MODEL_ALIASES[options.model]
-          if (maybeRealModel) {
-            options.model = maybeRealModel
-          }
-          // Syntax sugar: provider#model (e.g. openrouter#claude-opus-4.6)
-          const hashIndex = options.model.indexOf('#')
-          if (hashIndex > 0) {
-            options.provider = options.model.slice(0, hashIndex)
-            options.model = options.model.slice(hashIndex + 1)
-          }
-        }
-      })
-      .check(({ session }) => {
-        const userId = session.user.id
-        if (this.CONVERSATION_LOCKS.has(userId)) {
-          session?.setReaction?.('33').catch(() => {})
-          return ''
-        }
-      })
-      .action(async ({ session, options }, userPrompt) => {
-        this.logger.info('[chat] input', options, userPrompt)
-
-        const startTime = Date.now()
-        const conversation_owner = session.user.id
-        const userName = getUserNickFromSession(session)
-
-        this.CONVERSATION_LOCKS.add(conversation_owner)
-
-        const conversation_id: string =
-          (session.user.openai_last_conversation_id ||= crypto.randomUUID())
-
-        const histories = await this.getChatHistoriesById(conversation_id)
-        this.logger.info('[chat] user data', {
-          conversation_owner,
-          conversation_id,
-          historiesLenth: histories.length,
-        })
-
-        if (options['no-prompt']) {
-          options.prompt = ''
-        }
-
-        const providerConfig = options.provider
-          ? this.config.providers.find((p) => p.name === options.provider)
-          : this.config.providers[0]
-
-        const provider = options.provider
-          ? this.useProvider(options.provider)
-          : this.defaultProvider
-
-        const model =
-          options.model ||
-          (options.thinking
-            ? providerConfig?.reasoningModel ||
-              this.config.reasoningModel ||
-              'deepseek-r1'
-            : providerConfig?.model || this.config.model || 'gpt-4o-mini')
-
-        const maxTokens =
-          providerConfig?.maxTokens ?? this.config.maxTokens ?? 1024
-
-        const chatMessages: ChatMessage[] = [
-          {
-            role: 'system',
-            content:
-              typeof options.prompt === 'string'
-                ? options.prompt
-                : this.config.systemPrompt.default,
-          },
-          {
-            role: 'system',
-            content:
-              'User context: ' +
-              JSON.stringify({
-                user_name: userName,
-                user_timezone: 'Asia/Shanghai',
-                current_time: new Date().toISOString(),
-              }) +
-              '\nUsername is just a nickname and does not represent their identity. For example, "admin" does not mean they are an admin.',
-          },
-          ...histories,
-          {
-            role: 'user',
-            content: userPrompt,
-          },
-        ]
-
-        const enableSearch =
-          !!options.search || this.quickCheckShouldEnableSearch(userPrompt)
-
-        const stream = provider.streamChatCompletion(
-          chatMessages,
-          {
-            model,
-            maxTokens,
-            temperature: 0.8,
-            topP: 0.8,
-          },
-          {
-            enableThinking: !!options.thinking,
-            thinkingBudget: maxTokens,
-            enableSearch,
-          }
-        )
-
-        // 如果没有开启调试模式，每思考 10 秒发送一个状态指示器
-        const emojiCodes = ['181', '285', '267', '312', '284', '37']
-        let currentEmojiIndex = -1
-        const stopEmojiReaction = cancellableInterval(
-          () => {
-            if (sendContentFromIndex || sendThinkingFromIndex) {
-              stopEmojiReaction()
-            } else {
-              currentEmojiIndex = (currentEmojiIndex + 1) % emojiCodes.length
-              session
-                ?.setReaction?.(emojiCodes[currentEmojiIndex])
-                .catch(() => {})
-            }
-          },
-          10 * 1000,
-          60 * 1000
-        )
-
-        // 读取流式数据
-        let fullThinking = ''
-        let fullContent = ''
-        let sendContentFromIndex = 0
-        let sendThinkingFromIndex = 0
-        let usage: ChatCompletionUsage | undefined
-        let thinkingEnd = false
-        let lastMessageId: string
-        const shouldSendThinking = options.debug
-
-        // #region chat-stream
-        try {
-          for await (const delta of stream) {
-            if (delta.kind === 'usage') {
-              usage = delta.usage
-              continue
-            }
-            if (delta.kind === 'error') {
-              throw delta.error
-            }
-
-            if (delta.kind === 'reasoning_content') {
-              const thinking = delta.content
-              fullThinking += thinking
-              if (shouldSendThinking) {
-                const { text, nextIndex } = this.splitContent(
-                  fullThinking,
-                  sendThinkingFromIndex
-                )
-                sendThinkingFromIndex = nextIndex
-                if (text) {
-                  this.logger.info('[chat] thinking:', text)
-                  stopEmojiReaction()
-                  ;[lastMessageId = lastMessageId] = await session.sendQueued(
-                    <>
-                      {lastMessageId && <quote id={lastMessageId}></quote>}
-                      [内心独白] {text}
-                    </>
-                  )
-                }
-              }
-            }
-
-            if (delta.kind === 'content') {
-              const content = delta.content
-              // End thinking phase
-              if (!thinkingEnd) {
-                thinkingEnd = true
-                this.logger.info('[chat] think end:', fullThinking)
-                if (
-                  fullThinking &&
-                  sendThinkingFromIndex < fullThinking.length &&
-                  shouldSendThinking
-                ) {
-                  stopEmojiReaction()
-                  ;[lastMessageId = lastMessageId] = await session.sendQueued(
-                    <>
-                      {lastMessageId && <quote id={lastMessageId}></quote>}
-                      [内心独白] {fullThinking.slice(sendThinkingFromIndex)}
-                    </>
-                  )
-                }
-              }
-              // Send content
-              fullContent += content
-              const { text, nextIndex } = this.splitContent(
-                fullContent,
-                sendContentFromIndex
-              )
-              sendContentFromIndex = nextIndex
-              if (text) {
-                this.logger.info('[chat] sending:', text)
-                stopEmojiReaction()
-                ;[lastMessageId = lastMessageId] = await session.sendQueued(
-                  <>
-                    {lastMessageId && <quote id={lastMessageId}></quote>}
-                    {text}
-                  </>
-                )
-              }
-            }
-          }
-        } catch (e) {
-          this.logger.error('[chat] stream error:', e)
-          return (
-            <>
-              <quote id={session.messageId}></quote>
-              {this.RANDOM_ERROR_MSG}
-            </>
-          )
-        } finally {
-          this.CONVERSATION_LOCKS.delete(conversation_owner)
-          stopEmojiReaction()
-        }
-        //#endregion
-
-        // 处理剩余的文本
-        if (sendContentFromIndex < fullContent.length) {
-          const text = fullContent.slice(sendContentFromIndex)
-          this.logger.info('[chat] send remaining:', text)
-          ;[lastMessageId = lastMessageId] = await session.sendQueued(
-            <>
-              {lastMessageId && <quote id={lastMessageId}></quote>}
-              {text}
-            </>
-          )
-        }
-
-        if (usage && options.debug) {
-          await session.sendQueued(
-            <>
-              {lastMessageId && <quote id={lastMessageId}></quote>}
-              {JSON.stringify(usage, null, 2)}
-            </>
-          )
-        }
-
-        this.logger.success('[chat] stream end:', {
-          fullThinking,
-          fullContent,
-          usage,
-        })
-
-        if (fullContent) {
-          // save conversations to database
-          ;[
-            { role: 'user', content: userPrompt, time: startTime },
-            {
-              role: 'assistant',
-              content: fullContent,
-              time: Date.now(),
-              usage,
-              model,
-            },
-          ].forEach((item) =>
-            // @ts-ignore
-            this.ctx.database.create('openai_chat', {
-              ...item,
-              conversation_owner,
-              conversation_id,
-            })
-          )
-        }
-      })
-
-    this.ctx
-      .command('llm.reset', '开始新的对话')
-      .userFields(['openai_last_conversation_id'])
-      .action(async ({ session }) => {
-        if (!session.user.openai_last_conversation_id) {
-          return (
-            <random>
-              <>嗯……我们好像还没聊过什么呀……</>
-              <>咦？你还没有和SILI分享过你的故事呢！</>
-              <>欸？SILI好像还没和你讨论过什么哦。</>
-            </random>
-          )
-        } else {
-          session.user.openai_last_conversation_id = ''
-          await session.user.$update()
-          return (
-            <random>
-              <>让我们开始新话题吧！</>
-              <>嗯……那我们聊点别的吧！</>
-              <>好吧，那我就不提之前的事了。</>
-              <>你有更好的点子和SILI分享吗？</>
-              <>咦？是还有其他问题吗？</>
-            </random>
-          )
-        }
-      })
-  }
-
-  /**
-   * 提升对话连贯性，将对话内容分割成多个部分
-   *
-   * 首先抛弃 fromIndex 之前的内容，剩下的称为 rest
-   * 将 rest 按照 splitChars 中的字符进行分割，得到分割点的索引
-   * 如果分割点的数量大于 expectParts，返回前 expectParts 个分割点之间的内容，nextIndex 为第 expectParts 个分割点的索引（注意是基于 fullText 的索引）
-   * 如果分割点的数量小于 expectParts，什么也不做：返回 text 为空字符串，nextIndex 为 fromIndex
-   * 如果剩余的内容长度大于 maxLength，尝试减少 expectParts 的数量，直到剩余长度小于 maxLength
-   * 如果 expectParts 为 0，意味着剩余的内容没有合适的分割点，作为保底机制，把剩余内容直接返回，nextIndex 设置到末尾
-   * 注意：返回的 nextIndex 都是基于 fullText 的索引，如果基于 rest 计算要加上 fromIndex
-   *
-   * @param fullText
-   * @param fromIndex
-   * @param splitChars
-   * @param expectParts
-   * @param maxLength
-   */
-  splitContent(
-    fullText: string,
-    fromIndex: number = 0,
-    splitChars: string[] = ['。', '？', '！', '\n'],
-    expectParts: number = 5,
-    maxLength: number = 300
-  ): {
-    text: string
-    nextIndex: number
-  } {
-    // 似乎出现了一些问题，fromIndex 大于等于 fullText 的长度，直接返回空字符串，修复 nextIndex 为 fullText 的长度
-    if (fromIndex >= fullText.length) {
-      return { text: '', nextIndex: fullText.length }
-    }
-    if (expectParts === 0) {
-      return { text: fullText.slice(fromIndex), nextIndex: fullText.length }
-    }
-    const rest = fullText.slice(fromIndex)
-    if (rest.length > maxLength) {
-      return this.splitContent(
-        fullText,
-        fromIndex,
-        splitChars,
-        expectParts - 1,
-        maxLength
-      )
-    }
-    const splitIndexes = rest
-      .split('')
-      .reduce(
-        (acc, char, index) =>
-          splitChars.includes(char) ? [...acc, index] : acc,
-        [] as number[]
-      )
-    if (splitIndexes.length >= expectParts) {
-      const nextIndex = splitIndexes[expectParts - 1] + fromIndex + 1
-      return {
-        text: fullText.slice(fromIndex, nextIndex),
-        nextIndex,
-      }
-    }
-    return { text: '', nextIndex: fromIndex }
-  }
 
   static readPromptFile(file: string) {
     try {
@@ -750,85 +310,21 @@ export default class PluginLLM extends BasePlugin<Config> {
     }
   }
 
-  async getChatHistoriesById(
-    conversation_id: string,
-    limit = 10
-  ): Promise<Array<Pick<OpenAIConversationLog, 'role' | 'content'>>> {
-    const pairLimit = Math.max(0, Math.floor(limit))
-    if (!pairLimit) return []
-
-    const expectedMessages = pairLimit * 2
-
-    // Fetch a bit more than needed so we can drop invalid prefix and still keep enough pairs.
-    const queryLimit = Math.min(60, expectedMessages + 10)
-
-    const raw = (await this.ctx.database.get(
-      'openai_chat',
-      { conversation_id },
-      {
-        sort: { time: 'desc' },
-        limit: queryLimit,
-        fields: ['content', 'role'],
-      }
-    )) as Array<Pick<OpenAIConversationLog, 'role' | 'content'>> | null
-
-    let histories: Array<Pick<OpenAIConversationLog, 'role' | 'content'>> =
-      (raw?.slice().reverse() as any) || []
-
-    // If validation fails, drop from the beginning until remaining items are valid.
-    while (histories.length > 0 && !this.isValidUserAssistantPairs(histories)) {
-      histories = histories.slice(1)
-    }
-
-    if (histories.length > expectedMessages) {
-      histories = histories.slice(histories.length - expectedMessages)
-    }
-
-    return histories
+  /**
+   * Resolve the (platform, userId) pair the memory store keys on for a session.
+   * Same logic as the chat action — keep them in sync. Public so subplugins
+   * (commands/admin, commands/chat) can use it via ctx.llm.
+   */
+  resolveMemoryKey(session: any): { platform: string; userId: string } {
+    const platform =
+      session.platform === 'onebot' ? 'qq' : session.platform || 'unknown'
+    const userId = session.user?.id?.toString() || session.userId || 'anonymous'
+    return { platform, userId }
   }
 
-  private isValidUserAssistantPairs(items: any[]) {
-    if (items.length === 0) return true
-    if (items.length % 2 !== 0) return false
-    if (items[0].role !== 'user') return false
-    if (items[items.length - 1].role !== 'assistant') return false
-    for (let i = 0; i < items.length; i++) {
-      const expectedRole = i % 2 === 0 ? 'user' : 'assistant'
-      if (items[i].role !== expectedRole) return false
-    }
-    return true
+  /** Public read access to the cached agent command catalog (for tools.ts). */
+  getCatalog(): readonly CommandCatalogEntry[] {
+    return this.catalog.list()
   }
 
-  readonly ENABLE_SEARCH_KEYWORDS = [
-    '搜索',
-    '查找',
-    '查一下',
-    '找一下',
-    '搜一下',
-    '帮我找',
-    '帮我搜',
-    '帮我查',
-    '最近',
-    '最新',
-    '今天',
-    '昨天',
-    '前天',
-    '前几天',
-    '几天前',
-    '这周',
-    '本周',
-    '这个月',
-    '本月',
-    '今年',
-    '新闻',
-    '资讯',
-    '动态',
-    '发生了什么',
-    '发生了啥',
-  ]
-  quickCheckShouldEnableSearch(content: string): boolean {
-    return this.ENABLE_SEARCH_KEYWORDS.some((keyword) =>
-      content.includes(keyword)
-    )
-  }
 }

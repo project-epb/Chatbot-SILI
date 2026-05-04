@@ -1,19 +1,51 @@
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant'
-  content: string
+export interface ToolDefinition {
+  name: string
+  description: string
+  parameters: Record<string, any>
 }
+
+export interface ToolCall {
+  id: string
+  name: string
+  arguments: Record<string, any>
+}
+
+export type ChatMessage =
+  | { role: 'system'; content: string }
+  | { role: 'user'; content: string }
+  | {
+      role: 'assistant'
+      content: string
+      tool_calls?: ToolCall[]
+      reasoning_content?: string
+    }
+  | {
+      role: 'tool'
+      tool_call_id: string
+      tool_name: string
+      content: string
+    }
 
 export interface ChatCompletionOptions {
   model: string
   maxTokens?: number
   temperature?: number
   topP?: number
+  tools?: ToolDefinition[]
+  toolChoice?: 'auto' | 'none' | 'required'
 }
 
 export interface ChatCompletionFeatures {
   enableThinking?: boolean
   thinkingBudget?: number
   enableSearch?: boolean
+  /**
+   * AbortSignal for cancelling an in-flight request. When the caller wants
+   * to interrupt mid-stream (user typed a new message before the bot
+   * finished), aborting via this signal terminates the underlying SDK
+   * fetch — no more deltas arrive on the generator.
+   */
+  signal?: AbortSignal
 }
 
 export interface ChatCompletionUsage {
@@ -22,30 +54,26 @@ export interface ChatCompletionUsage {
   totalTokens?: number
 }
 
+export type StreamFinishReason = 'stop' | 'tool_calls' | 'length' | 'other'
+
 export type StreamChatDelta =
   | { kind: 'reasoning_content'; content: string }
   | { kind: 'content'; content: string }
+  | { kind: 'tool_call'; toolCall: ToolCall }
   | { kind: 'usage'; usage: ChatCompletionUsage }
   | { kind: 'error'; error: Error }
+  | { kind: 'finish'; reason: StreamFinishReason }
 
 export interface ModelInfo {
   id: string
   name?: string
   ownedBy?: string
-  /** Context window size in tokens */
   contextLength?: number
-  /** Price per million input tokens (USD) */
   inputPrice?: number
-  /** Price per million output tokens (USD) */
   outputPrice?: number
 }
 
 export abstract class LLMProviderBase {
-  /**
-   * Normalize options before sending to the API.
-   * Override in subclasses to handle model-specific constraints
-   * (e.g., Claude thinking mode requires temperature=1).
-   */
   protected normalizeOptions(
     options: ChatCompletionOptions,
     features?: ChatCompletionFeatures
@@ -53,10 +81,6 @@ export abstract class LLMProviderBase {
     return options
   }
 
-  /**
-   * List available models. Returns empty array if not supported.
-   * Providers may populate optional fields (name, pricing, etc.) when the API exposes them.
-   */
   async listModels(): Promise<ModelInfo[]> {
     return []
   }

@@ -412,9 +412,12 @@ app.plugin(function PluginCollectionSILICore(ctx) {
   }
   ctx.plugin(PluginLLM, {
     providers: parseLLMProviders(env),
-    maxTokens: env.LLM_MAX_TOKENS ? Number(env.LLM_MAX_TOKENS) : 4096,
+    maxTokens: env.LLM_MAX_TOKENS ? Number(env.LLM_MAX_TOKENS) : 16384,
     model: env.LLM_MODEL || 'gpt-4o',
-    reasoningModel: env.LLM_REASONING_MODEL || 'deepseek-r1',
+    memoryModel: env.LLM_AGENT_MEMORY_MODEL,
+    sessionIdleTimeoutMs: env.LLM_SESSION_IDLE_HOURS
+      ? Number(env.LLM_SESSION_IDLE_HOURS) * 60 * 60 * 1000
+      : undefined,
   })
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv, {
