@@ -2,6 +2,7 @@ import type { Context, Logger } from 'koishi'
 
 import type { MemoryStore } from '../memory'
 import type { LLMProviderBase } from '../providers/_base'
+import type { ToolRegistry } from '../tools'
 import type { CommandCatalogService } from './command-catalog'
 import type { SystemPromptBuilder } from './system-prompt'
 
@@ -30,6 +31,7 @@ export interface MemoryForkSchedulerDeps {
   chatHistory: ChatHistoryService
   systemPrompt: SystemPromptBuilder
   catalog: CommandCatalogService
+  tools: ToolRegistry
   defaultProvider: LLMProviderBase
   useProvider(name: string): LLMProviderBase
   /** Read config lazily so config edits don't get cached. */
@@ -38,7 +40,7 @@ export interface MemoryForkSchedulerDeps {
     memoryUpdateInterval?: number
     memoryByteLimit?: number
     memoryForkMaxRetries?: number
-    historyMessageCount?: number
+    historyTurnCount?: number
     providers: SchedulerProviderConfig[]
     model?: string
     maxTokens?: number
@@ -123,8 +125,16 @@ export class MemoryForkScheduler {
     },
     opts: { force?: boolean } = {}
   ): Promise<void> {
-    const { ctx, logger, memory, chatHistory, systemPrompt, catalog, config } =
-      this.deps
+    const {
+      ctx,
+      logger,
+      memory,
+      chatHistory,
+      systemPrompt,
+      catalog,
+      tools,
+      config,
+    } = this.deps
     const interval = config.memoryUpdateInterval ?? 10
     const byteLimit = config.memoryByteLimit ?? 3000
     const maxRetries = config.memoryForkMaxRetries ?? 3
@@ -132,7 +142,7 @@ export class MemoryForkScheduler {
     // 主对话发请求时本轮 user 还没落库，fork 触发时本轮 user/assistant 已落库，
     // 所以 fork 拿 N turn 包含本轮，主对话则是 N-1 turn + 当前 user。
     // 二者前缀完全包含到 t0-user，命中自动前缀缓存。
-    const historyTurns = config.historyMessageCount ?? 10
+    const historyTurns = config.historyTurnCount ?? 10
 
     const meta = await memory.getMeta(args.platform, args.userId)
     // 只数当前 conversation 内的 user 消息：原设计是"当前 session 超过 N 轮
@@ -166,6 +176,9 @@ export class MemoryForkScheduler {
     const { provider, model, maxTokens } = this.resolveProvider()
     // 用主对话同一份 system prompt（同 catalog → memoize 命中同一字符串）
     const sharedSystemPrompt = systemPrompt.get(catalog.getOrRefresh())
+    // 同一份 tools 列表，让 fork 请求的 prefix tokens 跟主对话对齐；
+    // toolChoice='none' 在 memory-fork 内部强制（不会真调用任何工具）
+    const sharedTools = tools.listDefinitions()
 
     const { maybeRunMemoryFork } = await import('../memory-fork')
     await maybeRunMemoryFork({
@@ -183,6 +196,7 @@ export class MemoryForkScheduler {
       currentMessageCount: userMessageCount,
       history,
       systemPrompt: sharedSystemPrompt,
+      tools: sharedTools,
     })
   }
 }

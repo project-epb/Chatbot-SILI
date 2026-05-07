@@ -14,6 +14,7 @@ import type {
   ChatCompletionOptions,
   ChatMessage,
   LLMProviderBase,
+  ToolDefinition,
 } from './providers/_base'
 import { clampThinkingBudget } from './thinking'
 
@@ -52,6 +53,15 @@ export interface MemoryForkInput {
    * The reflection instructions live in the trailing user turn instead.
    */
   systemPrompt: string
+  /**
+   * Tool definitions to declare on the request. Should be the SAME list
+   * the main chat uses (most providers serialize tools into the prefix
+   * tokens — omitting them here would split the cache key on the very
+   * next token after the system prompt). The fork itself has no business
+   * invoking any tool, so we send `tool_choice: 'none'` to suppress
+   * tool_calls without losing prefix-cache alignment.
+   */
+  tools?: ToolDefinition[]
 }
 
 const MEMORY_FORK_LOCKS = new Set<string>()
@@ -103,6 +113,12 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
     maxTokens: input.maxTokens,
     temperature: 0.5,
     topP: 0.9,
+    // Pass the same tools list as the main chat to keep prefix tokens
+    // identical (cache hit), but force tool_choice='none' so the model
+    // never actually emits tool_calls — fork's only job is to output
+    // a memory document, not to invoke read/save/exec.
+    tools: input.tools,
+    toolChoice: input.tools && input.tools.length > 0 ? 'none' : undefined,
   }
 
   // memory fork 是反思任务，开 thinking 让模型先权衡再下笔
@@ -209,6 +225,19 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
 }
 
 /**
+ * Format a Date as ISO date (YYYY-MM-DD) in the bot's local timezone.
+ * Used to inject {{TODAY}} into the fork prompt so time-sensitive memory
+ * entries can be timestamped without requiring the agent to infer the
+ * date from `<chat_info>` blocks scattered through history.
+ */
+function formatToday(now = new Date()): string {
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/**
  * Build the trailing user-turn content for a memory-fork request. All
  * reflection instructions live here (instead of in the system prompt) so
  * the [system + history] prefix can stay byte-identical to the main
@@ -217,7 +246,8 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
 export function buildMemoryForkUserPrompt(
   existingMemory: string,
   softLimit: number,
-  hardLimit: number
+  hardLimit: number,
+  today: string = formatToday()
 ): string {
   const tpl = MEMORY_FORK_PROMPT_TEMPLATE
   if (!tpl) {
@@ -226,6 +256,7 @@ export function buildMemoryForkUserPrompt(
       '基于以上对话记录决定是否更新这位用户的长期记忆——这是离线反思任务，不要回复对话。',
       `如果没有值得保留的新信息，只输出 ${NO_UPDATE_MAGIC}。`,
       `否则输出完整的新记忆内容（markdown），不超过 ${softLimit} 字节，硬上限 ${hardLimit}。`,
+      `时间敏感的事项请在末尾加 "（${today} 写入）" 后缀。`,
       '',
       '当前记忆：',
       existingMemory || '(空)',
@@ -236,4 +267,5 @@ export function buildMemoryForkUserPrompt(
     .replace(/\{\{SOFT_LIMIT\}\}/g, String(softLimit))
     .replace(/\{\{HARD_LIMIT\}\}/g, String(hardLimit))
     .replace(/\{\{NO_UPDATE_MAGIC\}\}/g, NO_UPDATE_MAGIC)
+    .replace(/\{\{TODAY\}\}/g, today)
 }

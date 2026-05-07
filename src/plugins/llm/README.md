@@ -21,7 +21,7 @@ plugins/llm/
 │   ├── active-chats.ts                in-flight chat 注册表 + abort
 │   └── memory-fork-scheduler.ts       memory-fork 节流调度
 ├── agent-loop.tsx                     LLM ↔ tool 多轮迭代 + 入库决策
-├── tools.ts                           LLM 工具：execute_koishi_command / read_user_memory
+├── tools.ts                           LLM 工具：execute_koishi_command / read_user_memory / save_user_memory
 ├── command-catalog.ts                 catalog renderer + types（纯函数）
 ├── output-filter.ts                   输出 element 白名单 sanitize
 ├── image-cache.ts                     base64 ↔ ref id 磁盘缓存
@@ -131,7 +131,13 @@ ChatCommand.action      ▼
 - agent 自己决定何时调（涉及偏好/历史时调，闲聊不调）
 - 同时省 turn-by-turn 的 token 重读成本
 
-**Memory fork 共享主对话前缀缓存**：fork 任务的请求结构刻意做成 `[主对话同款 system, 主对话同长度 history（含本轮）, 反思 user turn]`——前两段跟主对话上一轮发出的 prefix 字节一致，反思指令、当前记忆、字节上限等全塞到末尾 user turn。
+**主动写入：`save_user_memory` 工具**——agent 在 turn 内捕获到值得立即记录的强信号（用户主动声明身份/偏好/跨会话事实）时调用，不必等周期 fork。两条护栏（参考 Claude Code Edit/Write 设计）：
+- **read-before-write**：本 turn 没调过 `read_user_memory` 直接拒绝；触发 agent 先 read
+- **乐观锁**：read 时记下 `last_updated_at`，save 进入时再读一次，发现值变了（fork 中途跑过 / 并发 turn 写过）→ 拒绝并强制重新 read
+- 单 turn 限调一次；硬上限同 fork (`memoryByteLimit * 1.1`)
+- 命中后会推进 `message_count_at_update`，让周期 fork 后延：fork 转向"距上次任意更新超过 N 句没反思过"，主要做清理 + 兜底
+
+**Memory fork 共享主对话前缀缓存**：fork 任务的请求结构刻意做成 `[主对话同款 system, 主对话同款 tools 定义, 主对话同长度 history（含本轮）, 反思 user turn]`——前三段跟主对话上一轮发出的 prefix 字节一致，反思指令、当前记忆、字节上限等全塞到末尾 user turn。tools 定义用 `tool_choice='none'` 屏蔽实际调用，纯粹用来对齐 prefix tokens（providers 通常把 tools 编进 prompt prefix，不传就立即裂 cache）。
 
 - 触发节流按"当前 conversation 内 user 消息数"而不是 owner 全局，跨 session 切换由 `last_forked_conversation_id` 字段复位
 - DeepSeek 等自动前缀缓存场景下，fork 命中主对话上一轮留下的缓存（输入价 ≈ 10%），比配 flash 这类小模型还便宜（flash ≈ 50%）
@@ -266,7 +272,7 @@ PROTOCOL_ONLY_ELEMENT_TYPES  // sanitize 黑名单
   ],
   model: 'gpt-4o-mini',                  // 全局默认 model
   maxTokens: 8192,
-  historyMessageCount: 10,                // 单次拉多少 turn 进 prompt
+  historyTurnCount: 10,                   // 单次拉多少 user turn 进 prompt（一个 turn = 1 user + N tool 行 + 1 assistant，整 turn 完整入选）。IM 场景 50 turn 也就几千 token，便宜模型可放宽
   enableAgent: true,                       // 关掉就退化成单轮
   maxToolIterations: 5,                    // agent loop 上限
   showToolCallNotice: true,                // 显示「[正在执行: xxx]」

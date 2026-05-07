@@ -100,6 +100,11 @@ export async function runAgentLoop(
   let totalUsage: ChatCompletionUsage | undefined
   let silentChosen = false
 
+  // Fresh per-turn state shared across tool executions in this loop.
+  // Lets read_user_memory hand off `last_updated_at` to save_user_memory
+  // (read-before-write + optimistic-lock).
+  const turnState: Record<string, unknown> = {}
+
   const allTools = opts.registry.listDefinitions()
   const isAborted = () => opts.signal?.aborted === true
 
@@ -261,7 +266,7 @@ export async function runAgentLoop(
           .catch(() => {})
       }
       opts.logger.info('[agent] tool call:', tc.name, tc.arguments)
-      const resultText = await dispatchTool(opts, tc)
+      const resultText = await dispatchTool(opts, tc, turnState)
       opts.logger.info(
         '[agent] tool result:',
         tc.name,
@@ -332,7 +337,8 @@ export async function runAgentLoop(
 
 async function dispatchTool(
   opts: AgentLoopOptions,
-  tc: ToolCall
+  tc: ToolCall,
+  turnState: Record<string, unknown>
 ): Promise<string> {
   const handler = opts.registry.get(tc.name)
   if (!handler) return `Error: unknown tool "${tc.name}"`
@@ -341,6 +347,7 @@ async function dispatchTool(
       ctx: opts.ctx,
       logger: opts.logger,
       session: opts.session,
+      turnState,
     })
   } catch (e: any) {
     return `Error: ${e?.message || String(e)}`

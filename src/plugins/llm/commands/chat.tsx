@@ -200,7 +200,7 @@ export default class ChatCommand extends BasePlugin {
 
         const histories = await llm.chatHistory.getById(
           conversation_id,
-          llm.config.historyMessageCount
+          llm.config.historyTurnCount
         )
         llm.logger.info('[chat] user data', {
           conversation_owner,

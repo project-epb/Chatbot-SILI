@@ -31,8 +31,11 @@ import { SystemPromptBuilder } from './services/system-prompt'
 import {
   READ_USER_MEMORY_TOOL,
   ToolRegistry,
+  buildSaveUserMemoryTool,
   executeKoishiCommandHandler,
+  getMemoryToolState,
   runReadUserMemory,
+  runSaveUserMemory,
 } from './tools'
 
 declare module 'koishi' {
@@ -81,7 +84,13 @@ export type ProviderConfig =
 export interface Config {
   providers: ProviderConfig[]
   model?: string
-  historyMessageCount?: number
+  /**
+   * 单次拉多少 user turn 进 prompt。一个 turn = 1 user + 0..N
+   * assistant(tool_calls) + 0..N tool result + 1 final assistant，整 turn
+   * 完整入选，不会被截断到中间。落到实际 ChatMessage 行数会比这个数大
+   * （工具调用越密越大），但 IM 场景一般就 1.5-3 倍。
+   */
+  historyTurnCount?: number
   maxTokens?: number
   systemPrompt?: Partial<{
     default: string
@@ -160,10 +169,23 @@ export default class PluginLLM extends BasePlugin<Config> {
   readonly memoryFork: MemoryForkScheduler = new MemoryForkScheduler(this)
 
   constructor(ctx: Context, config: Config) {
+    // One-time compat: 旧字段名 historyMessageCount → historyTurnCount。
+    // 单位语义不变（一直是 user turn 数）；仅改名以避免误导成"消息行数"。
+    // 读完即丢，下游代码统一只看 historyTurnCount。
+    const legacy = (config as any).historyMessageCount
+    let migratedFromLegacyName = false
+    if (legacy !== undefined && config.historyTurnCount === undefined) {
+      config.historyTurnCount = legacy
+      migratedFromLegacyName = true
+    }
+    if ('historyMessageCount' in (config as any)) {
+      delete (config as any).historyMessageCount
+    }
+
     const defaultConfigs: Partial<Config> = {
       model: 'gpt-4o-mini',
       maxTokens: 8192,
-      historyMessageCount: 10,
+      historyTurnCount: 10,
       enableAgent: true,
       maxToolIterations: 5,
       showToolCallNotice: true,
@@ -184,6 +206,12 @@ export default class PluginLLM extends BasePlugin<Config> {
       },
     }
     super(ctx, config, 'llm')
+
+    if (migratedFromLegacyName) {
+      this.logger.warn(
+        '[config] "historyMessageCount" is deprecated; rename to "historyTurnCount" (semantics unchanged — counts user turns, not raw message rows).'
+      )
+    }
 
     for (const providerConfig of config.providers) {
       switch (providerConfig.type) {
@@ -220,9 +248,47 @@ export default class PluginLLM extends BasePlugin<Config> {
     this.tools.register(executeKoishiCommandHandler)
     this.tools.register({
       definition: READ_USER_MEMORY_TOOL,
-      execute: async (_args, { session }) => {
+      execute: async (_args, { session, turnState }) => {
         const { platform, userId } = this.resolveMemoryKey(session)
-        return runReadUserMemory(this.memory, platform, userId)
+        const result = await runReadUserMemory(this.memory, platform, userId, {
+          hardLimit: this.getMemoryHardLimit(),
+        })
+        const state = getMemoryToolState(turnState)
+        state.hasReadInTurn = true
+        state.lastSeenUpdatedAt = result.lastUpdatedAt
+        return result.text
+      },
+    })
+    this.tools.register({
+      definition: buildSaveUserMemoryTool(this.getMemoryHardLimit()),
+      execute: async (args, { ctx, session, turnState }) => {
+        const { platform, userId } = this.resolveMemoryKey(session)
+        const conversationId =
+          (session.user as any)?.openai_last_conversation_id ?? ''
+        if (!conversationId) {
+          return 'Error: no active conversation. Skip this turn and try again on the next user message.'
+        }
+        const conversationOwner = (session.user as any)?.id ?? 0
+        const state = getMemoryToolState(turnState)
+        return runSaveUserMemory(args as any, state, {
+          memory: this.memory,
+          platform,
+          userId,
+          conversationId,
+          getCurrentUserMessageCount: async () => {
+            const rows = await ctx.database.get(
+              'openai_chat',
+              {
+                conversation_owner: conversationOwner,
+                conversation_id: conversationId,
+                role: 'user',
+              },
+              { fields: ['id'] }
+            )
+            return rows?.length ?? 0
+          },
+          hardLimit: this.getMemoryHardLimit(),
+        })
       },
     })
 
@@ -327,4 +393,12 @@ export default class PluginLLM extends BasePlugin<Config> {
     return this.catalog.list()
   }
 
+  /**
+   * Hard byte limit for memory writes (both fork and the save_user_memory
+   * tool). Mirrors the soft-limit + 10% policy used in memory-fork.ts.
+   */
+  private getMemoryHardLimit(): number {
+    const soft = this.config.memoryByteLimit ?? 3000
+    return Math.ceil(soft * 1.1)
+  }
 }
