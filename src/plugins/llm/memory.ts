@@ -16,6 +16,14 @@ export interface OpenAIUserMemory {
   last_check_at: number
   update_count: number
   message_count_at_update: number
+  /**
+   * conversation_id under which message_count_at_update was recorded.
+   * Used by the scheduler to detect session rotation: when the current
+   * conversation_id differs, the stored count is treated as 0 so the
+   * "every N messages in current session" semantics survive across
+   * idle-timeout-driven session rollover.
+   */
+  last_forked_conversation_id: string
 }
 
 export const NO_UPDATE_MAGIC = '<<NO_UPDATE>>'
@@ -44,6 +52,7 @@ export class MemoryStore {
         last_check_at: 'unsigned(20)',
         update_count: 'unsigned',
         message_count_at_update: 'unsigned',
+        last_forked_conversation_id: 'string',
       },
       {
         primary: 'id',
@@ -73,7 +82,8 @@ export class MemoryStore {
     platform: string,
     userId: string,
     content: string,
-    currentMessageCount: number
+    currentMessageCount: number,
+    conversationId: string
   ): Promise<void> {
     const now = Date.now()
     const existing = await this.getMeta(platform, userId)
@@ -88,6 +98,7 @@ export class MemoryStore {
           last_check_at: now,
           update_count: existing.update_count + 1,
           message_count_at_update: currentMessageCount,
+          last_forked_conversation_id: conversationId,
         }
       )
     } else {
@@ -100,6 +111,7 @@ export class MemoryStore {
         last_check_at: now,
         update_count: 1,
         message_count_at_update: currentMessageCount,
+        last_forked_conversation_id: conversationId,
       })
     }
   }
@@ -114,7 +126,8 @@ export class MemoryStore {
   async markChecked(
     platform: string,
     userId: string,
-    currentMessageCount: number
+    currentMessageCount: number,
+    conversationId: string
   ): Promise<void> {
     const now = Date.now()
     const existing = await this.getMeta(platform, userId)
@@ -125,6 +138,7 @@ export class MemoryStore {
         {
           last_check_at: now,
           message_count_at_update: currentMessageCount,
+          last_forked_conversation_id: conversationId,
         }
       )
     } else {
@@ -137,6 +151,7 @@ export class MemoryStore {
         last_check_at: now,
         update_count: 0,
         message_count_at_update: currentMessageCount,
+        last_forked_conversation_id: conversationId,
       })
     }
   }

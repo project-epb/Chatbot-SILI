@@ -2,6 +2,8 @@ import type { Context, Logger } from 'koishi'
 
 import type { MemoryStore } from '../memory'
 import type { LLMProviderBase } from '../providers/_base'
+import type { CommandCatalogService } from './command-catalog'
+import type { SystemPromptBuilder } from './system-prompt'
 
 /**
  * Minimal provider-config shape the scheduler reads. Mirrors a subset of
@@ -26,6 +28,8 @@ export interface MemoryForkSchedulerDeps {
   logger: Logger
   memory: MemoryStore
   chatHistory: ChatHistoryService
+  systemPrompt: SystemPromptBuilder
+  catalog: CommandCatalogService
   defaultProvider: LLMProviderBase
   useProvider(name: string): LLMProviderBase
   /** Read config lazily so config edits don't get cached. */
@@ -34,6 +38,7 @@ export interface MemoryForkSchedulerDeps {
     memoryUpdateInterval?: number
     memoryByteLimit?: number
     memoryForkMaxRetries?: number
+    historyMessageCount?: number
     providers: SchedulerProviderConfig[]
     model?: string
     maxTokens?: number
@@ -118,27 +123,49 @@ export class MemoryForkScheduler {
     },
     opts: { force?: boolean } = {}
   ): Promise<void> {
-    const { ctx, logger, memory, chatHistory, config } = this.deps
+    const { ctx, logger, memory, chatHistory, systemPrompt, catalog, config } =
+      this.deps
     const interval = config.memoryUpdateInterval ?? 10
     const byteLimit = config.memoryByteLimit ?? 3000
     const maxRetries = config.memoryForkMaxRetries ?? 3
+    // history 长度跟主对话保持一致，[system + history] 前缀才对得上：
+    // 主对话发请求时本轮 user 还没落库，fork 触发时本轮 user/assistant 已落库，
+    // 所以 fork 拿 N turn 包含本轮，主对话则是 N-1 turn + 当前 user。
+    // 二者前缀完全包含到 t0-user，命中自动前缀缓存。
+    const historyTurns = config.historyMessageCount ?? 10
 
     const meta = await memory.getMeta(args.platform, args.userId)
+    // 只数当前 conversation 内的 user 消息：原设计是"当前 session 超过 N 轮
+    // 触发一次"，跨会话不应累计（idle timeout 切了新 conversation_id 后，
+    // 旧会话的计数就不该再决定新会话的 fork 时机）。
     const userMessages = await ctx.database.get(
       'openai_chat',
-      { conversation_owner: args.conversation_owner, role: 'user' },
+      {
+        conversation_owner: args.conversation_owner,
+        conversation_id: args.conversation_id,
+        role: 'user',
+      },
       { fields: ['id'] }
     )
     const userMessageCount = userMessages?.length ?? 0
     if (!opts.force) {
-      const since = userMessageCount - (meta?.message_count_at_update ?? 0)
+      // 跨会话时基线视为 0：上次 fork 记录的 conversation_id 跟当前不一致，
+      // 说明已轮换到新 session，count 也是从 0 开始的，比较起点应同步归零。
+      const sameConversation =
+        meta?.last_forked_conversation_id === args.conversation_id
+      const baseline = sameConversation
+        ? (meta?.message_count_at_update ?? 0)
+        : 0
+      const since = userMessageCount - baseline
       if (since < interval) return
     }
 
     // 拉取对话上下文（reasoning_content 已在 ChatHistoryService 默认带上）
-    const history = await chatHistory.getById(args.conversation_id, 50)
+    const history = await chatHistory.getById(args.conversation_id, historyTurns)
 
     const { provider, model, maxTokens } = this.resolveProvider()
+    // 用主对话同一份 system prompt（同 catalog → memoize 命中同一字符串）
+    const sharedSystemPrompt = systemPrompt.get(catalog.getOrRefresh())
 
     const { maybeRunMemoryFork } = await import('../memory-fork')
     await maybeRunMemoryFork({
@@ -155,6 +182,7 @@ export class MemoryForkScheduler {
       conversationId: args.conversation_id,
       currentMessageCount: userMessageCount,
       history,
+      systemPrompt: sharedSystemPrompt,
     })
   }
 }

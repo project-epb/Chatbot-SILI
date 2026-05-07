@@ -131,6 +131,12 @@ ChatCommand.action      ▼
 - agent 自己决定何时调（涉及偏好/历史时调，闲聊不调）
 - 同时省 turn-by-turn 的 token 重读成本
 
+**Memory fork 共享主对话前缀缓存**：fork 任务的请求结构刻意做成 `[主对话同款 system, 主对话同长度 history（含本轮）, 反思 user turn]`——前两段跟主对话上一轮发出的 prefix 字节一致，反思指令、当前记忆、字节上限等全塞到末尾 user turn。
+
+- 触发节流按"当前 conversation 内 user 消息数"而不是 owner 全局，跨 session 切换由 `last_forked_conversation_id` 字段复位
+- DeepSeek 等自动前缀缓存场景下，fork 命中主对话上一轮留下的缓存（输入价 ≈ 10%），比配 flash 这类小模型还便宜（flash ≈ 50%）
+- **DeepSeek 用户建议把 `memoryModel` 留空**，让 fork 跑主模型；只有 cache 行为很弱或主模型贵到哑火时才配独立 memoryModel
+
 ### 3. `<chat_info>` envelope 防 prompt injection
 
 用户每条输入被包装成：
@@ -245,7 +251,7 @@ PROTOCOL_ONLY_ELEMENT_TYPES  // sanitize 黑名单
 |---|---|---|
 | `openai_chat` | `conversation_id` `role` `content` `tool_calls`(json) `tool_call_id` `tool_name` `time` | 消息历史，按 conversation_id 聚合，role 含 system/user/assistant/tool |
 | `openai_session` | `conversation_id`(uniq) `conversation_owner` `platform` `user_id` `started_at` `last_used_at` `user_first_msg` | 会话元数据（瘦身后只保留这些）。`user_first_msg` 为前 30 codepoints，未来给 resume UI 用 |
-| `openai_user_memory` | `platform` `user_id`(uniq) `content` `byte_size` `update_count` `last_updated_at` `message_count_at_update` | 长期记忆，按 (platform, user_id) 唯一，由 memory-fork 周期写入 |
+| `openai_user_memory` | `platform` `user_id`(uniq) `content` `byte_size` `update_count` `last_updated_at` `message_count_at_update` `last_forked_conversation_id` | 长期记忆，按 (platform, user_id) 唯一，由 memory-fork 周期写入；`last_forked_conversation_id` 用于跨会话节流复位 |
 | `user.openai_last_conversation_id` | string | 用户当前 conversation 指针 |
 
 ---
@@ -265,9 +271,9 @@ PROTOCOL_ONLY_ELEMENT_TYPES  // sanitize 黑名单
   maxToolIterations: 5,                    // agent loop 上限
   showToolCallNotice: true,                // 显示「[正在执行: xxx]」
   memoryByteLimit: 3000,                   // memory 内容 byte 上限
-  memoryUpdateInterval: 10,                // 累计 N 条 user message 后触发 fork
+  memoryUpdateInterval: 10,                // 当前 conversation 内累计 N 条 user message 后触发 fork
   memoryForkMaxRetries: 3,
-  memoryModel: 'openrouter#claude-haiku-4-5',  // 可指定 fork 用的小模型
+  memoryModel: 'openrouter#claude-haiku-4-5',  // 可指定 fork 用的小模型；DeepSeek 用户**别配**这条，留空用主模型才能命中前缀缓存（≈10% 输入价 < flash 50%）
   sessionIdleTimeoutMs: 3 * 24 * 60 * 60 * 1000,  // conversation 历史长度上限触发器
   imageCacheMaxBytes: 500 * 1024 * 1024,   // 500MB
   imageCacheTtlMs: 4 * 60 * 60 * 1000,     // 4h

@@ -44,6 +44,14 @@ export interface MemoryForkInput {
   conversationId: string
   currentMessageCount: number
   history: ChatMessage[]
+  /**
+   * System prompt to use for the fork request. Should be byte-identical to
+   * the main chat's system prompt — that's how we keep the [system + history]
+   * prefix shared with the main conversation, so providers with automatic
+   * prefix caching (e.g. DeepSeek) can serve fork at ~10% input price.
+   * The reflection instructions live in the trailing user turn instead.
+   */
+  systemPrompt: string
 }
 
 const MEMORY_FORK_LOCKS = new Set<string>()
@@ -76,18 +84,18 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
   const softLimit = input.byteLimit
   const hardLimit = Math.ceil(softLimit * 1.1)
 
-  const systemPrompt = buildMemoryForkSystemPrompt(
+  // [system, ...history] 与主对话保持字节一致，让自动前缀缓存（DeepSeek 等）
+  // 命中主对话上一轮留下的缓存；反思指令、当前记忆、字节上限、NO_UPDATE
+  // 说明全部塞到末尾的单条 user turn 里，作为本次请求新增的非缓存部分。
+  const reflectionUserPrompt = buildMemoryForkUserPrompt(
     existingMemory,
     softLimit,
     hardLimit
   )
-
-  // 复制原 history（去掉所有 system 角色，避免叠加），追加触发 user 消息。
-  // reasoning_content 字段由 OpenAI provider 层根据模型按需添加/剥离。
   const messages: ChatMessage[] = [
-    { role: 'system', content: systemPrompt },
+    { role: 'system', content: input.systemPrompt },
     ...input.history.filter((m) => m.role !== 'system'),
-    { role: 'user', content: '请基于以上对话更新记忆档案。' },
+    { role: 'user', content: reflectionUserPrompt },
   ]
 
   const options: ChatCompletionOptions = {
@@ -142,7 +150,8 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
       await input.store.markChecked(
         input.platform,
         input.userId,
-        input.currentMessageCount
+        input.currentMessageCount,
+        input.conversationId
       )
       return
     }
@@ -178,7 +187,8 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
       input.platform,
       input.userId,
       trimmed,
-      input.currentMessageCount
+      input.currentMessageCount,
+      input.conversationId
     )
     return
   }
@@ -193,11 +203,18 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
   await input.store.markChecked(
     input.platform,
     input.userId,
-    input.currentMessageCount
+    input.currentMessageCount,
+    input.conversationId
   )
 }
 
-export function buildMemoryForkSystemPrompt(
+/**
+ * Build the trailing user-turn content for a memory-fork request. All
+ * reflection instructions live here (instead of in the system prompt) so
+ * the [system + history] prefix can stay byte-identical to the main
+ * conversation and benefit from automatic prefix caching.
+ */
+export function buildMemoryForkUserPrompt(
   existingMemory: string,
   softLimit: number,
   hardLimit: number
@@ -206,7 +223,7 @@ export function buildMemoryForkSystemPrompt(
   if (!tpl) {
     // 兜底：模板文件读取失败时使用最小可用提示，避免任务直接挂
     return [
-      '你的任务：基于刚才的对话记录，决定是否更新用户的长期记忆。',
+      '基于以上对话记录决定是否更新这位用户的长期记忆——这是离线反思任务，不要回复对话。',
       `如果没有值得保留的新信息，只输出 ${NO_UPDATE_MAGIC}。`,
       `否则输出完整的新记忆内容（markdown），不超过 ${softLimit} 字节，硬上限 ${hardLimit}。`,
       '',
