@@ -6,7 +6,7 @@
  */
 import { config as setupDotEnv } from 'dotenv'
 
-import { App, Random, type Session, Time } from 'koishi'
+import { App, Time, h } from 'koishi'
 
 import { resolve } from 'node:path'
 
@@ -41,7 +41,7 @@ import PluginPowerUser from '~/power-user'
 import PluginProfile from '~/profile'
 import PluginQueue from '~/queue'
 import PluginReboot from '~/reboot'
-import PluginRepeater, { RepeatState } from '~/repeater'
+import PluginRepeater from '~/repeater'
 import PluginSensitiveFilter from '~/sensitive-words-filter'
 import PluginSiliName from '~/sili-name'
 import PluginSpawn from '~/spawn'
@@ -462,41 +462,17 @@ app.plugin(function PluginCollectionInternal(ctx) {
   ctx.plugin(PluginDebug)
   ctx.plugin(PluginHomo)
   ctx.plugin(PluginReboot)
-  const randomHit = (probability: number) => Math.random() < probability
   ctx.plugin(PluginRepeater, {
-    onRepeat(state: RepeatState, session: Session) {
-      if (!state.repeated && state.times > 3) {
-        const hit = randomHit(0.125 * state.times)
-        logger.info('[尝试参与复读]', hit)
-        return hit ? state.content : ''
-      }
-
-      const noRepeatText = [
-        'No，不要再复读了！',
-        '🤚我说婷婷，你们搞复读，不讲武德。',
-        '那么就到此为止吧，再复读就不礼貌了。',
-        '🤚很抱歉打扰大家的复读，水群不要忘记多喝热水哟~',
-      ]
-      if (
-        state.repeated &&
-        state.times > 5 &&
-        !noRepeatText.includes(state.content)
-      ) {
-        const hit = randomHit(0.1 * (state.times - 5))
-        logger.info('[尝试打断复读]', hit)
-        return hit ? Random.pick(noRepeatText) : ''
-      }
-    },
-    // onInterrupt(state: RepeatState, session: Session) {
-    //   if (!state.repeated) return
-    //   const hit = randomHit(0.1 * (state.times - 5))
-    //   logger.info('[尝试质询打断]', hit)
-    //   return hit
-    //     ? session.send(
-    //         `${segment.at(session.userId as string)}在？为什么打断复读？`
-    //       )
-    //     : false
-    // },
+    interruptTexts: [
+      'No，不要再复读了！',
+      '🤚我说婷婷，你们搞复读，不讲武德。',
+      '那么就到此为止吧，再复读就不礼貌了。',
+      '🤚很抱歉打扰大家的复读，水群不要忘记多喝热水哟~',
+    ],
+    queryTexts: [
+      (_state, breaker) => `${h.at(breaker.userId)}在？为什么打断复读？`,
+      (_state, breaker) => `${h.at(breaker.userId)} 你还要继续复读哟，怎么停下来了。`,
+    ],
   })
   ctx.plugin(PluginSensitiveFilter)
   ctx.plugin(PluginSpawn)
