@@ -118,6 +118,11 @@ export default class ChatCommand extends BasePlugin {
 
         const startTime = Date.now()
         const conversation_owner = session.user.id
+        // 本 chat invocation 在 conversation 内的 turn 编号；所有 row 共享。
+        // 配合 intraSeq（user=0, 后续 ++）形成 history 的复合排序键。
+        let turnNumber = -1
+        let intraSeq = 0
+        const nextSeq = () => ++intraSeq
         const userName = getUserNickFromSession(session)
 
         // 打断场景识别 + 等老会话退出
@@ -352,6 +357,12 @@ export default class ChatCommand extends BasePlugin {
 
         chatMessages[0] = { role: 'system', content: systemPromptText }
 
+        // 分配本 chat invocation 的 turn_number。在 session rotation 之后、
+        // 任何 record 落库之前 allocate；ActiveChatRegistry 已经按 owner
+        // 串行 chat，所以 in-memory counter 严格单调，被打断的老 chat 与
+        // 后续新 chat 拿到的 turn_number 不会撞。
+        turnNumber = await llm.turns.allocate(conversation_id)
+
         // 逐字流给用户的 helper
         const flushVisibleText = async (force: boolean) => {
           const next = force
@@ -414,6 +425,8 @@ export default class ChatCommand extends BasePlugin {
                 usage: record.usage,
                 model: record.model,
                 time: record.time,
+                turn_number: turnNumber,
+                intra_turn_seq: nextSeq(),
               } as any)
             },
             onToolRecord: async (record) => {
@@ -426,6 +439,8 @@ export default class ChatCommand extends BasePlugin {
                 tool_call_id: record.toolCallId,
                 tool_name: record.toolName,
                 time: record.time,
+                turn_number: turnNumber,
+                intra_turn_seq: nextSeq(),
               } as any)
             },
             onTurnEnd: async () => {
@@ -484,9 +499,9 @@ export default class ChatCommand extends BasePlugin {
           aborted: agentResult.aborted,
         })
 
-        // 落库 user 消息（time 早于其他记录，按 time 排序仍正确）。
-        // 即便被打断也写：用户实际说了这句话，且对应 assistant 已带
-        // <interrupted/> 标记入库，history 完整。
+        // 落库 user 消息。排序由 (turn_number, intra_turn_seq) 决定，
+        // user 永远 intra_turn_seq=0 是 turn 头；即使该 chat 被打断、
+        // 中途有 record 先落库，user 仍排在 turn 起始。
         await llm.ctx.database.create('openai_chat', {
           conversation_owner,
           conversation_id,
@@ -494,6 +509,8 @@ export default class ChatCommand extends BasePlugin {
           content: userPrompt,
           reasoning_content: '',
           time: startTime,
+          turn_number: turnNumber,
+          intra_turn_seq: 0,
         } as any)
 
         // 被打断时对方的 abort 已经触发（abort 早于这里）；正常完成时

@@ -28,6 +28,8 @@ import { ChatHistoryService } from './services/chat-history'
 import { CommandCatalogService } from './services/command-catalog'
 import { MemoryForkScheduler } from './services/memory-fork-scheduler'
 import { SystemPromptBuilder } from './services/system-prompt'
+import { TurnAllocator } from './services/turn-allocator'
+import { migrateTurnNumbers } from './services/turn-migration'
 import {
   READ_USER_MEMORY_TOOL,
   ToolRegistry,
@@ -63,6 +65,20 @@ interface OpenAIConversationLog {
   usage?: ChatCompletionUsage
   model?: string
   time: number
+  /**
+   * Per-conversation monotonic turn counter (1-based). All rows produced
+   * by one chat invocation share this value. Sorted on for history
+   * reconstruction together with `intra_turn_seq` — replaces `time` as
+   * the primary ordering key, since `time` is wall-clock and races on
+   * interrupt boundaries / tool latency. `time` is kept as a debug-only
+   * timestamp.
+   */
+  turn_number: number
+  /**
+   * Order within a turn: user row is always 0; assistant/tool rows take
+   * 1, 2, 3, ... in the order the chat handler writes them.
+   */
+  intra_turn_seq: number
 }
 
 export type ProviderConfig =
@@ -167,6 +183,7 @@ export default class PluginLLM extends BasePlugin<Config> {
     this.logger
   )
   readonly memoryFork: MemoryForkScheduler = new MemoryForkScheduler(this)
+  readonly turns: TurnAllocator = new TurnAllocator(this.ctx)
 
   constructor(ctx: Context, config: Config) {
     // One-time compat: 旧字段名 historyMessageCount → historyTurnCount。
@@ -296,6 +313,21 @@ export default class PluginLLM extends BasePlugin<Config> {
     // getOrRefresh 会按需懒重建（覆盖 ready 后才 register 的延迟插件）
     this.catalog.bind()
     this.ctx.on('ready', () => {
+      // 启动时一次性迁移：补 turn_number / intra_turn_seq 到旧记录，
+      // 跑完 idempotent，下次启动如果所有行都已分配会快速跳过。
+      migrateTurnNumbers(this.ctx, this.logger)
+        .then((r) =>
+          this.logger.info(
+            '[turn-migration] done: scanned=%d migrated=%d skipped=%d',
+            r.scannedConversations,
+            r.migratedRows,
+            r.skippedConversations
+          )
+        )
+        .catch((e) =>
+          this.logger.warn('[turn-migration] failed:', e)
+        )
+
       // 启动时清一次过期的图片缓存；之后每小时再扫一次（ctx.setInterval
       // 在 plugin dispose 时自动清理）。
       this.imageRefs
@@ -345,14 +377,16 @@ export default class PluginLLM extends BasePlugin<Config> {
         usage: 'json',
         model: 'string',
         time: 'integer',
+        turn_number: 'unsigned',
+        intra_turn_seq: 'unsigned',
       },
       {
         primary: 'id',
         autoInc: true,
         indexes: [
-          // ChatHistoryService.getById
-          ['conversation_id', 'time'],
-          // 通过用户查找记录
+          // ChatHistoryService.getById primary order
+          ['conversation_id', 'turn_number', 'intra_turn_seq'],
+          // 通过用户查找记录（time 仍是天然的"按时序看用户活动"键）
           ['conversation_owner', 'time'],
           // 用于可能的时间范围清理操作
           ['time'],
