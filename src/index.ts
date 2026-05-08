@@ -9,6 +9,7 @@ import { config as setupDotEnv } from 'dotenv'
 import { App, Time, h } from 'koishi'
 
 import { resolve } from 'node:path'
+import process from 'node:process'
 
 import AdapterMinecraft from '@/adapters/queqiao-minecraft'
 import FallbackHandler from '@/modules/FallbackHandler'
@@ -112,7 +113,6 @@ setupDotEnv({
   path: resolve(__dirname, '..', '.env.local'),
   override: true,
 })
-
 const { env } = process
 
 /** 初始化 Koishi 实例 */

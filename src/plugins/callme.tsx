@@ -104,5 +104,30 @@ export default class PatchCallme extends BasePlugin {
           )
         }
       })
+
+    ctx
+      .command('admin.reset-name', '重置用户名字', { authority: 4 })
+      .option('user', '-u <user:user> 目标用户', {})
+      .action(async ({ command, session, options }) => {
+        let [platform, uid] = options.user?.split(':') || []
+        if (!uid && platform) {
+          uid = platform
+          platform = session.platform
+        }
+        if (!uid) {
+          return session.execute({
+            name: command.name,
+            options: { help: true },
+          })
+        }
+        const user = await session.app.database.getUser(platform, uid)
+        if (!user) {
+          return '没有找到这个用户'
+        }
+        await session.app.database.setUser(platform, uid, {
+          name: null,
+        })
+        return '重置成功'
+      })
   }
 }
