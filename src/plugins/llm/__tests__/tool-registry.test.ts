@@ -1,13 +1,23 @@
 import { describe, it, expect } from 'vitest'
 import {
+  EXTRACT_WEBPAGES_TOOL,
   type MemoryToolState,
   ToolRegistry,
+  WEB_SEARCH_TOOL,
+  type WebExtractClient,
+  type WebExtractResponse,
+  type WebSearchClient,
+  type WebSearchResponse,
+  type WebToolsState,
   buildSaveUserMemoryTool,
   getMemoryToolState,
+  getWebToolsState,
   isForbiddenAgentCommand,
   renderAgentHelp,
   runReadUserMemory,
   runSaveUserMemory,
+  runWebExtract,
+  runWebSearch,
   type ToolHandler,
 } from '../tools'
 import type { CommandCatalogEntry } from '../command-catalog'
@@ -440,6 +450,400 @@ describe('getMemoryToolState', () => {
     const b = getMemoryToolState(ts)
     expect(b).toBe(a)
     expect(b.hasReadInTurn).toBe(true)
+  })
+})
+
+describe('runWebSearch', () => {
+  const makeClient = (resp: WebSearchResponse): WebSearchClient => ({
+    async search() {
+      return resp
+    },
+  })
+
+  const failingClient = (msg = 'boom'): WebSearchClient => ({
+    async search() {
+      throw new Error(msg)
+    },
+  })
+
+  const freshState = (
+    overrides: Partial<WebToolsState> = {}
+  ): WebToolsState => ({
+    searchCallCount: 0,
+    extractCallCount: 0,
+    ...overrides,
+  })
+
+  const sampleResults: WebSearchResponse = {
+    results: [
+      {
+        title: 'Example One',
+        url: 'https://example.com/a',
+        content: 'first snippet',
+        score: 0.9,
+      },
+      {
+        title: 'Example Two',
+        url: 'https://example.com/b',
+        content: 'second snippet',
+      },
+    ],
+  }
+
+  it('rejects empty / missing query without burning the budget', async () => {
+    const c = makeClient(sampleResults)
+    const state = freshState()
+    expect(await runWebSearch(undefined, c, state)).toMatch(
+      /missing required field/
+    )
+    expect(await runWebSearch({ query: '' }, c, state)).toMatch(
+      /missing required/
+    )
+    expect(await runWebSearch({ query: '   \n  ' }, c, state)).toMatch(
+      /missing required/
+    )
+    expect(state.searchCallCount).toBe(0)
+  })
+
+  it('formats results with title, URL and content', async () => {
+    const out = await runWebSearch(
+      { query: 'foo' },
+      makeClient(sampleResults),
+      freshState()
+    )
+    expect(out).toContain('# 搜索结果："foo"')
+    expect(out).toContain('## 1. Example One')
+    expect(out).toContain('URL: https://example.com/a')
+    expect(out).toContain('first snippet')
+    expect(out).toContain('## 2. Example Two')
+    expect(out).toContain('URL: https://example.com/b')
+    expect(out).toContain('second snippet')
+  })
+
+  it('includes the engine answer when provided', async () => {
+    const out = await runWebSearch(
+      { query: 'foo' },
+      makeClient({ ...sampleResults, answer: 'short summary' }),
+      freshState()
+    )
+    expect(out).toContain('**摘要**：short summary')
+  })
+
+  it('handles empty results gracefully and still increments call count', async () => {
+    const state = freshState()
+    const out = await runWebSearch(
+      { query: 'no hits' },
+      makeClient({ results: [] }),
+      state
+    )
+    expect(out).toMatch(/没有搜到.*"no hits"/)
+    expect(state.searchCallCount).toBe(1)
+  })
+
+  it('returns Error string when client throws (still increments)', async () => {
+    const state = freshState()
+    const out = await runWebSearch(
+      { query: 'foo' },
+      failingClient('network down'),
+      state
+    )
+    expect(out).toMatch(/^Error: web search failed: network down/)
+    expect(state.searchCallCount).toBe(1)
+  })
+
+  it('clamps max_results to the configured cap', async () => {
+    let received = 0
+    const client: WebSearchClient = {
+      async search(input) {
+        received = input.maxResults
+        return { results: [] }
+      },
+    }
+    await runWebSearch({ query: 'q', max_results: 999 }, client, freshState(), {
+      maxResultsCap: 10,
+    })
+    expect(received).toBe(10)
+  })
+
+  it('falls back to defaultMaxResults when not provided / invalid', async () => {
+    let received = 0
+    const client: WebSearchClient = {
+      async search(input) {
+        received = input.maxResults
+        return { results: [] }
+      },
+    }
+    await runWebSearch({ query: 'q' }, client, freshState(), {
+      defaultMaxResults: 7,
+    })
+    expect(received).toBe(7)
+    await runWebSearch({ query: 'q', max_results: 0 }, client, freshState(), {
+      defaultMaxResults: 7,
+    })
+    expect(received).toBe(7)
+    await runWebSearch(
+      { query: 'q', max_results: Number.NaN as any },
+      client,
+      freshState(),
+      { defaultMaxResults: 7 }
+    )
+    expect(received).toBe(7)
+  })
+
+  it('honors a valid in-range max_results', async () => {
+    let received = 0
+    const client: WebSearchClient = {
+      async search(input) {
+        received = input.maxResults
+        return { results: [] }
+      },
+    }
+    await runWebSearch({ query: 'q', max_results: 3 }, client, freshState(), {
+      defaultMaxResults: 5,
+      maxResultsCap: 10,
+    })
+    expect(received).toBe(3)
+  })
+
+  it('trims the query before passing to the client', async () => {
+    let received = ''
+    const client: WebSearchClient = {
+      async search(input) {
+        received = input.query
+        return { results: [] }
+      },
+    }
+    await runWebSearch({ query: '  hello world  ' }, client, freshState())
+    expect(received).toBe('hello world')
+  })
+
+  it('rejects further calls past the per-turn cap', async () => {
+    const state = freshState({ searchCallCount: 3 })
+    let calls = 0
+    const client: WebSearchClient = {
+      async search() {
+        calls++
+        return { results: [] }
+      },
+    }
+    const out = await runWebSearch({ query: 'q' }, client, state, {
+      maxCallsPerTurn: 3,
+    })
+    expect(out).toMatch(/已经调用 3 次.*上限 3/)
+    expect(calls).toBe(0) // didn't hit the API
+    expect(state.searchCallCount).toBe(3) // didn't increment past the cap either
+  })
+
+  it('lets a fresh-state agent reach the cap exactly', async () => {
+    const state = freshState()
+    const client = makeClient(sampleResults)
+    for (let i = 0; i < 3; i++) {
+      const out = await runWebSearch({ query: `q${i}` }, client, state, {
+        maxCallsPerTurn: 3,
+      })
+      expect(out).not.toMatch(/^Error/)
+    }
+    expect(state.searchCallCount).toBe(3)
+    const out = await runWebSearch({ query: 'q4' }, client, state, {
+      maxCallsPerTurn: 3,
+    })
+    expect(out).toMatch(/^Error: web_search/)
+  })
+
+  it('appends remaining-budget hint when below cap', async () => {
+    const state = freshState()
+    const out = await runWebSearch(
+      { query: 'q' },
+      makeClient(sampleResults),
+      state,
+      { maxCallsPerTurn: 3 }
+    )
+    expect(out).toMatch(/本轮还可再 search 2 次/)
+  })
+
+  it('appends quota-used-up hint at last allowed call', async () => {
+    const state = freshState({ searchCallCount: 2 })
+    const out = await runWebSearch(
+      { query: 'q' },
+      makeClient(sampleResults),
+      state,
+      { maxCallsPerTurn: 3 }
+    )
+    expect(out).toMatch(/本轮 search 配额已用完/)
+  })
+})
+
+describe('WEB_SEARCH_TOOL definition', () => {
+  it('declares query as required and constrains max_results', () => {
+    expect(WEB_SEARCH_TOOL.name).toBe('web_search')
+    expect(WEB_SEARCH_TOOL.parameters.required).toEqual(['query'])
+    const props = WEB_SEARCH_TOOL.parameters.properties
+    expect(props.query.type).toBe('string')
+    expect(props.max_results.type).toBe('integer')
+    expect(props.max_results.minimum).toBe(1)
+    expect(props.max_results.maximum).toBe(10)
+  })
+
+  it('teaches when to use vs not use, and points to extract_webpages', () => {
+    expect(WEB_SEARCH_TOOL.description).toMatch(/什么时候调|什么时候不调|什么时候别调/)
+    expect(WEB_SEARCH_TOOL.description).toMatch(/execute_koishi_command/)
+    expect(WEB_SEARCH_TOOL.description).toMatch(/extract_webpages/)
+    expect(WEB_SEARCH_TOOL.description).toMatch(/3 次/)
+  })
+})
+
+describe('runWebExtract', () => {
+  const sampleResp: WebExtractResponse = {
+    results: [
+      {
+        url: 'https://example.com/a',
+        title: 'Page A',
+        content: 'page A body',
+      },
+      {
+        url: 'https://example.com/b',
+        content: 'page B body',
+      },
+    ],
+    failed: [{ url: 'https://example.com/dead', error: '404' }],
+  }
+
+  const makeClient = (resp: WebExtractResponse): WebExtractClient => ({
+    async extract() {
+      return resp
+    },
+  })
+
+  const freshState = (
+    overrides: Partial<WebToolsState> = {}
+  ): WebToolsState => ({
+    searchCallCount: 0,
+    extractCallCount: 0,
+    ...overrides,
+  })
+
+  it('rejects missing / non-array urls', async () => {
+    const c = makeClient(sampleResp)
+    expect(await runWebExtract(undefined, c, freshState())).toMatch(
+      /missing required field "urls"/
+    )
+    expect(
+      await runWebExtract({ urls: 'not-array' as any }, c, freshState())
+    ).toMatch(/missing required field "urls"/)
+  })
+
+  it('rejects empty / all-blank urls array', async () => {
+    const c = makeClient(sampleResp)
+    expect(await runWebExtract({ urls: [] }, c, freshState())).toMatch(
+      /empty after trimming/
+    )
+    expect(
+      await runWebExtract({ urls: ['', '  ', '\n'] }, c, freshState())
+    ).toMatch(/empty after trimming/)
+  })
+
+  it('rejects too many URLs', async () => {
+    const urls = Array.from({ length: 6 }, (_, i) => `https://e.com/${i}`)
+    const out = await runWebExtract({ urls }, makeClient(sampleResp), freshState(), {
+      maxUrlsPerCall: 5,
+    })
+    expect(out).toMatch(/too many URLs.*cap is 5/)
+  })
+
+  it('formats successful results + failed urls together', async () => {
+    const out = await runWebExtract(
+      { urls: ['https://example.com/a', 'https://example.com/b'] },
+      makeClient(sampleResp),
+      freshState()
+    )
+    expect(out).toContain('## 1. Page A')
+    expect(out).toContain('URL: https://example.com/a')
+    expect(out).toContain('page A body')
+    expect(out).toContain('## 2. https://example.com/b')
+    expect(out).toContain('page B body')
+    expect(out).toContain('## 抓取失败的 URL')
+    expect(out).toContain('https://example.com/dead — 404')
+  })
+
+  it('returns Error string when client throws (still increments)', async () => {
+    const state = freshState()
+    const client: WebExtractClient = {
+      async extract() {
+        throw new Error('rate limit')
+      },
+    }
+    const out = await runWebExtract(
+      { urls: ['https://example.com/a'] },
+      client,
+      state
+    )
+    expect(out).toMatch(/^Error: web extract failed: rate limit/)
+    expect(state.extractCallCount).toBe(1)
+  })
+
+  it('rejects further calls past the per-turn cap', async () => {
+    const state = freshState({ extractCallCount: 2 })
+    let calls = 0
+    const client: WebExtractClient = {
+      async extract() {
+        calls++
+        return { results: [], failed: [] }
+      },
+    }
+    const out = await runWebExtract(
+      { urls: ['https://example.com/a'] },
+      client,
+      state,
+      { maxCallsPerTurn: 2 }
+    )
+    expect(out).toMatch(/已经调用 2 次.*上限 2/)
+    expect(calls).toBe(0)
+    expect(state.extractCallCount).toBe(2)
+  })
+
+  it('trims and filters non-string entries before sending', async () => {
+    let received: string[] = []
+    const client: WebExtractClient = {
+      async extract(urls) {
+        received = urls
+        return { results: [], failed: [] }
+      },
+    }
+    await runWebExtract(
+      { urls: ['  https://x.com  ', 42 as any, '', 'https://y.com'] },
+      client,
+      freshState()
+    )
+    expect(received).toEqual(['https://x.com', 'https://y.com'])
+  })
+})
+
+describe('EXTRACT_WEBPAGES_TOOL definition', () => {
+  it('requires urls and constrains array size', () => {
+    expect(EXTRACT_WEBPAGES_TOOL.name).toBe('extract_webpages')
+    expect(EXTRACT_WEBPAGES_TOOL.parameters.required).toEqual(['urls'])
+    const urls = EXTRACT_WEBPAGES_TOOL.parameters.properties.urls
+    expect(urls.type).toBe('array')
+    expect(urls.minItems).toBe(1)
+    expect(urls.maxItems).toBe(5)
+  })
+
+  it('teaches batch usage and per-turn cap', () => {
+    expect(EXTRACT_WEBPAGES_TOOL.description).toMatch(/一次调用|batch|一次性/)
+    expect(EXTRACT_WEBPAGES_TOOL.description).toMatch(/2 次|最多 2/)
+    expect(EXTRACT_WEBPAGES_TOOL.description).toMatch(/web_search/)
+  })
+})
+
+describe('getWebToolsState', () => {
+  it('initializes counts to zero on first access and shares thereafter', () => {
+    const ts: Record<string, unknown> = {}
+    const a = getWebToolsState(ts)
+    expect(a).toEqual({ searchCallCount: 0, extractCallCount: 0 })
+    a.searchCallCount = 2
+    const b = getWebToolsState(ts)
+    expect(b).toBe(a)
+    expect(b.searchCallCount).toBe(2)
   })
 })
 

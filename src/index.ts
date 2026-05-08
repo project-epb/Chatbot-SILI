@@ -421,6 +421,9 @@ app.plugin(function PluginCollectionSILICore(ctx) {
     sessionIdleTimeoutMs: env.LLM_SESSION_IDLE_HOURS
       ? Number(env.LLM_SESSION_IDLE_HOURS) * 60 * 60 * 1000
       : undefined,
+    tavily: env.LLM_TAVILY_API_KEY
+      ? { apiKey: env.LLM_TAVILY_API_KEY }
+      : undefined,
   })
   ctx.plugin(PluginPing)
   ctx.plugin(PluginPixiv, {

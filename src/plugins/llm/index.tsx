@@ -28,16 +28,22 @@ import { ChatHistoryService } from './services/chat-history'
 import { CommandCatalogService } from './services/command-catalog'
 import { MemoryForkScheduler } from './services/memory-fork-scheduler'
 import { SystemPromptBuilder } from './services/system-prompt'
+import { TavilySearchClient } from './services/tavily-client'
 import { TurnAllocator } from './services/turn-allocator'
 import { migrateTurnNumbers } from './services/turn-migration'
 import {
+  EXTRACT_WEBPAGES_TOOL,
   READ_USER_MEMORY_TOOL,
   ToolRegistry,
+  WEB_SEARCH_TOOL,
   buildSaveUserMemoryTool,
   executeKoishiCommandHandler,
   getMemoryToolState,
+  getWebToolsState,
   runReadUserMemory,
   runSaveUserMemory,
+  runWebExtract,
+  runWebSearch,
 } from './tools'
 
 declare module 'koishi' {
@@ -140,6 +146,31 @@ export interface Config {
   imageCacheTtlMs?: number
   /** Max bytes per image; oversized images skip cache + show placeholder. Default 8MB. */
   imageCacheMaxImageBytes?: number
+  /**
+   * Tavily-backed `web_search` tool. When set, the agent gets a `web_search`
+   * tool it can call for live internet lookups. Without this config the
+   * tool is not registered and the agent has no web-search capability
+   * (existing provider-side `enableSearch` flag is unaffected).
+   */
+  tavily?: {
+    apiKey: string
+    searchDepth?: 'basic' | 'advanced' | 'fast' | 'ultra-fast'
+    topic?: 'general' | 'news' | 'finance'
+    /** Default result count if the agent doesn't pass max_results. Default 5. */
+    defaultMaxResults?: number
+    /** Hard cap for max_results (agent requests above this are clamped). Default 10. */
+    maxResultsCap?: number
+    /** Per-request timeout in seconds. Default 15. */
+    timeoutSeconds?: number
+    /** Extract depth: `basic` is fast, `advanced` more thorough. Default basic. */
+    extractDepth?: 'basic' | 'advanced'
+    /** Hard cap for URLs per single extract call. Default 5. */
+    maxExtractUrlsPerCall?: number
+    /** Per-turn cap for `web_search` tool calls. Default 3. */
+    maxSearchCallsPerTurn?: number
+    /** Per-turn cap for `extract_webpages` tool calls. Default 2. */
+    maxExtractCallsPerTurn?: number
+  }
 }
 export declare const Config: Config
 
@@ -308,6 +339,35 @@ export default class PluginLLM extends BasePlugin<Config> {
         })
       },
     })
+
+    // 可选工具：web_search + extract_webpages（仅在配置了 tavily.apiKey 时注册）
+    if (config.tavily?.apiKey) {
+      const tavilyConfig = config.tavily
+      const tavilyClient = new TavilySearchClient({
+        apiKey: tavilyConfig.apiKey,
+        searchDepth: tavilyConfig.searchDepth,
+        topic: tavilyConfig.topic,
+        timeoutSeconds: tavilyConfig.timeoutSeconds,
+        extractDepth: tavilyConfig.extractDepth,
+      })
+      this.tools.register({
+        definition: WEB_SEARCH_TOOL,
+        execute: async (args, { turnState }) =>
+          runWebSearch(args as any, tavilyClient, getWebToolsState(turnState), {
+            defaultMaxResults: tavilyConfig.defaultMaxResults,
+            maxResultsCap: tavilyConfig.maxResultsCap,
+            maxCallsPerTurn: tavilyConfig.maxSearchCallsPerTurn,
+          }),
+      })
+      this.tools.register({
+        definition: EXTRACT_WEBPAGES_TOOL,
+        execute: async (args, { turnState }) =>
+          runWebExtract(args as any, tavilyClient, getWebToolsState(turnState), {
+            maxUrlsPerCall: tavilyConfig.maxExtractUrlsPerCall,
+            maxCallsPerTurn: tavilyConfig.maxExtractCallsPerTurn,
+          }),
+      })
+    }
 
     // catalog 自己挂 ready hook，rebuild 时机一致；之后每次 chat turn
     // getOrRefresh 会按需懒重建（覆盖 ready 后才 register 的延迟插件）

@@ -53,6 +53,7 @@
     "@koishijs/plugin-sandbox": "^3.4.2",
     "@koishijs/plugin-server": "^3.2.7",
     "@koishijs/plugin-status": "^7.4.10",
+    "@tavily/core": "^0.7.3",
     "fexios": "^6.2.1",
     "json5": "^2.2.3",
     "koishi": "^4.18.9",
