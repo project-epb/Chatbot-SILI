@@ -3,9 +3,14 @@ import type { ToolDefinition } from '../providers/_base'
 
 export const READ_USER_MEMORY_TOOL: ToolDefinition = {
   name: 'read_user_memory',
-  description:
-    '读取当前用户的长期记忆文档，按需调用：当话题涉及用户偏好、过往互动、或个人化判断时使用；闲聊和常识问答不需要调用。返回纯文本（多行 markdown），若无记忆返回 "(暂无长期记忆)"。' +
-    '如果接下来打算调 `save_user_memory` 更新记忆，必须先调本工具——save 工具会校验 read-before-write。',
+  description: [
+    '读取当前用户的长期记忆文档（markdown）。无记忆时返回 `(暂无长期记忆)`。',
+    '',
+    '**何时调**：话题涉及该用户的偏好、过往互动、个人化判断时。',
+    '**何时不调**：闲聊、常识问答、无需个人化的请求——浪费 turn。',
+    '',
+    '如果接下来打算调 `save_user_memory` 更新记忆，必须先调本工具（save 会校验 read-before-write）。',
+  ].join('\n'),
   parameters: {
     type: 'object',
     properties: {},

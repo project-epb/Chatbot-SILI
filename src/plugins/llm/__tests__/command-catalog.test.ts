@@ -285,6 +285,65 @@ describe('renderCatalogEntryDetail', () => {
     expect(out).not.toMatch(/wiki connect/)
   })
 
+  it('renders usage block between description and 参数', () => {
+    const entry: CommandCatalogEntry = {
+      name: 'dice',
+      description: '掷骰子',
+      usage: '投掷 [骰子表达式] [--difficulty 难度值]\n例如"两个20面骰加5"：dice 2d20+5',
+      args: [{ name: 'dice', type: 'string', required: false }],
+      options: [],
+      aliases: [],
+      children: [],
+    }
+    const out = renderCatalogEntryDetail(entry)
+    expect(out).toContain('## 用法')
+    expect(out).toContain('投掷 [骰子表达式]')
+    expect(out).toContain('例如"两个20面骰加5"')
+    // 用法必须在 描述 之后、参数 之前
+    expect(out.indexOf('掷骰子')).toBeLessThan(out.indexOf('## 用法'))
+    expect(out.indexOf('## 用法')).toBeLessThan(out.indexOf('## 参数'))
+  })
+
+  it('renders option syntax with long form first, short flag after', () => {
+    const entry: CommandCatalogEntry = {
+      name: 'dice',
+      description: 'd',
+      args: [],
+      options: [
+        {
+          name: 'difficulty',
+          type: 'string',
+          syntax: '-d, --difficulty <difficulty>',
+          description: '难度值',
+        },
+        {
+          name: 'no-critical',
+          type: 'boolean',
+          syntax: '-C, --no-critical',
+          description: '不检查大成功/大失败',
+        },
+        // 没有 syntax 的选项 fallback 到 `--name`
+        { name: 'plain', type: 'boolean', description: '普通选项' },
+      ],
+      aliases: [],
+      children: [],
+    }
+    const out = renderCatalogEntryDetail(entry)
+    // long 在前、short 在后；value placeholder 跟在 long 后面
+    expect(out).toContain('`--difficulty <difficulty>, -d`')
+    expect(out).toContain('`--no-critical, -C`')
+    // 不能出现 koishi 风格"短旗标在前"
+    expect(out).not.toContain('-d, --difficulty')
+    expect(out).not.toContain('-C, --no-critical')
+    // 没 syntax 的 fallback
+    expect(out).toContain('`--plain`')
+    // 描述照常带
+    expect(out).toContain('难度值')
+    expect(out).toContain('不检查大成功/大失败')
+    // 必须告诉 AI 用 long 名字
+    expect(out).toMatch(/必须用.*--long|长.*名字/)
+  })
+
   it('omits empty sections', () => {
     const entry: CommandCatalogEntry = {
       name: 'foo',

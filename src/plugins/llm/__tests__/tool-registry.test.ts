@@ -685,7 +685,7 @@ describe('WEB_SEARCH_TOOL definition', () => {
   })
 
   it('teaches when to use vs not use, and points to extract_webpages', () => {
-    expect(WEB_SEARCH_TOOL.description).toMatch(/什么时候调|什么时候不调|什么时候别调/)
+    expect(WEB_SEARCH_TOOL.description).toMatch(/何时调|何时别调|什么时候调/)
     expect(WEB_SEARCH_TOOL.description).toMatch(/execute_koishi_command/)
     expect(WEB_SEARCH_TOOL.description).toMatch(/extract_webpages/)
     expect(WEB_SEARCH_TOOL.description).toMatch(/3 次/)
@@ -857,7 +857,7 @@ describe('buildSaveUserMemoryTool', () => {
 
   it('teaches declarative-not-imperative phrasing', () => {
     const def = buildSaveUserMemoryTool(3300)
-    expect(def.description).toMatch(/声明性|不要写命令/)
+    expect(def.description).toMatch(/声明[性式]|不要[写用]命令/)
   })
 
   it('forbids recording user requests to alter SILI persona', () => {

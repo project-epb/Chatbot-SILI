@@ -12,14 +12,23 @@ import type { ToolHandler } from './types'
 
 export const EXECUTE_KOISHI_COMMAND_TOOL: ToolDefinition = {
   name: 'execute_koishi_command',
-  description:
-    '以当前用户的身份执行一条 Koishi 指令并返回结果。指令清单和参数说明见 system prompt 中的「可用指令」章节。',
+  description: [
+    '以当前用户的身份执行一条 Koishi 指令。可用指令清单见 system prompt 的「可用指令」章节——清单里看到的就是 `name` 该传的值，MUST NOT 做额外加工；清单中不存在的指令 MUST NOT 凭空调用。',
+    '',
+    '**清单只是概览**，没有列出参数、选项、子指令。首次调用前 MUST use `help`：',
+    '`{name: "help", args: ["指令名"]}` → 返回描述/参数/选项/别名/子指令。',
+    '',
+    '**命名规则**（Koishi 把命名空间和分类用不同符号区分）：',
+    '- `foo.bar` （**点号** = 命名空间）→ `name: "foo.bar"`',
+    '- `foo/bar` （**斜杠** = 分类）→ `name: "bar"`（foo 仅用于分组）',
+    '- 顶级指令直接传 `name: "homo"`',
+  ].join('\n'),
   parameters: {
     type: 'object',
     properties: {
       name: {
         type: 'string',
-        description: "指令的完整路径名，如 'pixiv.illust' 或 'tools/homo'",
+        description: "指令的完整路径名，如 'foo' 或 'foo.bar'",
       },
       args: {
         type: 'array',

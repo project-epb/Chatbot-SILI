@@ -72,9 +72,16 @@ export function splitContent(
   // 2. 超长 + 多行兜底——**仅当** agent 整段从未输出过 marker 才触发。
   // 一旦它表态过想分段（哪怕只一次），就让它接管：当前可能在写代码块
   // 等不该被切的内容，系统不再插手。
+  //
+  // 切点要求：rest 已达 maxLen，且切片本身 >= maxLen/2 字符。后者避免
+  // AI 满篇 `\n\n` 段落分隔时，第一次切完后 cursor 落在下一段开头，
+  // rest 仍 >= maxLen → 又在很近的 \n 处切出一条 5 字消息的级联问题。
+  // 找一个"距 cursor 至少 maxLen/2 处之后"的 \n，保证每段兜底输出都
+  // 有实际分量。
   const agentOptedIn = buffer.indexOf(MARKER) !== -1
   if (!agentOptedIn && rest.length >= maxLen) {
-    const nl = rest.indexOf('\n')
+    const minSliceLen = Math.floor(maxLen / 2)
+    const nl = rest.indexOf('\n', minSliceLen)
     if (nl >= 0) {
       const cut = nl + 1
       return emit(rest.slice(0, cut), fromIndex + cut)

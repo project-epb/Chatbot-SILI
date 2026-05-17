@@ -105,12 +105,14 @@ describe('splitContent', () => {
       expect(out.text).toBe('a'.repeat(500) + '\n')
     })
 
-    it('suppresses whitespace-only chunk between paragraph \\n\\n', () => {
+    it('does not cascade-cut on paragraph \\n\\n boundaries', () => {
       // AI 出 "para1\n\npara2..." 没用 marker、超长。第一次 splitContent 切
-      // 第一个 \n 后；第二次进来 rest 以 \n 起头，又超长又有 \n → 老逻辑
-      // 切 1 char "\n" 发出去 → onebot 端 "[暂不支持的消息类型]"。新逻辑
-      // 把 whitespace-only 的 slice 抹成 ''，nextIndex 照常推进，caller 的
-      // `if (next.text)` 短路不发送。
+      // 第一个 \n；第二次进来 rest 以 "\n" + para2 起头，rest.length 仍 >=
+      // maxLen，老逻辑会在那个领头 \n 处又切一刀（要么发 1 char "\n"
+      // 触发 onebot "[暂不支持的消息类型]"，要么发出一条只有几字的微消息
+      // 触发"AI 没插 marker → 系统在每段空行处都切一刀"的级联）。
+      // 新逻辑：兜底切点必须距 cursor 至少 maxLen/2，rest 开头的孤立 \n
+      // 不会被当作切点，第二次直接返回 ('', fromIndex) 等更多 buffer。
       const para1 = 'a'.repeat(300)
       const para2 = 'b'.repeat(400)
       const buf = para1 + '\n\n' + para2
@@ -118,7 +120,28 @@ describe('splitContent', () => {
       expect(first.text).toBe(para1 + '\n')
       const second = splitContent(buf, first.nextIndex, { maxChunkLen: 200 })
       expect(second.text).toBe('')
-      expect(second.nextIndex).toBe(first.nextIndex + 1)
+      expect(second.nextIndex).toBe(first.nextIndex)
+    })
+
+    it('cuts at a substantial \\n, not the first one near the cursor', () => {
+      // 还原用户报的 bug：AI 满篇 `\n\n` 段落分隔、无 marker。每段都很短
+      // (~50 chars)。老逻辑会逐段切出小消息；新逻辑要求切片至少
+      // maxLen/2 才切，把小段聚合发出。
+      const sections = [
+        '好呀～SILI 来随便说几个 HTML 标签好了！',
+        '---',
+        '**`<h1>` ~ `<h6>` — 标题标签**',
+        '网页里的标题就是靠它们来的，`<h1>` 最大最醒目，`<h6>` 最小。',
+        '---',
+        '**`<a>` — 超链接**',
+        '网页里能跳来跳去全靠它～',
+      ]
+      const buf = sections.join('\n\n') + '\n\n' + 'x'.repeat(300)
+      const out = splitContent(buf, 0, { maxChunkLen: 200 })
+      // 兜底切片长度 >= maxLen/2 = 100
+      expect(out.text.length).toBeGreaterThanOrEqual(100)
+      // 不应该把第一行（22 chars）单独发
+      expect(out.text).not.toBe(sections[0] + '\n')
     })
 
     it('marker-only slice that contains the marker text still emits', () => {
