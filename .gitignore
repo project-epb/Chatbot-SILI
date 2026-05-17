@@ -160,3 +160,6 @@ badwords.ini
 # claude code superpowers plugin
 docs/superpowers
 .superpowers
+
+# per-environment Claude Code local notes (imported by CLAUDE.md via @CLAUDE.local.md)
+CLAUDE.local.md

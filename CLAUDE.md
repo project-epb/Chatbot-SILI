@@ -1,0 +1,71 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+SILI 是基于 [Koishi](https://koishi.chat/) 的群聊机器人，主要部署在 QQ（NapCat OneBot 适配器），也支持 Discord / KOOK / DingTalk / 卫星等。
+
+Runtime: **tsx + bun**（生产用 bun，dev 用 tsx）。Node >= 24.11。
+
+**SILI 命令前缀按部署不同**：生产环境是 `!`、测试 / 本地 dev 是 `;`。本文档示例命令一律不带前缀（写 `chat` / `debug.history` / `llm.compact`），按你所在环境补上即可。
+
+## Scripts
+
+| | |
+|---|---|
+| `bun start` | 生产启动 |
+| `bun dev` / `pnpm dev` / `npm run dev` | 本地开发（tsx --watch） |
+| `bun test` / `npx vitest run` | 跑全量测试一次 |
+| `bun test:watch` / `npx vitest` | watch 模式 |
+| `npx vitest run <path>` | 跑单个文件 / 目录 |
+| `npx tsc --noEmit -p .` | 类型检查（无单独的 lint script） |
+
+测试在 `__tests__/` 子目录里，与被测代码同级 —— 大部分目录都自带一个（`src/plugins/llm/__tests__/`、`src/utils/__tests__/` 等）。
+
+## 路径别名（tsconfig）
+
+```
+@/*       → src/*
+~/*       → src/plugins/*
+$utils/*  → src/utils/*
+```
+
+非标准的 alias 集合，平时 grep / import 时注意。
+
+## JSX
+
+JSX 不是 React。`tsconfig.json` 里 `"jsxImportSource": "@satorijs/element"` —— `.tsx` 文件里的 JSX 编译成 satori h-elements（`<image src=...>` / `<at id=...>` / `<random>...</random>`），是 koishi 发消息的原生表示。**不要当 React 用**（没有 useState / Fragment 语义不同 / 等等）。
+
+## 顶层结构
+
+```
+src/
+├── index.ts            App + 全部插件加载入口
+├── adapters/           自研适配器（minecraft）
+├── modules/            进程级辅助（logging / firewall / fallback handler …）
+├── services/           对外注入式服务（html 渲染、QQ NT emoji reaction、piggyback…）
+├── utils/              纯函数工具
+└── plugins/            业务插件（一个文件 / 一个目录 = 一个 koishi plugin）
+    ├── llm/            ← 自研 LLM agent 栈，整个项目最重的部分（独立 README）
+    ├── debug/          调试命令（`debug.*`，authority 3+）
+    ├── mediawiki/      MediaWiki 查询
+    ├── pixiv.ts        Pixiv 图片
+    ├── dice.ts         骰子
+    └── ...             （每个文件就是一个 koishi 命令插件）
+```
+
+加新功能 = 在 `src/plugins/` 加文件（或目录） + 在 `src/index.ts` 里 `ctx.plugin(YourPlugin)` 注册。
+
+## LLM 插件特别说明
+
+`src/plugins/llm/` 是项目最重的子系统。改它之前必读两份文档：
+
+- `src/plugins/llm/README.md` —— 子模块清单 + 一次 chat 的端到端流程图
+- `src/plugins/llm/CLAUDE.md` —— Claude 编辑须知（DB schema 陷阱、协议中央目录、provider 适配差异等踩坑点）
+
+Claude Code 进入该目录工作时会自动叠加加载那份 CLAUDE.md。
+
+## 本地开发偏好
+
+本机部署 + 容器操作 / 日志位置 / restart 流程等环境特定的事写在 `CLAUDE.local.md`（gitignore），由各部署环境各自维护。
+
+@CLAUDE.local.md
