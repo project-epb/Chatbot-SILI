@@ -252,17 +252,31 @@ export default class ChatCommand extends BasePlugin {
         // static field-meaning + "don't echo" rules live in the system
         // prompt's `## 消息协议` section so they're cached forever and
         // don't repeat in every prompt.
-        const userMessageEnvelope = [
+        //
+        // The envelope is split into two pieces:
+        //   - persistableEnvelope: chat_info + user_message, byte-stable
+        //     enough to store in db so REPLAYED history matches what we
+        //     SENT last turn → previous-user position keeps the provider's
+        //     prefix cache instead of always being a miss.
+        //   - userMessageEnvelope: persistable + (optional) interrupt
+        //     notice. Interrupt notices are turn-specific instructions
+        //     (offer the <silent/> bailout for "shut up"-style asks),
+        //     so they MUST NOT leak into persisted history — replaying
+        //     them would offer silent-mode in irrelevant future turns.
+        const chatInfoBlock = [
           PROTOCOL_TAGS.CHAT_INFO.open,
           JSON.stringify(chatInfo),
           PROTOCOL_TAGS.CHAT_INFO.close,
-          interruptNoticeBlock,
+        ].join('\n')
+        const userMessageBlock = [
           PROTOCOL_TAGS.USER_MESSAGE.open,
           userMessageBody,
           PROTOCOL_TAGS.USER_MESSAGE.close,
-        ]
-          .filter(Boolean)
-          .join('\n')
+        ].join('\n')
+        const persistableEnvelope = `${chatInfoBlock}\n${userMessageBlock}`
+        const userMessageEnvelope = interruptNoticeBlock
+          ? `${chatInfoBlock}\n${interruptNoticeBlock}\n${userMessageBlock}`
+          : persistableEnvelope
 
         // chatMessages is populated after systemPromptText is resolved
         // (post-rotation) and after the summary compactor runs — see the
@@ -564,11 +578,22 @@ export default class ChatCommand extends BasePlugin {
         // 落库 user 消息。排序由 (turn_number, intra_turn_seq) 决定，
         // user 永远 intra_turn_seq=0 是 turn 头；即使该 chat 被打断、
         // 中途有 record 先落库，user 仍排在 turn 起始。
+        //
+        // Persist the wrapped envelope (sans interrupt notice) so that the
+        // bytes in db match what we SENT this turn for the user-message
+        // position. Next turn replays this row at that exact position, so
+        // the provider's prefix cache stays valid through it instead of
+        // missing on the raw/wrapped mismatch. Behind a config flag while
+        // we measure the cache-hit-rate impact in production.
+        const persistedUserContent =
+          llm.config.persistWrappedUserMessage !== false
+            ? persistableEnvelope
+            : userPrompt
         await llm.ctx.database.create('openai_chat', {
           conversation_owner,
           conversation_id,
           role: 'user',
-          content: userPrompt,
+          content: persistedUserContent,
           reasoning_content: '',
           time: startTime,
           turn_number: turnNumber,

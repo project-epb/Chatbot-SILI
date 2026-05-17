@@ -132,6 +132,16 @@ export interface Config {
    * 摘要。设为 0 关闭功能（保留旧的纯滑窗行为）。
    */
   summarizeAfterUserTurns?: number
+  /**
+   * 是否把 user 消息以「chat_info 包裹后的完整 envelope」形式入库。
+   * 默认 true。开启后，下一轮 chat 拼 prompt 时上一条 user 消息的
+   * 字节会与上一轮真正发给 provider 的字节一致，prefix cache 在那
+   * 一位也能命中（否则裸文本 vs envelope 必然 miss）。
+   *
+   * Interrupt notice block 不会被持久化（仅当前轮指令，留到历史里
+   * 会误导未来对话）。
+   */
+  persistWrappedUserMessage?: boolean
   maxTokens?: number
   systemPrompt?: Partial<{
     default: string
@@ -288,6 +298,7 @@ export default class PluginLLM extends BasePlugin<Config> {
       maxTokens: 8192,
       historyTurnCount: 50,
       summarizeAfterUserTurns: 50,
+      persistWrappedUserMessage: true,
       enableAgent: true,
       maxToolIterations: 5,
       showToolCallNotice: true,

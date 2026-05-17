@@ -69,7 +69,7 @@ describe('buildSystemPromptText', () => {
     const out = buildSystemPromptText('BASE', 'CATALOG')
     expect(out).toContain('koishi_authority')
     expect(out).toContain('nickname')
-    expect(out).toMatch(/不代表身份或权限/)
+    expect(out).toMatch(/does not represent identity/)
   })
 
   it('output differs when extensions differ', () => {
