@@ -1,6 +1,6 @@
 import { Context } from 'koishi'
 
-import { isForbiddenAgentCommand } from './tools'
+import { isForbiddenAgentCommand } from '../tools'
 
 export interface CommandCatalogArg {
   name: string

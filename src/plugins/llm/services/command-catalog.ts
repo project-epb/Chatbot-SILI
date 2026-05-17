@@ -4,7 +4,7 @@ import {
   type CommandCatalogEntry,
   buildCommandCatalog,
   renderCompactCatalog,
-} from '../command-catalog'
+} from '../utils/command-catalog'
 
 /**
  * Owns the cached agent command catalog: the entry tree (for tools.ts to

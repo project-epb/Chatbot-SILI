@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildMemoryForkUserPrompt } from '../memory-fork'
-import { NO_UPDATE_MAGIC } from '../memory'
+import { buildMemoryForkUserPrompt } from '../services/memory-fork'
+import { NO_UPDATE_MAGIC } from '../services/memory'
 
 describe('buildMemoryForkUserPrompt', () => {
   it('substitutes the existing memory placeholder', () => {

@@ -5,7 +5,7 @@ import {
   renderCommandCatalog,
   renderCompactCatalog,
   type CommandCatalogEntry,
-} from '../command-catalog'
+} from '../utils/command-catalog'
 
 describe('renderCommandCatalog', () => {
   it('renders empty catalog', () => {

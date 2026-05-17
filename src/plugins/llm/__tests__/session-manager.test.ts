@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isSessionExpired, truncateFirstMsg } from '../session-manager'
+import { isSessionExpired, truncateFirstMsg } from '../services/session-manager'
 
 describe('truncateFirstMsg', () => {
   it('returns empty for null/undefined/whitespace', () => {

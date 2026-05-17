@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { PROTOCOL_MARKERS } from '../protocol'
-import { splitContent } from '../stream-splitter'
+import { PROTOCOL_MARKERS } from '../utils/protocol'
+import { splitContent } from '../utils/stream-splitter'
 
 const CHUNK_BREAK_MARKER = PROTOCOL_MARKERS.MSG_BREAK
 
@@ -46,8 +46,8 @@ describe('splitContent', () => {
   })
 
   it('returns empty when only marker prefix is present (incomplete tag)', () => {
-    // streaming 中 marker 可能被切到中间：'<msg_break' 还差 '/>'
-    expect(splitContent('hello <msg_break', 0).text).toBe('')
+    // streaming 中 marker 可能被切到中间：'[koishi:msg_break' 还差 ']'
+    expect(splitContent('hello [koishi:msg_break', 0).text).toBe('')
   })
 
   describe('long-content fallback', () => {
@@ -103,6 +103,29 @@ describe('splitContent', () => {
       const buf = 'a'.repeat(500) + '\n' + 'b'.repeat(50)
       const out = splitContent(buf, 0, { maxChunkLen: 200 })
       expect(out.text).toBe('a'.repeat(500) + '\n')
+    })
+
+    it('suppresses whitespace-only chunk between paragraph \\n\\n', () => {
+      // AI 出 "para1\n\npara2..." 没用 marker、超长。第一次 splitContent 切
+      // 第一个 \n 后；第二次进来 rest 以 \n 起头，又超长又有 \n → 老逻辑
+      // 切 1 char "\n" 发出去 → onebot 端 "[暂不支持的消息类型]"。新逻辑
+      // 把 whitespace-only 的 slice 抹成 ''，nextIndex 照常推进，caller 的
+      // `if (next.text)` 短路不发送。
+      const para1 = 'a'.repeat(300)
+      const para2 = 'b'.repeat(400)
+      const buf = para1 + '\n\n' + para2
+      const first = splitContent(buf, 0, { maxChunkLen: 200 })
+      expect(first.text).toBe(para1 + '\n')
+      const second = splitContent(buf, first.nextIndex, { maxChunkLen: 200 })
+      expect(second.text).toBe('')
+      expect(second.nextIndex).toBe(first.nextIndex + 1)
+    })
+
+    it('marker-only slice that contains the marker text still emits', () => {
+      // marker 的字面内容不是 whitespace-only，所以即使前后只有空白也照发
+      const buf = '\n' + CHUNK_BREAK_MARKER + 'tail'
+      const out = splitContent(buf, 0)
+      expect(out.text).toBe('\n' + CHUNK_BREAK_MARKER)
     })
   })
 })

@@ -8,7 +8,7 @@ import type {
   ChatMessage,
   ToolCall,
 } from './providers/_base'
-import { PROTOCOL_MARKERS } from './protocol'
+import { PROTOCOL_MARKERS } from './utils/protocol'
 import { ToolRegistry } from './tools'
 
 const { SILENT: SILENT_MARKER, INTERRUPTED: INTERRUPTED_MARKER, MSG_BREAK: MSG_BREAK_MARKER } =

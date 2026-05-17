@@ -1,6 +1,6 @@
 import type { Context } from 'koishi'
 
-import { type HistoryRow, groupAndTrimHistory } from '../history-filter'
+import { type HistoryRow, groupAndTrimHistory } from './history-filter'
 import type { ChatMessage, ToolCall } from '../providers/_base'
 
 /**

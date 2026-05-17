@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { byteLength, isNoUpdateMagic, NO_UPDATE_MAGIC } from '../memory'
+import { byteLength, isNoUpdateMagic, NO_UPDATE_MAGIC } from '../services/memory'
 
 describe('byteLength', () => {
   it('returns ascii char count', () => {

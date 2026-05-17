@@ -4,14 +4,14 @@
  * 在 koishi 这类「不能编辑已发消息」的平台上，把 LLM 的长流切成几条
  * 短消息发出。两条规则：
  *
- *   1. **AI 显式标记** `<msg_break/>`：模型在合适处插入，看到就切。
- *      标记在 sanitize 阶段被丢弃（PROTOCOL_ONLY_ELEMENT_TYPES）。
+ *   1. **AI 显式标记** `[koishi:msg_break]`：模型在合适处插入，看到就切。
+ *      标记在 sanitize 阶段被丢弃。
  *   2. **超长 + 多行兜底**：仅在 agent **整段从未输出过任何 marker**
  *      的前提下生效。buffer 超过 maxChunkLen 且出现 `\n` 时切第一个
  *      `\n`，避免 agent 完全不切的情况下用户死等。
  *
  *      一旦 agent 出过任何一个 marker，就认为它已经接管了分段决策，
- *      系统不再兜底干预——典型场景是「先解释一段 + `<msg_break/>` +
+ *      系统不再兜底干预——典型场景是「先解释一段 + `[koishi:msg_break]` +
  *      然后 \`\`\`js 长示例代码块\`\`\`」，代码块容易超过 500 字但绝
  *      对不该被切到中间。
  *
@@ -38,6 +38,18 @@ export interface SplitResult {
   nextIndex: number
 }
 
+/**
+ * Build a result, suppressing whitespace-only payloads. Callers use
+ * `if (next.text)` to decide whether to actually `sendQueued`; returning
+ * `text: ''` makes the cursor advance past the slice without surfacing it
+ * as an IM message. This matters because the fallback newline-cut can land
+ * on the second `\n` of a `\n\n` paragraph break, yielding a single-`\n`
+ * chunk that onebot renders as "[暂不支持的消息类型]" on QQ.
+ */
+function emit(slice: string, nextIndex: number): SplitResult {
+  return { text: slice.trim() ? slice : '', nextIndex }
+}
+
 export function splitContent(
   buffer: string,
   fromIndex: number,
@@ -54,10 +66,7 @@ export function splitContent(
   const markerIdx = rest.indexOf(MARKER)
   if (markerIdx >= 0) {
     const cut = markerIdx + MARKER.length
-    return {
-      text: rest.slice(0, cut),
-      nextIndex: fromIndex + cut,
-    }
+    return emit(rest.slice(0, cut), fromIndex + cut)
   }
 
   // 2. 超长 + 多行兜底——**仅当** agent 整段从未输出过 marker 才触发。
@@ -68,7 +77,7 @@ export function splitContent(
     const nl = rest.indexOf('\n')
     if (nl >= 0) {
       const cut = nl + 1
-      return { text: rest.slice(0, cut), nextIndex: fromIndex + cut }
+      return emit(rest.slice(0, cut), fromIndex + cut)
     }
   }
 

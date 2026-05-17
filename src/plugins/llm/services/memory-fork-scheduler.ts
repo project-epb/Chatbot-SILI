@@ -1,6 +1,6 @@
 import type { Context, Logger } from 'koishi'
 
-import type { MemoryStore } from '../memory'
+import type { MemoryStore } from './memory'
 import type { LLMProviderBase } from '../providers/_base'
 import type { ToolRegistry } from '../tools'
 import type { CommandCatalogService } from './command-catalog'
@@ -180,7 +180,7 @@ export class MemoryForkScheduler {
     // toolChoice='none' 在 memory-fork 内部强制（不会真调用任何工具）
     const sharedTools = tools.listDefinitions()
 
-    const { maybeRunMemoryFork } = await import('../memory-fork')
+    const { maybeRunMemoryFork } = await import('./memory-fork')
     await maybeRunMemoryFork({
       ctx,
       logger,

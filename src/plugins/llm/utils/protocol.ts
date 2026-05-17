@@ -2,18 +2,27 @@
  * Protocol elements shared between the orchestration system and the agent.
  *
  * Centralized so any rename / addition is one-stop, and so plain `grep`
- * across the codebase finds every reference. Code that builds envelope
- * strings or detects markers should import from here, never hardcode the
- * raw `<...>` strings.
+ * across the codebase finds every reference.
+ *
+ * Format split — important to understand:
+ *  - **Inbound (system → agent)** uses `<chat_info>...</chat_info>` XML
+ *    style envelope. These never reach the chat platform; they only exist
+ *    in the agent's message context where AI is good at reading XML.
+ *  - **Outbound (agent → us → chat platform)** uses `[koishi:...]`
+ *    bracket form for any protocol marker or real element the agent wants
+ *    rendered. The sanitizer h.text()-escapes the *entire* agent output
+ *    by default; only bracket-form patterns get lifted as elements or
+ *    dropped as markers. This means raw `<` `>` in agent text never
+ *    collide with our protocol — both can coexist because the protocol
+ *    doesn't use angle brackets at all on the outbound side.
  *
  * Categories:
  *  - **Element type names**: bare `chat_info`, `user_message`, etc.
- *    Used by `output-filter.ts` (sanitize allow/deny lists) and any
- *    `h.parse(...).type` comparison.
- *  - **Self-closing markers**: full `<silent/>` strings the agent emits
- *    inline. Used by agent-loop and stream-splitter for detection.
- *  - **Block tags**: paired open/close strings used to wrap envelope
- *    blocks in user messages.
+ *    Used for `h.parse(...).type` comparison on inbound envelope.
+ *  - **Self-closing markers**: full `[koishi:silent]` strings the agent
+ *    emits inline. Used by agent-loop and stream-splitter for detection.
+ *  - **Block tags** (inbound only): paired open/close XML strings used
+ *    to wrap envelope blocks in user messages.
  */
 
 /** Element type names (`element.type` after `h.parse`). */
@@ -32,11 +41,17 @@ export const PROTOCOL_ELEMENT_TYPES = {
   MSG_BREAK: 'msg_break',
 } as const
 
-/** Full self-closing marker strings. */
+/**
+ * Full marker strings emitted by the agent on the outbound side. Bracket
+ * form (`[koishi:xxx]`) deliberately avoids angle brackets so it never
+ * collides with raw `<` / `>` in agent prose — the sanitizer h.text()-
+ * escapes everything that doesn't match a `[koishi:...]` pattern, so the
+ * protocol and natural text coexist without parsing ambiguity.
+ */
 export const PROTOCOL_MARKERS = {
-  INTERRUPTED: '<interrupted/>',
-  SILENT: '<silent/>',
-  MSG_BREAK: '<msg_break/>',
+  INTERRUPTED: '[koishi:interrupted]',
+  SILENT: '[koishi:silent]',
+  MSG_BREAK: '[koishi:msg_break]',
 } as const
 
 /** Paired open/close tags for envelope blocks. */

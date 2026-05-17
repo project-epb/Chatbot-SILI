@@ -20,8 +20,8 @@ import {
   runWebSearch,
   type ToolHandler,
 } from '../tools'
-import type { CommandCatalogEntry } from '../command-catalog'
-import { byteLength } from '../memory'
+import type { CommandCatalogEntry } from '../utils/command-catalog'
+import { byteLength } from '../services/memory'
 
 const fakeHandler = (name: string, result = 'ok'): ToolHandler => ({
   definition: {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { groupAndTrimHistory, type HistoryRow } from '../history-filter'
+import { groupAndTrimHistory, type HistoryRow } from '../services/history-filter'
 
 const u = (content: string): HistoryRow => ({ role: 'user', content })
 const a = (content: string, tc?: string): HistoryRow => ({

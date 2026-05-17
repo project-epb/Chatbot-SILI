@@ -15,13 +15,13 @@ import type {
   ChatMessage,
   LLMProviderBase,
   ToolDefinition,
-} from './providers/_base'
-import { clampThinkingBudget } from './thinking'
+} from '../providers/_base'
+import { clampThinkingBudget } from '../utils/thinking'
 
 const MEMORY_FORK_PROMPT_TEMPLATE = (() => {
   try {
     return readFileSync(
-      resolve(__dirname, './prompts/memory-fork.prompt.md'),
+      resolve(__dirname, '../prompts/memory-fork.prompt.md'),
       'utf-8'
     )
   } catch {

@@ -1,160 +1,248 @@
 import { describe, it, expect } from 'vitest'
-import { sanitizeAgentOutput } from '../output-filter'
+import h from '@satorijs/element'
+import { sanitizeAgentOutput } from '../utils/output-filter'
+
+/**
+ * Simulate the adapter's text-segment decoding pass — after our sanitize
+ * produces a wire string, session.sendQueued re-parses it and the onebot
+ * adapter emits `attrs.content` of synthetic text nodes into the OneBot
+ * text payload (one level of entity decode). This helper yields the
+ * actual user-visible string per IM client.
+ */
+function userVisible(safe: string): string {
+  const reparsed = h.parse(safe)
+  return reparsed
+    .map((e) =>
+      e.type === 'text' && e.attrs?.content != null
+        ? e.attrs.content
+        : e.toString()
+    )
+    .join('')
+}
 
 describe('sanitizeAgentOutput', () => {
-  it('passes plain text through unchanged', () => {
-    expect(sanitizeAgentOutput('hello world')).toBe('hello world')
-    expect(sanitizeAgentOutput('你好，世界！')).toBe('你好，世界！')
+  describe('plain text — escapes <>& but is otherwise untouched', () => {
+    it('passes plain ASCII / CJK text through', () => {
+      expect(userVisible(sanitizeAgentOutput('hello world'))).toBe(
+        'hello world'
+      )
+      expect(userVisible(sanitizeAgentOutput('你好，世界！'))).toBe(
+        '你好，世界！'
+      )
+    })
+
+    it('returns empty string unchanged', () => {
+      expect(sanitizeAgentOutput('')).toBe('')
+    })
+
+    it('preserves raw < and > in agent prose (regression — used to be parsed)', () => {
+      // The original bug: agent writes prose containing `<` `>` and a
+      // koishi-element parser ate everything in between. With h.text by
+      // default, those are just characters.
+      expect(
+        userVisible(sanitizeAgentOutput('前面有一个<，中间一堆内容，后面有一个>'))
+      ).toBe('前面有一个<，中间一堆内容，后面有一个>')
+    })
+
+    it('preserves raw &', () => {
+      expect(userVisible(sanitizeAgentOutput('A & B'))).toBe('A & B')
+    })
+
+    it('preserves entity-encoded text as the literal entity', () => {
+      // Agent writes `&lt;` → wire has `&amp;lt;` → adapter decodes once →
+      // user sees literal `&lt;`. Agent's escape intent is honored.
+      expect(userVisible(sanitizeAgentOutput('教学：&lt; 表示小于号'))).toBe(
+        '教学：&lt; 表示小于号'
+      )
+    })
   })
 
-  it('returns empty string unchanged', () => {
-    expect(sanitizeAgentOutput('')).toBe('')
+  describe('XML/HTML tags in prose — all become literal text', () => {
+    it('<div>foo</div> renders as literal characters', () => {
+      expect(
+        userVisible(sanitizeAgentOutput('讲解 <div>foo</div> 标签'))
+      ).toBe('讲解 <div>foo</div> 标签')
+    })
+
+    it('orphan <br> does not corrupt the rest of the message', () => {
+      // Critical regression from earlier sanitizer: bare `<br>` used to
+      // swallow the tail via h.parse's auto-nest. Now everything is text.
+      expect(
+        userVisible(sanitizeAgentOutput('前 <br> 这段必须保留'))
+      ).toBe('前 <br> 这段必须保留')
+    })
+
+    it('XML-style koishi elements are NOT recognized (only bracket form is)', () => {
+      // <img src=...> is just text; only [koishi:img ...] gets extracted.
+      const safe = sanitizeAgentOutput('<img src="https://x.com/a.png"/>')
+      expect(userVisible(safe)).toBe('<img src="https://x.com/a.png"/>')
+    })
+
+    it('<at>, <sharp>, <face> are literal text (no spam-mention risk)', () => {
+      expect(userVisible(sanitizeAgentOutput('Hi <at id="123">小鱼</at>!'))).toBe(
+        'Hi <at id="123">小鱼</at>!'
+      )
+    })
   })
 
-  it('keeps allowed elements (<a>, <img>)', () => {
-    const out = sanitizeAgentOutput(
-      '看看 <a href="https://example.com">这个</a>'
-    )
-    expect(out).toContain('<a href="https://example.com">')
-    expect(out).toContain('这个')
-    expect(out).toContain('</a>')
+  describe('[koishi:img] extraction', () => {
+    it('extracts <img> with http(s) src', () => {
+      const safe = sanitizeAgentOutput('[koishi:img src="https://x.com/a.png"]')
+      expect(safe).toContain('<img')
+      expect(safe).toContain('src="https://x.com/a.png"')
+    })
+
+    it('extracts <img ref="..."/> trusted placeholder', () => {
+      const safe = sanitizeAgentOutput('[koishi:img ref="abc123def456"]')
+      expect(safe).toContain('<img')
+      expect(safe).toContain('ref="abc123def456"')
+    })
+
+    it('drops <img> with dangerous schemes (file/javascript/data/etc)', () => {
+      expect(sanitizeAgentOutput('[koishi:img src="file:///etc/passwd"]')).toBe(
+        ''
+      )
+      expect(
+        sanitizeAgentOutput('[koishi:img src="javascript:alert(1)"]')
+      ).toBe('')
+      expect(sanitizeAgentOutput('[koishi:img src="data:image/png;..."]')).toBe(
+        ''
+      )
+      expect(sanitizeAgentOutput('[koishi:img src="ftp://x"]')).toBe('')
+    })
+
+    it('escapes [koishi:img] with placeholder src as literal text', () => {
+      // Educational example URL (no scheme): surface as visible text.
+      const safe = sanitizeAgentOutput('[koishi:img src="image.png"]')
+      expect(userVisible(safe)).toBe('[koishi:img src="image.png"]')
+    })
+
+    it('escapes [koishi:img] with no src/ref as literal text', () => {
+      const safe = sanitizeAgentOutput('看这个 [koishi:img]')
+      expect(userVisible(safe)).toBe('看这个 [koishi:img]')
+    })
+
+    it('inline mid-message image works as real element', () => {
+      const safe = sanitizeAgentOutput(
+        '看图：[koishi:img src="https://x.com/a.png"] 是不是很酷'
+      )
+      expect(safe).toContain('<img src="https://x.com/a.png"/>')
+      expect(userVisible(safe)).toContain('看图：')
+      expect(userVisible(safe)).toContain('是不是很酷')
+    })
   })
 
-  it('keeps <img> with src', () => {
-    const out = sanitizeAgentOutput('<img src="https://x.com/a.png"/>')
-    expect(out).toContain('<img')
-    expect(out).toContain('src="https://x.com/a.png"')
+  describe('bracket-in-attr edge cases', () => {
+    it('preserves [ inside attribute URL', () => {
+      const safe = sanitizeAgentOutput(
+        '[koishi:a href="https://foo.com/path-[-bracket"]text[/koishi:a]'
+      )
+      expect(safe).toContain('href="https://foo.com/path-[-bracket"')
+      expect(safe).toContain('>text<')
+    })
+
+    it('preserves ] inside attribute URL (the trickier case)', () => {
+      // Regex must allow `]` inside `"..."` attr values without closing
+      // the open tag prematurely.
+      const safe = sanitizeAgentOutput(
+        '[koishi:a href="https://foo.com/path-]-bracket"]text[/koishi:a]'
+      )
+      expect(safe).toContain('href="https://foo.com/path-]-bracket"')
+      // Link text is JUST "text" (not the leaked URL fragment) — extract
+      // the inner-text region between open `>` and close `<`.
+      const innerMatch = safe.match(/<a [^>]+>([^<]*)<\/a>/)
+      expect(innerMatch?.[1]).toBe('text')
+    })
+
+    it('preserves [bracketed text] inside link content', () => {
+      const safe = sanitizeAgentOutput(
+        '[koishi:a href="https://x.com"]看 [这里][/koishi:a]'
+      )
+      expect(safe).toContain('看 [这里]</a>')
+    })
+
+    it('preserves ] inside img src', () => {
+      const safe = sanitizeAgentOutput(
+        '[koishi:img src="https://foo.com/path?q=]"]'
+      )
+      expect(safe).toContain('src="https://foo.com/path?q=]"')
+    })
   })
 
-  it('strips <at> element but preserves children text', () => {
-    const out = sanitizeAgentOutput('Hi <at id="123">小鱼</at>!')
-    expect(out).not.toContain('<at')
-    expect(out).not.toContain('</at')
-    expect(out).toContain('小鱼')
-    expect(out).toContain('Hi')
-    expect(out).toContain('!')
+  describe('[koishi:a]...[/koishi:a] extraction', () => {
+    it('extracts <a> with http(s) href', () => {
+      const safe = sanitizeAgentOutput(
+        '看 [koishi:a href="https://example.com"]这里[/koishi:a]'
+      )
+      expect(safe).toContain('href="https://example.com"')
+      expect(safe).toContain('这里')
+    })
+
+    it('drops <a> wrapper but keeps text on dangerous href', () => {
+      const safe = sanitizeAgentOutput(
+        '[koishi:a href="javascript:alert(1)"]click[/koishi:a]'
+      )
+      // No real <a> element
+      expect(safe).not.toMatch(/<a\b/)
+      // But the visible text survives
+      expect(userVisible(safe)).toContain('click')
+    })
+
+    it('escapes [koishi:a] with placeholder href as literal text', () => {
+      const safe = sanitizeAgentOutput(
+        '[koishi:a href="#anchor"]section[/koishi:a]'
+      )
+      expect(userVisible(safe)).toBe('[koishi:a href="#anchor"]section[/koishi:a]')
+    })
   })
 
-  it('strips <sharp> and <face> elements', () => {
-    const out1 = sanitizeAgentOutput('频道 <sharp id="42">general</sharp> 你好')
-    expect(out1).not.toContain('<sharp')
-    expect(out1).toContain('general')
+  describe('protocol markers are dropped', () => {
+    it('drops self-closing markers (msg_break/silent/interrupted)', () => {
+      expect(sanitizeAgentOutput('a[koishi:msg_break]b')).toBe('ab')
+      expect(sanitizeAgentOutput('hello[koishi:silent]')).toBe('hello')
+      expect(sanitizeAgentOutput('[koishi:silent]tail')).toBe('tail')
+      expect(sanitizeAgentOutput('a[koishi:interrupted]b')).toBe('ab')
+    })
 
-    const out2 = sanitizeAgentOutput('<face id="haha"/>')
-    expect(out2).not.toContain('<face')
+    it('XML-form markers are NOT specially handled (just text)', () => {
+      // If agent slips into old habit and writes <msg_break/>, we DON'T
+      // strip it — surfaces as literal text. The splitter also won't cut
+      // there. Agent gets feedback to use the new form.
+      expect(userVisible(sanitizeAgentOutput('a<msg_break/>b'))).toBe(
+        'a<msg_break/>b'
+      )
+    })
   })
 
-  it('keeps <quote> (system-injected, must pass through)', () => {
-    const out = sanitizeAgentOutput('<quote id="100"/>回复')
-    expect(out).toContain('<quote')
-    expect(out).toContain('id="100"')
-    expect(out).toContain('回复')
-  })
+  describe('end-to-end: user-visible matches agent intent', () => {
+    it('the original phantom-close bug case', () => {
+      // Agent writes `<div>` without close. Used to gain a `</div>` from
+      // h.parse's auto-close. Now: zero parsing, just escape.
+      expect(
+        userVisible(sanitizeAgentOutput('让我讲解一下<div>标签的用法'))
+      ).toBe('让我讲解一下<div>标签的用法')
+    })
 
-  it('keeps richtext tags (b/i/em/strong/p/br)', () => {
-    const out = sanitizeAgentOutput('<b>粗体</b> 和 <i>斜体</i>')
-    expect(out).toContain('<b>')
-    expect(out).toContain('粗体')
-    expect(out).toContain('<i>')
-    expect(out).toContain('斜体')
-  })
+    it('mixed teaching content + real image side-by-side (the trickiest case)', () => {
+      // Agent teaches HTML AND inserts a real image. With bracket syntax
+      // for the real one, zero ambiguity:
+      //   - <img>...</img> mentions stay text (no parsing)
+      //   - [koishi:img src="..."] gets extracted as real element
+      const safe = sanitizeAgentOutput(
+        '<img> 是图片标签，比如这张：[koishi:img src="https://r2.epb.wiki/avatar.jpg"] 看到了吗？再来 <img src="example.png"/> 是另一个示例。'
+      )
+      // Real img extracted
+      expect(safe).toContain('<img src="https://r2.epb.wiki/avatar.jpg"/>')
+      // Educational examples preserved as literal
+      const visible = userVisible(safe)
+      expect(visible).toContain('<img> 是图片标签')
+      expect(visible).toContain('<img src="example.png"/> 是另一个示例')
+    })
 
-  it('handles a mix of allowed and disallowed elements', () => {
-    const out = sanitizeAgentOutput(
-      '<at id="1"/>看 <a href="https://x.com">链接</a><face id="ok"/>'
-    )
-    expect(out).not.toContain('<at')
-    expect(out).not.toContain('<face')
-    expect(out).toContain('<a href="https://x.com">')
-    expect(out).toContain('链接')
-  })
-
-  it('does not throw on malformed/incomplete tags from streaming', () => {
-    // 流式分片可能切出 `<at id="` 这种不完整片段；只要不抛错就 OK
-    expect(() => sanitizeAgentOutput('text <at id="')).not.toThrow()
-    expect(() => sanitizeAgentOutput('text <a href="http')).not.toThrow()
-  })
-
-  it('strips <img> with file:// src (LFI prevention)', () => {
-    const out = sanitizeAgentOutput('<img src="file:///etc/passwd"/>')
-    expect(out).not.toContain('file://')
-    expect(out).not.toContain('<img')
-  })
-
-  it('strips <img> with data: src from agent (only ref form trusted)', () => {
-    // data: 协议本身合法，但只能由 resolveRefsToDataUris 在 sanitize 之后产生；
-    // agent 直接写 data: 视为不可信
-    const out = sanitizeAgentOutput(
-      '<img src="data:image/png;base64,iVBOR..."/>'
-    )
-    expect(out).not.toContain('data:image')
-    expect(out).not.toContain('<img')
-  })
-
-  it('strips <img> with javascript:/koishi:/exotic schemes', () => {
-    expect(sanitizeAgentOutput('<img src="javascript:alert(1)"/>')).not.toContain('javascript')
-    expect(sanitizeAgentOutput('<img src="koishi:foo"/>')).not.toContain('<img')
-    expect(sanitizeAgentOutput('<img src="ftp://x"/>')).not.toContain('<img')
-  })
-
-  it('keeps <img> with http(s) src', () => {
-    const ok1 = sanitizeAgentOutput('<img src="https://x.com/a.png"/>')
-    expect(ok1).toContain('<img')
-    expect(ok1).toContain('https://x.com/a.png')
-    const ok2 = sanitizeAgentOutput('<img src="http://x.com/a.png"/>')
-    expect(ok2).toContain('http://x.com/a.png')
-  })
-
-  it('keeps <img ref="..."/> placeholder (no src) as trusted', () => {
-    const out = sanitizeAgentOutput('<img ref="abc123def456"/>')
-    expect(out).toContain('<img')
-    expect(out).toContain('ref="abc123def456"')
-  })
-
-  it('strips <a> with file:// href but keeps the link text', () => {
-    const out = sanitizeAgentOutput(
-      '点 <a href="file:///etc/passwd">这里</a> 看'
-    )
-    expect(out).not.toContain('file://')
-    expect(out).not.toContain('<a')
-    expect(out).toContain('这里')
-  })
-
-  it('strips <a> with javascript: href', () => {
-    const out = sanitizeAgentOutput(
-      '<a href="javascript:alert(1)">click</a>'
-    )
-    expect(out).not.toContain('javascript')
-    expect(out).not.toContain('<a')
-    expect(out).toContain('click')
-  })
-
-  it('keeps <a> with http(s) href', () => {
-    const out = sanitizeAgentOutput(
-      '<a href="https://example.com">看这里</a>'
-    )
-    expect(out).toContain('href="https://example.com"')
-    expect(out).toContain('看这里')
-  })
-
-  it('strips internal protocol elements entirely (no children kept)', () => {
-    // chat_info / user_message / interrupt_notice / interrupted / silent
-    expect(
-      sanitizeAgentOutput('<chat_info>{"user_id":1}</chat_info>')
-    ).toBe('')
-    expect(
-      sanitizeAgentOutput('hi <user_message>secret</user_message> there')
-    ).not.toContain('secret')
-    expect(
-      sanitizeAgentOutput('text <interrupt_notice>...</interrupt_notice>')
-    ).not.toContain('interrupt_notice')
-    expect(sanitizeAgentOutput('a<interrupted/>b')).toBe('ab')
-    expect(sanitizeAgentOutput('<silent/>')).toBe('')
-  })
-
-  it('strips <silent/> mid-stream chunks too', () => {
-    // 多模型流式分片可能让 <silent/> 出现在不同位置
-    expect(sanitizeAgentOutput('hello<silent/>')).toBe('hello')
-    expect(sanitizeAgentOutput('<silent/>tail')).toBe('tail')
+    it('streaming-cut tags do not throw', () => {
+      expect(() => sanitizeAgentOutput('text [koishi:img src="https://x')).not.toThrow()
+      expect(() => sanitizeAgentOutput('text [koishi:msg_brea')).not.toThrow()
+      expect(() => sanitizeAgentOutput('[koishi:a href="https://x"]click')).not.toThrow()
+    })
   })
 })

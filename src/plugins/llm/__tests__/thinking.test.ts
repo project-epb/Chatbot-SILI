@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { clampThinkingBudget, resolveThinkingLevel } from '../thinking'
+import { clampThinkingBudget, resolveThinkingLevel } from '../utils/thinking'
 
 describe('resolveThinkingLevel', () => {
   it('defaults to low when undefined', () => {

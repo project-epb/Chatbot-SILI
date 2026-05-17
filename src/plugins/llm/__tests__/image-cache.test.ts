@@ -3,7 +3,7 @@ import { mkdtemp, readdir, stat, utimes, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { ImageReferenceCache } from '../image-cache'
+import { ImageReferenceCache } from '../services/image-cache'
 
 const SMALL_DATA_URI =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAarVyFEAAAAASUVORK5CYII='
