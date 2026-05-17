@@ -12,6 +12,7 @@ function mkDeps(over: {
   countUserMessages?: number
   history?: ChatMessage[]
   summary?: string | Error
+  memory?: { content?: string; last_updated_at?: number } | null | Error
 }) {
   const createCalls: any[] = []
   const sessionsCreated: any[] = []
@@ -41,6 +42,13 @@ function mkDeps(over: {
   const turns = {
     allocate: vi.fn(async () => 1),
   } as any
+  const memory = {
+    getMeta: vi.fn(async () => {
+      if (over.memory instanceof Error) throw over.memory
+      if (over.memory === null) return null
+      return over.memory ?? null
+    }),
+  } as any
 
   const provider: LLMProviderBase = {
     async *streamChatCompletion(): AsyncGenerator<StreamChatDelta> {
@@ -55,7 +63,7 @@ function mkDeps(over: {
     },
   } as any
 
-  return { ctx, logger, history, sessions, turns, provider, createCalls, sessionsCreated }
+  return { ctx, logger, history, sessions, turns, memory, provider, createCalls, sessionsCreated }
 }
 
 const INPUT = {
@@ -76,6 +84,7 @@ describe('SummaryCompactor', () => {
       d.history,
       d.sessions,
       d.turns,
+      d.memory,
       { threshold: 0 }
     )
     const r = await c.compactIfNeeded({ ...INPUT, provider: d.provider })
@@ -92,6 +101,7 @@ describe('SummaryCompactor', () => {
       d.history,
       d.sessions,
       d.turns,
+      d.memory,
       { threshold: 10 }
     )
     const r = await c.compactIfNeeded({ ...INPUT, provider: d.provider })
@@ -108,6 +118,7 @@ describe('SummaryCompactor', () => {
       d.history,
       d.sessions,
       d.turns,
+      d.memory,
       { threshold: 10 }
     )
     const r = await c.compactIfNeeded({ ...INPUT, provider: d.provider })
@@ -127,6 +138,7 @@ describe('SummaryCompactor', () => {
       d.history,
       d.sessions,
       d.turns,
+      d.memory,
       { threshold: 10 }
     )
     const r = await c.compactIfNeeded({ ...INPUT, provider: d.provider })
@@ -147,6 +159,7 @@ describe('SummaryCompactor', () => {
       d.history,
       d.sessions,
       d.turns,
+      d.memory,
       { threshold: 10 }
     )
     const r = await c.compactIfNeeded({ ...INPUT, provider: d.provider })
@@ -170,6 +183,7 @@ describe('SummaryCompactor', () => {
       d.history,
       d.sessions,
       d.turns,
+      d.memory,
       { threshold: 10 }
     )
     const r = await c.compactIfNeeded({ ...INPUT, provider: d.provider })
@@ -230,6 +244,7 @@ describe('SummaryCompactor', () => {
       d.history,
       d.sessions,
       d.turns,
+      d.memory,
       { threshold: 10, maxTokens: 999 }
     )
     await c.compactIfNeeded({ ...INPUT, provider: d.provider })
@@ -238,5 +253,101 @@ describe('SummaryCompactor', () => {
     expect(receivedOptions.maxTokens).toBe(999)
     expect(receivedOptions.model).toBe('gpt-test')
     expect(receivedOptions.temperature).toBeLessThan(0.5)
+  })
+
+  it('prepends a <long_term_memory> snapshot when the user has memory', async () => {
+    let receivedMessages: ChatMessage[] = []
+    const d = mkDeps({
+      countUserMessages: 50,
+      history: [{ role: 'user', content: 'hi' }],
+      summary: 'compacted',
+      memory: { content: '- 喜欢吃热干面\n- 在杭州' },
+    })
+    d.provider.streamChatCompletion = (async function* (
+      msgs: ChatMessage[]
+    ): AsyncGenerator<StreamChatDelta> {
+      receivedMessages = msgs
+      yield { kind: 'content', content: 'compacted' }
+      yield { kind: 'finish', reason: 'stop' }
+    }) as any
+
+    const c = new SummaryCompactor(
+      d.ctx,
+      d.logger,
+      d.history,
+      d.sessions,
+      d.turns,
+      d.memory,
+      { threshold: 10 }
+    )
+    const r = await c.compactIfNeeded({ ...INPUT, provider: d.provider })
+
+    expect(r.ran).toBe(true)
+    expect(d.memory.getMeta).toHaveBeenCalledWith('qq', '999')
+    const lastUserMessage = receivedMessages[receivedMessages.length - 1]
+    expect(lastUserMessage.role).toBe('user')
+    expect((lastUserMessage as { content: string }).content).toMatch(
+      /<long_term_memory>[\s\S]*喜欢吃热干面[\s\S]*在杭州[\s\S]*<\/long_term_memory>/
+    )
+    // Memory should be persisted into the new conversation's seed user row
+    const chatRows = d.createCalls.filter((c) => c.table === 'openai_chat')
+    expect(chatRows[0].row.content).toContain('<long_term_memory>')
+    expect(chatRows[0].row.content).toContain('喜欢吃热干面')
+  })
+
+  it('skips the memory block when user has no memory', async () => {
+    let receivedMessages: ChatMessage[] = []
+    const d = mkDeps({
+      countUserMessages: 50,
+      history: [{ role: 'user', content: 'hi' }],
+      summary: 'compacted',
+      memory: null,
+    })
+    d.provider.streamChatCompletion = (async function* (
+      msgs: ChatMessage[]
+    ): AsyncGenerator<StreamChatDelta> {
+      receivedMessages = msgs
+      yield { kind: 'content', content: 'compacted' }
+      yield { kind: 'finish', reason: 'stop' }
+    }) as any
+
+    const c = new SummaryCompactor(
+      d.ctx,
+      d.logger,
+      d.history,
+      d.sessions,
+      d.turns,
+      d.memory,
+      { threshold: 10 }
+    )
+    await c.compactIfNeeded({ ...INPUT, provider: d.provider })
+
+    const lastUserMessage = receivedMessages[receivedMessages.length - 1]
+    expect((lastUserMessage as { content: string }).content).not.toContain(
+      '<long_term_memory>'
+    )
+  })
+
+  it('proceeds normally when memory fetch errors', async () => {
+    const d = mkDeps({
+      countUserMessages: 50,
+      history: [{ role: 'user', content: 'hi' }],
+      summary: 'compacted',
+      memory: new Error('memory db unavailable'),
+    })
+
+    const c = new SummaryCompactor(
+      d.ctx,
+      d.logger,
+      d.history,
+      d.sessions,
+      d.turns,
+      d.memory,
+      { threshold: 10 }
+    )
+    const r = await c.compactIfNeeded({ ...INPUT, provider: d.provider })
+
+    expect(r.ran).toBe(true)
+    expect(d.logger.warn).toHaveBeenCalled()
   })
 })

@@ -6,15 +6,14 @@ import { cancellableInterval } from '@/utils/cancellableDefferred'
 
 import BasePlugin from '~/_boilerplate'
 
-import { getUserNickFromSession } from '$utils/formatSession'
-
 import { runAgentLoop } from '../agent-loop'
+import type { ChatMessage } from '../providers/_base'
+import { buildMemorySnapshot } from '../services/memory-snapshot'
+import { ToolRegistry } from '../tools'
 import { sanitizeAgentOutput } from '../utils/output-filter'
 import { PROTOCOL_MARKERS, PROTOCOL_TAGS } from '../utils/protocol'
-import type { ChatMessage } from '../providers/_base'
 import { splitContent } from '../utils/stream-splitter'
 import { clampThinkingBudget, resolveThinkingLevel } from '../utils/thinking'
-import { ToolRegistry } from '../tools'
 
 /**
  * Subplugin: the `;chat` command and its supporting flow.
@@ -44,12 +43,31 @@ export default class ChatCommand extends BasePlugin {
    * `-s true` overrides this in either direction.
    */
   private readonly ENABLE_SEARCH_KEYWORDS = [
-    '搜索', '查找', '查一下', '找一下', '搜一下',
-    '帮我找', '帮我搜', '帮我查',
-    '最近', '最新', '今天', '昨天', '前天', '前几天', '几天前',
-    '这周', '本周', '这个月', '本月', '今年',
-    '新闻', '资讯', '动态',
-    '发生了什么', '发生了啥',
+    '搜索',
+    '查找',
+    '查一下',
+    '找一下',
+    '搜一下',
+    '帮我找',
+    '帮我搜',
+    '帮我查',
+    '最近',
+    '最新',
+    '今天',
+    '昨天',
+    '前天',
+    '前几天',
+    '几天前',
+    '这周',
+    '本周',
+    '这个月',
+    '本月',
+    '今年',
+    '新闻',
+    '资讯',
+    '动态',
+    '发生了什么',
+    '发生了啥',
   ]
 
   constructor(ctx: Context) {
@@ -123,7 +141,6 @@ export default class ChatCommand extends BasePlugin {
         let turnNumber = -1
         let intraSeq = 0
         const nextSeq = () => ++intraSeq
-        const userName = getUserNickFromSession(session)
 
         // 打断场景识别 + 等老会话退出
         let interruptScenario: 'fresh' | 'pre-stream' | 'mid-stream' = 'fresh'
@@ -158,8 +175,8 @@ export default class ChatCommand extends BasePlugin {
             session.user.openai_last_conversation_id = conversation_id
           }
         } else {
-          conversation_id =
-            (session.user.openai_last_conversation_id ||= crypto.randomUUID())
+          conversation_id = session.user.openai_last_conversation_id ||=
+            crypto.randomUUID()
         }
 
         const abortController = new AbortController()
@@ -210,17 +227,37 @@ export default class ChatCommand extends BasePlugin {
         // and serve a stale prompt to the agent loop.
 
         const TZ = 'Asia/Shanghai'
+        // Three name sources surfaced to the agent (priority for "how to
+        // call this user": callme > group_nickname > platform.user.name):
+        //   - koishi.callme: user-set preference (via the ;callme command)
+        //   - platform.user.name: platform-native username
+        //   - platform.user.group_nickname: QQ group card (group only;
+        //     undefined elsewhere → JSON.stringify drops the key)
         const chatInfo = {
-          uid: session.user.id,
-          nickname: userName,
-          platform: session.platform === 'onebot' ? 'qq' : session.platform,
-          platform_user_id: session.userId,
-          platform_user_name: session.user.name,
-          channel_type: session.subtype,
-          channel_id: session.channelId,
-          koishi_authority: session.user.authority,
-          current_time:
-            new Date().toLocaleString('sv', { timeZone: TZ }) + ` (${TZ})`,
+          koishi: {
+            uid: session.user.id,
+            callme: session.user.name,
+            authority: session.user.authority,
+          },
+          platform: {
+            kind:
+              session.platform === 'onebot' ? 'onebot(qq)' : session.platform,
+            user: {
+              id: session.event.user?.id,
+              name: session.event.user?.name,
+              group_nickname: session.event.member?.nick,
+              channel_roles: session.event.member?.roles
+                ?.filter(Boolean)
+                ?.join(','),
+            },
+            channel: {
+              id: session.event.channel?.id,
+              name:
+                session.event._data?.group_name || session.event.channel?.name,
+              type: session.event.channel?.type,
+            },
+          },
+          time: new Date().toLocaleString('sv', { timeZone: TZ }) + ` (${TZ})`,
         }
         // 系统注入元数据 + 用户原话用 XML tag 隔离，防止"复述我的消息"类
         // 注入把 chat_info 块带出来。chat_info 不入库（不进 history），每轮
@@ -273,10 +310,14 @@ export default class ChatCommand extends BasePlugin {
           userMessageBody,
           PROTOCOL_TAGS.USER_MESSAGE.close,
         ].join('\n')
-        const persistableEnvelope = `${chatInfoBlock}\n${userMessageBlock}`
-        const userMessageEnvelope = interruptNoticeBlock
+        // Base envelope shapes — the optional memory snapshot prefix is
+        // computed AFTER history load (we only seed memory on the first
+        // turn of a fresh conversation, and post-compaction sessions
+        // already carry the snapshot inside their summary user row).
+        const persistableEnvelopeBase = `${chatInfoBlock}\n${userMessageBlock}`
+        const userMessageEnvelopeBase = interruptNoticeBlock
           ? `${chatInfoBlock}\n${interruptNoticeBlock}\n${userMessageBlock}`
-          : persistableEnvelope
+          : persistableEnvelopeBase
 
         // chatMessages is populated after systemPromptText is resolved
         // (post-rotation) and after the summary compactor runs — see the
@@ -396,7 +437,8 @@ export default class ChatCommand extends BasePlugin {
               compactRes.summaryLength
             )
             conversation_id = compactRes.newConversationId
-            session.user.openai_last_conversation_id = compactRes.newConversationId
+            session.user.openai_last_conversation_id =
+              compactRes.newConversationId
             await session.user.$update()
             // ActiveChatRegistry entry is keyed by owner but caches the
             // conversation id; sync so a later interrupt sees the new id.
@@ -416,6 +458,30 @@ export default class ChatCommand extends BasePlugin {
           conversation_id,
           historiesLength: histories.length,
         })
+
+        // First-turn memory bootstrap: if this is the conversation's first
+        // exchange (no prior history), prepend the user's long-term
+        // memory as a <long_term_memory> snapshot to the user envelope.
+        // Compaction-spawned conversations already carry the snapshot
+        // inside their summary user row, so `histories.length === 0`
+        // cleanly discriminates "fresh / reset / idle-rotated" from
+        // "post-compaction" — only the former needs seeding here.
+        const memoryPrefix =
+          histories.length === 0
+            ? await buildMemorySnapshot(
+                llm.memory,
+                platform,
+                userId,
+                llm.logger
+              )
+            : ''
+        const persistableEnvelope = memoryPrefix
+          ? `${memoryPrefix}\n\n${persistableEnvelopeBase}`
+          : persistableEnvelopeBase
+        const userMessageEnvelope = memoryPrefix
+          ? `${memoryPrefix}\n\n${userMessageEnvelopeBase}`
+          : userMessageEnvelopeBase
+
         chatMessages.push(
           { role: 'system', content: systemPromptText },
           ...histories,

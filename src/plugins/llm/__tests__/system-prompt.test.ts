@@ -65,11 +65,14 @@ describe('buildSystemPromptText', () => {
     expect(out).toContain('## 输出节奏')
   })
 
-  it('includes the chat_info field explainer block', () => {
+  it('includes the chat_info field explainer block with all three name fields', () => {
     const out = buildSystemPromptText('BASE', 'CATALOG')
-    expect(out).toContain('koishi_authority')
-    expect(out).toContain('nickname')
-    expect(out).toMatch(/does not represent identity/)
+    expect(out).toContain('koishi.callme')
+    expect(out).toContain('platform.user.name')
+    expect(out).toContain('platform.user.group_nickname')
+    expect(out).toContain('koishi.authority')
+    expect(out).toMatch(/Priority for addressing the user/)
+    expect(out).toMatch(/do not represent identity/)
   })
 
   it('output differs when extensions differ', () => {

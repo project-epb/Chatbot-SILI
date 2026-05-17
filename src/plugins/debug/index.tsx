@@ -114,10 +114,7 @@ export class PluginDebug extends BasePlugin {
 
         const onebot = (session.bot as any).internal
         try {
-          const res = await onebot._request(
-            'get_group_msg_history',
-            params
-          )
+          const res = await onebot._request('get_group_msg_history', params)
           const messages = res?.data?.messages ?? res?.messages ?? []
           const summary = [
             `status: ${res?.status ?? 'n/a'}, retcode: ${res?.retcode ?? 'n/a'}`,
@@ -129,12 +126,26 @@ export class PluginDebug extends BasePlugin {
           const json = JSON.stringify(sample, null, 2)
           if (!ctx.html) return `${summary}\n---\n${json}`
           const img = await ctx.html.shiki(json, 'json')
-          return img
-            ? <>{summary}{'\n'}{h.img(img, 'image/jpeg')}</>
-            : `${summary}\n---\n${json}`
+          return img ? (
+            <>
+              {summary}
+              {'\n'}
+              {h.img(img, 'image/jpeg')}
+            </>
+          ) : (
+            `${summary}\n---\n${json}`
+          )
         } catch (e: any) {
           return `failed: ${e?.message ?? String(e)}`
         }
+      })
+
+    ctx
+      .command('debug.event', 'Inspect session event data', { authority: 3 })
+      .action(({ session }) => {
+        const ev = session.event || session.toJSON()
+        if (!ev) return 'No event data found.'
+        return JSON.stringify(ev, null, 2)
       })
   }
 }

@@ -6,6 +6,8 @@ import type {
 } from '../providers/_base'
 
 import type { ChatHistoryService } from './chat-history'
+import type { MemoryStore } from './memory'
+import { buildMemorySnapshot } from './memory-snapshot'
 import type { SessionManager } from './session-manager'
 import type { TurnAllocator } from './turn-allocator'
 
@@ -106,8 +108,12 @@ export class SummaryCompactor {
     private readonly history: ChatHistoryService,
     private readonly sessions: SessionManager,
     private readonly turns: TurnAllocator,
+    private readonly memory: Pick<MemoryStore, 'getMeta'>,
     private readonly options: SummaryCompactorOptions
   ) {}
+
+  // Memory snapshot building is shared with chat.tsx via
+  // `services/memory-snapshot.ts` — see buildMemorySnapshot().
 
   /**
    * Threshold-gated entry called by the chat command on every turn.
@@ -145,7 +151,19 @@ export class SummaryCompactor {
       return { ran: false, reason: 'no history to summarize' }
     }
 
-    const summaryPrompt = `<system:compact>${this.options.prompt ?? DEFAULT_SUMMARY_PROMPT}</system:compact>`
+    const memorySnapshot = await buildMemorySnapshot(
+      this.memory,
+      input.platform,
+      input.userId,
+      this.logger
+    )
+    const compactInstruction = `<system:compact>${this.options.prompt ?? DEFAULT_SUMMARY_PROMPT}</system:compact>`
+    // Memory comes first (becomes the start of the cached prefix in the
+    // new session), then the compaction instruction. When the user has
+    // no memory the snapshot is empty and we send just the instruction.
+    const summaryPrompt = memorySnapshot
+      ? `${memorySnapshot}\n\n${compactInstruction}`
+      : compactInstruction
     const messages: ChatMessage[] = [
       { role: 'system', content: input.systemPrompt },
       ...history,

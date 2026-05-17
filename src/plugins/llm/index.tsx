@@ -332,6 +332,7 @@ export default class PluginLLM extends BasePlugin<Config> {
       this.chatHistory,
       this.sessions,
       this.turns,
+      this.memory,
       { threshold: config.summarizeAfterUserTurns ?? 50 }
     )
 
