@@ -82,6 +82,7 @@
     "mint-filter": "^4.0.3",
     "openai": "^6.17.0",
     "puppeteer": "^24.32.1",
+    "quickjs-emscripten": "^0.32.0",
     "shiki": "^3.21.0",
     "wiki-saikou": "^7.6.0"
   },

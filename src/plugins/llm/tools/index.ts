@@ -9,6 +9,7 @@
  *   - read-user-memory.ts       READ_USER_MEMORY_TOOL + state + run
  *   - save-user-memory.ts       buildSaveUserMemoryTool + run
  *   - web.ts                    WEB_SEARCH_TOOL + EXTRACT_WEBPAGES_TOOL + runs
+ *   - code-sandbox.ts           CODE_SANDBOX_TOOL + buildCodeSandboxHandler
  */
 
 export * from './types'
@@ -16,3 +17,4 @@ export * from './execute-koishi-command'
 export * from './read-user-memory'
 export * from './save-user-memory'
 export * from './web'
+export * from './code-sandbox'

@@ -36,6 +36,7 @@ import {
   READ_USER_MEMORY_TOOL,
   ToolRegistry,
   WEB_SEARCH_TOOL,
+  buildCodeSandboxHandler,
   buildSaveUserMemoryTool,
   executeKoishiCommandHandler,
   getMemoryToolState,
@@ -170,6 +171,36 @@ export interface Config {
     maxSearchCallsPerTurn?: number
     /** Per-turn cap for `extract_webpages` tool calls. Default 2. */
     maxExtractCallsPerTurn?: number
+  }
+  /**
+   * Local QuickJS-based code sandbox tool. Defaults to enabled. Set
+   * `{ enabled: false }` to disable. No external service / API key
+   * needed; the WASM module is bundled with quickjs-emscripten.
+   */
+  codeSandbox?: {
+    enabled?: boolean
+    memoryLimitMb?: number
+    maxTimeoutMs?: number
+    defaultTimeoutMs?: number
+    stdoutByteLimit?: number
+    returnValueByteCap?: number
+    /**
+     * Escape hatch: skip QuickJS setMemoryLimit + setMaxStackSize.
+     * Default false — leave it that way unless you've verified your
+     * environment doesn't catch DoS via the QuickJS-internal caps.
+     * Setting to true means sandboxed user code can allocate arbitrary
+     * host memory (limited only by container cgroup), which is a real
+     * DoS vector if user input can reach the tool. The earlier
+     * "singleton WASM corruption" bug that motivated default-true is
+     * now sidestepped by per-call newQuickJSWASMModule().
+     */
+    disableHostLimits?: boolean
+    /**
+     * Host-side RSS-growth cap (MB), best-effort defense-in-depth.
+     * Default 128. See runtime jsdoc for caveats — primary DoS
+     * defense is memoryLimitMb via setMemoryLimit.
+     */
+    rssGrowthCapMb?: number
   }
 }
 export declare const Config: Config
@@ -369,6 +400,22 @@ export default class PluginLLM extends BasePlugin<Config> {
       })
     }
 
+    // code-sandbox: 本地 QuickJS 沙箱工具，默认开启（不需要 API key）
+    const sb = config.codeSandbox ?? {}
+    if (sb.enabled !== false) {
+      this.tools.register(
+        buildCodeSandboxHandler(this.logger, {
+          memoryLimitMb: sb.memoryLimitMb,
+          defaultTimeoutMs: sb.defaultTimeoutMs,
+          maxTimeoutMs: sb.maxTimeoutMs,
+          stdoutByteLimit: sb.stdoutByteLimit,
+          returnValueByteCap: sb.returnValueByteCap,
+          disableHostLimits: sb.disableHostLimits,
+          rssGrowthCapMb: sb.rssGrowthCapMb,
+        })
+      )
+    }
+
     // catalog 自己挂 ready hook，rebuild 时机一致；之后每次 chat turn
     // getOrRefresh 会按需懒重建（覆盖 ready 后才 register 的延迟插件）
     this.catalog.bind()
@@ -413,6 +460,23 @@ export default class PluginLLM extends BasePlugin<Config> {
         },
         60 * 60 * 1000
       )
+
+      // 预热 code-sandbox WASM，把首次 tool call 的 ~100-200ms 加载延迟从
+      // 用户感知路径里移走。失败不影响主流程（第一次实际调用会重新尝试加载）。
+      const sbHandler = this.tools.get('run_code_sandbox')
+      if (sbHandler) {
+        ;(async () => {
+          try {
+            const { CodeSandboxRuntime } = await import(
+              './services/code-sandbox-runtime'
+            )
+            await new CodeSandboxRuntime(this.logger).warmup()
+            this.logger.info('[code-sandbox] warmup ok')
+          } catch (e) {
+            this.logger.warn('[code-sandbox] warmup failed:', e)
+          }
+        })()
+      }
     })
 
     this.ctx.set('llm', this)
