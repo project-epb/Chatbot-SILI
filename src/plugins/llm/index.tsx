@@ -37,6 +37,7 @@ import {
   ToolRegistry,
   WEB_SEARCH_TOOL,
   buildCodeSandboxHandler,
+  buildReadChannelHistoryHandler,
   buildSaveUserMemoryTool,
   executeKoishiCommandHandler,
   getMemoryToolState,
@@ -415,6 +416,10 @@ export default class PluginLLM extends BasePlugin<Config> {
         })
       )
     }
+
+    // read_channel_history: 通过 OneBot get_group_msg_history 拉群历史。
+    // 仅在 onebot 平台 + 群聊上下文里可用，handler 自己做平台/场景检查。
+    this.tools.register(buildReadChannelHistoryHandler())
 
     // catalog 自己挂 ready hook，rebuild 时机一致；之后每次 chat turn
     // getOrRefresh 会按需懒重建（覆盖 ready 后才 register 的延迟插件）
