@@ -16,6 +16,7 @@ import BasePlugin from '~/_boilerplate'
  *   - llm.stop        cut SILI off mid-reply (hidden)
  *   - llm.catalog     force-rebuild agent command catalog (hidden, auth 3)
  *   - llm.memory      read/write/reset the user's long-term memory (hidden)
+ *   - llm.compact     force-trigger summary compaction on current convo (hidden, auth 3)
  */
 export default class AdminCommands extends BasePlugin {
   static inject = ['llm', 'database']
@@ -28,6 +29,7 @@ export default class AdminCommands extends BasePlugin {
     this.#registerStop(ctx)
     this.#registerCatalog(ctx)
     this.#registerMemory(ctx)
+    this.#registerCompact(ctx)
   }
 
   #registerProviders(ctx: Context) {
@@ -169,6 +171,7 @@ export default class AdminCommands extends BasePlugin {
   #registerReset(ctx: Context) {
     ctx
       .command('llm.reset', '开始新的对话')
+      .alias('llm.new', 'llm.clear')
       .userFields(['id', 'openai_last_conversation_id'])
       .shortcut('聊点别的', { prefix: true, fuzzy: false })
       .action(async ({ session }) => {
@@ -300,6 +303,59 @@ export default class AdminCommands extends BasePlugin {
           const removed = await llm.memory.delete(platform, userId)
           return removed ? '记忆已清空。' : '记忆已不存在。'
         }
+      })
+  }
+
+  #registerCompact(ctx: Context) {
+    ctx
+      .command(
+        'llm.compact',
+        'Force-trigger summary compaction on the current conversation',
+        { hidden: true, authority: 3 }
+      )
+      .userFields(['id', 'openai_last_conversation_id'])
+      .action(async ({ session }) => {
+        const llm = ctx.llm
+        const conversation_id = session.user.openai_last_conversation_id
+        if (!conversation_id) return 'No active conversation to compact.'
+
+        const provider = llm.defaultProvider
+        const model =
+          llm.config.providers[0]?.model || llm.config.model || 'gpt-4o-mini'
+        const { platform, userId } = llm.resolveMemoryKey(session)
+        const commandCatalog = llm.catalog.getOrRefresh()
+        const systemPromptText = llm.systemPrompt.get(commandCatalog)
+
+        const t0 = Date.now()
+        const res = await llm.summary.compactNow({
+          conversation_id,
+          conversation_owner: session.user.id,
+          systemPrompt: systemPromptText,
+          provider,
+          model,
+          platform,
+          userId,
+        })
+        const elapsed = Date.now() - t0
+
+        if (!res.ran) {
+          return `Did not compact: ${res.reason} (${elapsed}ms)`
+        }
+
+        // Adopt the new id so the next chat turn from this user continues
+        // on the compacted session — same handoff the chat command does
+        // when threshold-triggered compaction fires.
+        session.user.openai_last_conversation_id = res.newConversationId!
+        await session.user.$update()
+        const active = llm.activeChats.get(session.user.id)
+        if (active) active.conversationId = res.newConversationId!
+
+        return [
+          `Compacted in ${elapsed}ms.`,
+          `Old: ${res.prevConversationId}`,
+          `New: ${res.newConversationId}`,
+          `Summary length: ${res.summaryLength} chars`,
+        ].join('\n')
       })
   }
 }

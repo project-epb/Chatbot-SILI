@@ -19,6 +19,20 @@ import type { ChatMessage, ToolCall } from '../providers/_base'
 export class ChatHistoryService {
   constructor(private readonly ctx: Context) {}
 
+  /**
+   * Count user-role rows for a conversation. Used by SummaryCompactor to
+   * decide when to rotate. Cheaper than `getById().filter(...)` because
+   * it only pulls the `id` column.
+   */
+  async countUserMessages(conversation_id: string): Promise<number> {
+    const rows = (await this.ctx.database.get(
+      'openai_chat',
+      { conversation_id, role: 'user' },
+      { fields: ['id'] }
+    )) as Array<{ id: number }> | null
+    return rows?.length ?? 0
+  }
+
   async getById(
     conversation_id: string,
     limit = 10

@@ -19,6 +19,13 @@ export interface OpenAISession {
   /** First user utterance (up to 30 codepoints) — used as a label when the
    *  user wants to resume / pick between past conversations. */
   user_first_msg: string
+  /**
+   * If non-empty, this session was created by SummaryCompactor from another
+   * session — the value is that prior session's `conversation_id`. Lets
+   * tooling walk the summary chain backward and tells the operator this
+   * is a continuation, not a fresh start.
+   */
+  prev_session_id?: string
 }
 
 export interface CreateSessionInput {
@@ -27,6 +34,8 @@ export interface CreateSessionInput {
   platform: string
   userId: string
   userFirstMsg: string
+  /** When this session was forked from another (summary compaction). */
+  prevSessionId?: string
 }
 
 const FIRST_MSG_MAX_CODEPOINTS = 30
@@ -56,6 +65,7 @@ export class SessionManager {
         started_at: 'unsigned(20)',
         last_used_at: 'unsigned(20)',
         user_first_msg: 'string(255)',
+        prev_session_id: 'string(64)',
       },
       {
         primary: 'id',
@@ -83,6 +93,7 @@ export class SessionManager {
       started_at: now,
       last_used_at: now,
       user_first_msg: truncateFirstMsg(input.userFirstMsg),
+      prev_session_id: input.prevSessionId ?? '',
     })
     return row
   }

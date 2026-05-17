@@ -27,6 +27,7 @@ import { ActiveChatRegistry } from './services/active-chats'
 import { ChatHistoryService } from './services/chat-history'
 import { CommandCatalogService } from './services/command-catalog'
 import { MemoryForkScheduler } from './services/memory-fork-scheduler'
+import { SummaryCompactor } from './services/summary-compactor'
 import { SystemPromptBuilder } from './services/system-prompt'
 import { TavilySearchClient } from './services/tavily-client'
 import { TurnAllocator } from './services/turn-allocator'
@@ -113,8 +114,24 @@ export interface Config {
    * assistant(tool_calls) + 0..N tool result + 1 final assistant，整 turn
    * 完整入选，不会被截断到中间。落到实际 ChatMessage 行数会比这个数大
    * （工具调用越密越大），但 IM 场景一般就 1.5-3 倍。
+   *
+   * 注意：滑窗一旦触发就会让 prompt 前缀变化、prefix cache 全部失效。
+   * 推荐设置 >= `summarizeAfterUserTurns`，让 summary 比滑窗先触发，
+   * 这样 cache 命中率才能真正受益于摘要压缩。
    */
   historyTurnCount?: number
+  /**
+   * 同一 conversation 内累计多少条 user message 后触发一次 summary
+   * compaction：把当前 system + 历史 + "请总结" 发给主模型，把得到的
+   * 摘要作为新的会话基点持久化（is_summary 标记）。后续 turn 只加载
+   * 摘要之后的 row，从而把整个早期上下文压缩成一对稳定的 user+
+   * assistant 消息——cache 在长会话里仍能维持高命中率。
+   *
+   * 计数是「自上一次 summary 以来的 user turn 数」（无 summary 则从
+   * conversation 起点算），所以默认 50 意味着每 50 条用户消息触发一次
+   * 摘要。设为 0 关闭功能（保留旧的纯滑窗行为）。
+   */
+  summarizeAfterUserTurns?: number
   maxTokens?: number
   systemPrompt?: Partial<{
     default: string
@@ -237,7 +254,8 @@ export default class PluginLLM extends BasePlugin<Config> {
     maxImageBytes: this.config.imageCacheMaxImageBytes,
   })
   readonly systemPrompt: SystemPromptBuilder = new SystemPromptBuilder(
-    () => this.config.systemPrompt.default ?? ''
+    () => this.config.systemPrompt.default ?? '',
+    this.ctx
   )
   readonly chatHistory: ChatHistoryService = new ChatHistoryService(this.ctx)
   readonly activeChats: ActiveChatRegistry = new ActiveChatRegistry(this.logger)
@@ -247,6 +265,9 @@ export default class PluginLLM extends BasePlugin<Config> {
   )
   readonly memoryFork: MemoryForkScheduler = new MemoryForkScheduler(this)
   readonly turns: TurnAllocator = new TurnAllocator(this.ctx)
+  // Summary compactor — instantiated post-construct so it can read the
+  // resolved config (threshold from `summarizeAfterUserTurns`).
+  summary!: SummaryCompactor
 
   constructor(ctx: Context, config: Config) {
     // One-time compat: 旧字段名 historyMessageCount → historyTurnCount。
@@ -265,7 +286,8 @@ export default class PluginLLM extends BasePlugin<Config> {
     const defaultConfigs: Partial<Config> = {
       model: 'gpt-4o-mini',
       maxTokens: 8192,
-      historyTurnCount: 10,
+      historyTurnCount: 50,
+      summarizeAfterUserTurns: 50,
       enableAgent: true,
       maxToolIterations: 5,
       showToolCallNotice: true,
@@ -292,6 +314,15 @@ export default class PluginLLM extends BasePlugin<Config> {
         '[config] "historyMessageCount" is deprecated; rename to "historyTurnCount" (semantics unchanged — counts user turns, not raw message rows).'
       )
     }
+
+    this.summary = new SummaryCompactor(
+      this.ctx,
+      this.logger,
+      this.chatHistory,
+      this.sessions,
+      this.turns,
+      { threshold: config.summarizeAfterUserTurns ?? 50 }
+    )
 
     for (const providerConfig of config.providers) {
       switch (providerConfig.type) {
