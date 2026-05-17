@@ -52,6 +52,21 @@ export interface ChatCompletionUsage {
   promptTokens?: number
   completionTokens?: number
   totalTokens?: number
+  /**
+   * Input tokens served from the provider's prompt cache (no full re-encoding
+   * billed). OpenAI: `prompt_tokens_details.cached_tokens`. Anthropic:
+   * `cache_read_input_tokens`. Already counted inside `promptTokens` — this
+   * is a breakdown, not an additional total.
+   */
+  cachedTokens?: number
+  /**
+   * Tokens spent on the model's hidden reasoning / thinking. OpenAI o-series
+   * + DeepSeek-R1: `completion_tokens_details.reasoning_tokens`. Already
+   * counted inside `completionTokens`. Anthropic streams thinking text and
+   * folds it into `output_tokens` without a separate count — left undefined
+   * there.
+   */
+  reasoningTokens?: number
 }
 
 export type StreamFinishReason = 'stop' | 'tool_calls' | 'length' | 'other'

@@ -128,11 +128,23 @@ export class AnthropicProvider extends LLMProviderBase {
         case 'message_delta': {
           const usage = (event as any).usage
           if (usage) {
+            // Anthropic's `input_tokens` excludes cache reads/creates and
+            // reports them as separate buckets; sum all three so
+            // `promptTokens` reflects the true billed prompt size and the
+            // cachedTokens/promptTokens hit-rate math is consistent with
+            // OpenAI's `prompt_tokens` (which already includes cached).
+            const inputRaw = usage.input_tokens ?? 0
+            const cacheRead = usage.cache_read_input_tokens ?? 0
+            const cacheCreate = usage.cache_creation_input_tokens ?? 0
             yield {
               kind: 'usage',
               usage: {
-                promptTokens: usage.input_tokens,
+                promptTokens: inputRaw + cacheRead + cacheCreate,
                 completionTokens: usage.output_tokens,
+                cachedTokens:
+                  typeof usage.cache_read_input_tokens === 'number'
+                    ? cacheRead
+                    : undefined,
               },
             }
           }

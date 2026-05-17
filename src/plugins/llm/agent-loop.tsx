@@ -359,9 +359,20 @@ function mergeUsage(
   b: ChatCompletionUsage
 ): ChatCompletionUsage {
   if (!a) return b
+  // `undefined + defined` stays `defined` (e.g., only one provider reported
+  // cached/reasoning) — addUndef preserves the value when one side is
+  // missing, sums when both are present, and stays undefined when neither
+  // reported, so a 0 in the log unambiguously means "reported zero" rather
+  // than "never reported".
+  const addUndef = (x?: number, y?: number): number | undefined => {
+    if (x === undefined && y === undefined) return undefined
+    return (x ?? 0) + (y ?? 0)
+  }
   return {
-    promptTokens: (a.promptTokens ?? 0) + (b.promptTokens ?? 0),
-    completionTokens: (a.completionTokens ?? 0) + (b.completionTokens ?? 0),
-    totalTokens: (a.totalTokens ?? 0) + (b.totalTokens ?? 0),
+    promptTokens: addUndef(a.promptTokens, b.promptTokens),
+    completionTokens: addUndef(a.completionTokens, b.completionTokens),
+    totalTokens: addUndef(a.totalTokens, b.totalTokens),
+    cachedTokens: addUndef(a.cachedTokens, b.cachedTokens),
+    reasoningTokens: addUndef(a.reasoningTokens, b.reasoningTokens),
   }
 }

@@ -503,10 +503,16 @@ export default class ChatCommand extends BasePlugin {
           )
         }
 
+        const u = agentResult.totalUsage
+        const cacheHitRate =
+          u?.cachedTokens !== undefined && u.promptTokens
+            ? `${((u.cachedTokens / u.promptTokens) * 100).toFixed(1)}%`
+            : undefined
         llm.logger.success('[chat] agent end:', {
           iterations: agentResult.iterations,
           fullContent: agentResult.fullContent,
-          usage: agentResult.totalUsage,
+          usage: u,
+          cacheHitRate,
           aborted: agentResult.aborted,
         })
 

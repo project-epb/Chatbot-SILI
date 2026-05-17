@@ -168,12 +168,18 @@ export class OpenAIProvider extends LLMProviderBase {
 
     for await (const chunk of stream) {
       if (chunk.usage) {
+        const u = chunk.usage as any
+        const cached = u.prompt_tokens_details?.cached_tokens
+        const reasoning = u.completion_tokens_details?.reasoning_tokens
         yield {
           kind: 'usage',
           usage: {
             promptTokens: chunk.usage.prompt_tokens,
             completionTokens: chunk.usage.completion_tokens,
             totalTokens: chunk.usage.total_tokens,
+            cachedTokens: typeof cached === 'number' ? cached : undefined,
+            reasoningTokens:
+              typeof reasoning === 'number' ? reasoning : undefined,
           },
         }
       }
