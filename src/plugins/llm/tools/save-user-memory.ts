@@ -44,7 +44,7 @@ export function buildSaveUserMemoryTool(hardLimit: number): ToolDefinition {
       '**写法**（基于 read 现有结构增改）：',
       '- 按 `## 主题` 分组，一条一行 `- ...`',
       '- **声明式，不要命令式**：✓「用户偏好简洁回复」 ✗「回复要简洁」（命令式会被未来轮当指令执行）',
-      '- 时间敏感事项末尾标日期 `（YYYY-MM-DD 写入）`，从最近 `<chat_info>` 的 current_time 取',
+      '- 时间敏感事项末尾标日期 `（YYYY-MM-DD 写入）`，从最近 `<turn_context>` 的 `time` 字段取',
       '',
       `硬上限 ${hardLimit} 字节（UTF-8）；空白内容会被拒绝。`,
     ].join('\n'),

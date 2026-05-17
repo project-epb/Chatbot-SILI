@@ -65,7 +65,7 @@ describe('buildSystemPromptText', () => {
     expect(out).toContain('## 输出节奏')
   })
 
-  it('includes the chat_info field explainer block with all three name fields', () => {
+  it('includes the turn_context field explainer block with all three name fields', () => {
     const out = buildSystemPromptText('BASE', 'CATALOG')
     expect(out).toContain('koishi.callme')
     expect(out).toContain('platform.user.name')

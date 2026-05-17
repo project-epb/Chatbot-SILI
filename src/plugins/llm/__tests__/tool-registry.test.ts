@@ -867,6 +867,6 @@ describe('buildSaveUserMemoryTool', () => {
 
   it('mentions date-stamping for time-sensitive entries', () => {
     const def = buildSaveUserMemoryTool(3300)
-    expect(def.description).toMatch(/YYYY-MM-DD|chat_info|current_time/)
+    expect(def.description).toMatch(/YYYY-MM-DD|turn_context|chat_info/)
   })
 })

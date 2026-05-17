@@ -4,6 +4,7 @@ import type {
   ChatMessage,
   LLMProviderBase,
 } from '../providers/_base'
+import { PROTOCOL_TAGS } from '../utils/protocol'
 
 import type { ChatHistoryService } from './chat-history'
 import type { MemoryStore } from './memory'
@@ -157,7 +158,11 @@ export class SummaryCompactor {
       input.userId,
       this.logger
     )
-    const compactInstruction = `<system:compact>${this.options.prompt ?? DEFAULT_SUMMARY_PROMPT}</system:compact>`
+    const compactInstruction = [
+      PROTOCOL_TAGS.SYSTEM_COMPACT.open,
+      this.options.prompt ?? DEFAULT_SUMMARY_PROMPT,
+      PROTOCOL_TAGS.SYSTEM_COMPACT.close,
+    ].join('')
     // Memory comes first (becomes the start of the cached prefix in the
     // new session), then the compaction instruction. When the user has
     // no memory the snapshot is empty and we send just the instruction.

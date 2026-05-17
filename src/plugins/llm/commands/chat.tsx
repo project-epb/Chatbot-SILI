@@ -260,14 +260,13 @@ export default class ChatCommand extends BasePlugin {
           time: new Date().toLocaleString('sv', { timeZone: TZ }) + ` (${TZ})`,
         }
         // 系统注入元数据 + 用户原话用 XML tag 隔离，防止"复述我的消息"类
-        // 注入把 chat_info 块带出来。chat_info 不入库（不进 history），每轮
-        // 临时拼接，仅影响最后一条 user message 的输入。系统侧的 routing
-        // 协议在 system prompt 的「消息协议」段教育模型如何识别。
+        // 注入把 turn_context 块带出来。系统侧的 routing 协议在 system
+        // prompt 的「消息协议」段教育模型如何识别。
         //
         // 打断场景：
         // - pre-stream（老 session 还没流出任何 token）：把上一句和这一句
         //   作为单条 user_message 拼接，模型视角等价于"用户连发了两段"
-        // - mid-stream（用户已看到部分回复）：在 chat_info 后注入临时 block
+        // - mid-stream（用户已看到部分回复）：在 turn_context 后注入临时 block
         //   <interrupt_notice> 教模型当前的对话状态 + 给它"说 <silent/> 选
         //   择沉默"的能力。这个 block 不入 history，下一轮自动消失，避免
         //   AI 滥用沉默
@@ -285,25 +284,25 @@ export default class ChatCommand extends BasePlugin {
                 PROTOCOL_TAGS.INTERRUPT_NOTICE.close,
               ].join('\n')
             : ''
-        // chat_info envelope: just the JSON, no per-turn explainers. The
-        // static field-meaning + "don't echo" rules live in the system
+        // turn_context envelope: just the JSON, no per-turn explainers.
+        // The static field-meaning + "don't echo" rules live in the system
         // prompt's `## 消息协议` section so they're cached forever and
         // don't repeat in every prompt.
         //
         // The envelope is split into two pieces:
-        //   - persistableEnvelope: chat_info + user_message, byte-stable
-        //     enough to store in db so REPLAYED history matches what we
-        //     SENT last turn → previous-user position keeps the provider's
-        //     prefix cache instead of always being a miss.
+        //   - persistableEnvelope: turn_context + user_message, byte-
+        //     stable enough to store in db so REPLAYED history matches
+        //     what we SENT last turn → previous-user position keeps the
+        //     provider's prefix cache instead of always being a miss.
         //   - userMessageEnvelope: persistable + (optional) interrupt
         //     notice. Interrupt notices are turn-specific instructions
         //     (offer the <silent/> bailout for "shut up"-style asks),
         //     so they MUST NOT leak into persisted history — replaying
         //     them would offer silent-mode in irrelevant future turns.
         const chatInfoBlock = [
-          PROTOCOL_TAGS.CHAT_INFO.open,
+          PROTOCOL_TAGS.TURN_CONTEXT.open,
           JSON.stringify(chatInfo),
-          PROTOCOL_TAGS.CHAT_INFO.close,
+          PROTOCOL_TAGS.TURN_CONTEXT.close,
         ].join('\n')
         const userMessageBlock = [
           PROTOCOL_TAGS.USER_MESSAGE.open,

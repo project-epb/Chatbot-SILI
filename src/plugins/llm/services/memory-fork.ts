@@ -228,7 +228,7 @@ async function runMemoryFork(input: MemoryForkInput): Promise<void> {
  * Format a Date as ISO date (YYYY-MM-DD) in the bot's local timezone.
  * Used to inject {{TODAY}} into the fork prompt so time-sensitive memory
  * entries can be timestamped without requiring the agent to infer the
- * date from `<chat_info>` blocks scattered through history.
+ * date from `<turn_context>` blocks scattered through history.
  */
 function formatToday(now = new Date()): string {
   const y = now.getFullYear()
