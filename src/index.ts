@@ -361,7 +361,7 @@ app.plugin(function PluginCollectionDialogue(ctx) {
   })
 
   // FIXME: plugin-dialogue 权限漏洞
-  // 禁止一般用户使用问答查询
+  // 禁止一般用户查询问答库，避免泄露敏感信息
   ctx.on(
     // @ts-ignore
     'dialogue/before-action',
@@ -374,16 +374,21 @@ app.plugin(function PluginCollectionDialogue(ctx) {
   )
 
   // FIXME: plugin-dialogue 逻辑漏洞
-  // 挡掉「只 @bot 不说话」走 dialogue：当 stripped.content 为空时，dialogue
-  // 内置的 `dialogue/query` hook 不会附加 question 条件（见 internal.ts），
-  // 退化为「全库按 probA 加权随机抽一条」，表现为「@SILI 任何回答」。
-  // FallbackHandler 会接管空内容 → ping 的兜底。
+  // 当用户仅发送了一个纯 @bot 的消息时，stripped.content 为空，
+  // `dialogue/query` hook 不会附加 question 条件，
+  // 导致其退化为「全库按 probA 加权随机抽一条」，
+  // 表现为「@bot」=「随机回答」。
   ctx.on(
     // @ts-ignore
     'dialogue/receive',
     ({ session }: PluginDialogue.SessionState) => {
       const trimmedContent = session.stripped.content?.trim() || ''
-      if (trimmedContent.length < 1) return true
+      if (trimmedContent.length <= 0) {
+        ctx
+          .logger('HOTFIX')
+          .warn(`Pure mention triggered random dialogue: ${session.id}`)
+        return true
+      }
     }
   )
 })
