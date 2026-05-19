@@ -2,7 +2,7 @@
  * @name FallbackHandler
  * @desc 内部插件，用于处理未匹配到任何指令的消息
  */
-import { Context } from 'koishi'
+import { Context, sleep } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
@@ -30,6 +30,8 @@ export interface Config {
   enablePing?: boolean
   /** @bot 有内容但没人接时是否调 chat。默认 true */
   enableChat?: boolean
+  /** 发送 ping/chat 前的延迟（ms），防止微妙的竞态。默认 500 */
+  delayMs?: number
 }
 
 type ResolvedConfig = Required<Config>
@@ -39,6 +41,7 @@ const DEFAULTS: ResolvedConfig = {
   enableLog: true,
   enablePing: true,
   enableChat: true,
+  delayMs: 500,
 }
 
 export default class FallbackHandler extends BasePlugin<ResolvedConfig> {
@@ -50,6 +53,17 @@ export default class FallbackHandler extends BasePlugin<ResolvedConfig> {
     super(ctx, config, 'FallbackHandler')
 
     if (!config.enabled) return
+
+    // 框架层双保险：command/before-execute 和 satori 的 before-send 事件
+    // 都不受 instance property 被 delete 的影响，比单纯 patch session 方法
+    // 更稳。dialogue 的 MessageBuffer 在 end() 时会 `delete session.send`，
+    // 会把本插件挂上去的 instance patch 也一并清掉；而事件 hook 不会丢。
+    ctx.before('command/execute', (argv) => {
+      if (argv.session) argv.session._handled = true
+    })
+    ctx.before('send', (session) => {
+      session._handled = true
+    })
 
     // 用 `prepend = true` 把这条 middleware 钉在队首：pre-next 最先进入，
     // 但在 koishi 洋葱模型下，post-next 反而是 *最后* 才跑 —— 这才是真正
@@ -80,6 +94,9 @@ export default class FallbackHandler extends BasePlugin<ResolvedConfig> {
       if (!session.stripped.atSelf && !session.stripped.appel) return result
       if (session.argv?.command || session._handled) return result
 
+      if (config.delayMs > 0) await sleep(config.delayMs)
+      if (session._handled) return result
+
       if (config.enableLog) {
         this.logger.info(
           'addressed to bot but no handler matched:',
@@ -90,7 +107,9 @@ export default class FallbackHandler extends BasePlugin<ResolvedConfig> {
       const cleanContent = session.stripped.content.trim()
       if (!cleanContent) {
         // 仅有 @ 提及但无其他内容，视为用户想要唤醒/测试机器人
-        if (config.enablePing) return _sessionExecute({ name: 'ping' })
+        if (config.enablePing) {
+          return _sessionExecute({ name: 'ping' })
+        }
       } else {
         // 有其他内容但未被任何指令/中间件处理，视为用户想要聊天
         if (config.enableChat) {
