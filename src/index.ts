@@ -360,14 +360,30 @@ app.plugin(function PluginCollectionDialogue(ctx) {
     },
   })
 
-  // FIXME: 禁止一般用户使用问答查询
+  // FIXME: plugin-dialogue 权限漏洞
+  // 禁止一般用户使用问答查询
   ctx.on(
+    // @ts-ignore
     'dialogue/before-action',
     (session: PluginDialogue.Dialogue.Session) => {
       const userAuth = session.user?.authority || 0
       if (userAuth <= 2) {
         return '你没有权限执行此操作。'
       }
+    }
+  )
+
+  // FIXME: plugin-dialogue 逻辑漏洞
+  // 挡掉「只 @bot 不说话」走 dialogue：当 stripped.content 为空时，dialogue
+  // 内置的 `dialogue/query` hook 不会附加 question 条件（见 internal.ts），
+  // 退化为「全库按 probA 加权随机抽一条」，表现为「@SILI 任何回答」。
+  // FallbackHandler 会接管空内容 → ping 的兜底。
+  ctx.on(
+    // @ts-ignore
+    'dialogue/receive',
+    ({ session }: PluginDialogue.SessionState) => {
+      const trimmedContent = session.stripped.content?.trim() || ''
+      if (trimmedContent.length < 1) return true
     }
   )
 })
@@ -477,7 +493,8 @@ app.plugin(function PluginCollectionInternal(ctx) {
     ],
     queryTexts: [
       (_state, breaker) => `${h.at(breaker.userId)}在？为什么打断复读？`,
-      (_state, breaker) => `${h.at(breaker.userId)} 你还要继续复读哟，怎么停下来了。`,
+      (_state, breaker) =>
+        `${h.at(breaker.userId)} 你还要继续复读哟，怎么停下来了。`,
     ],
   })
   ctx.plugin(PluginSensitiveFilter)
