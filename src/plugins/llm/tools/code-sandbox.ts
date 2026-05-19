@@ -26,6 +26,7 @@ export const CODE_SANDBOX_TOOL: ToolDefinition = {
     '',
     '**何时调**：数值/统计计算、单位/进制转换、JSON/CSV 解析与转换、日期运算、文本批处理、需要程序化验证的逻辑。',
     '**何时别调**：能直接答的事实问题、能用 web_search/extract_webpages 解决的联网查询。',
+    '**用户看不到你写的代码、运行过程、结果**：若有需要，自己转述给用户。',
   ].join('\n'),
   parameters: {
     type: 'object',
