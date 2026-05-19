@@ -6,36 +6,68 @@ import { Context, Session } from 'koishi'
 
 import BasePlugin from '~/_boilerplate'
 
+import { Channel } from '@satorijs/protocol'
+
 export default class MessagesLogger extends BasePlugin {
   constructor(public ctx: Context) {
-    super(ctx, {}, 'message')
+    super(ctx, {}, 'msg')
 
-    ctx.on('before-attach-channel', (session, fields) => {
-      fields.add('name')
-    })
+    const UNKNOWN = '<unknown>'
 
-    ctx.on('message', (session) => {
-      const content = this.toSlimContent(session.content) ?? '[UNKNOWN]'
-      this.logger.info(
-        `${session.platform}${
-          session.event.guild
-            ? `/${session.event.guild.name}(#${session.event.guild.id})`
-            : ''
-        } ▸ ${session.username} (${session.userId})`,
-        `⫸ ${content}`
-      )
-    })
+    const isDirect = (session: Session) =>
+      session.isDirect || session.event.channel.type === Channel.Type.DIRECT
 
-    ctx.before('send', (session) => {
-      const content = this.toSlimContent(
-        session.content ?? session.elements?.join('') ?? '[UNKNOWN]'
-      )
-      ctx
-        .logger('SEND')
-        .info(
-          `${session.platform}/${session.event?.channel?.name}(#${session.event?.channel?.id})`,
-          `⫸ ${content}`
+    const channelNameCache = new Map<string, string>()
+    const getChannelNameFromCache = (session: Session) => {
+      return channelNameCache.get(`${session.platform}:${session.channelId}`)
+    }
+    const setChannelNameCache = (session: Session) => {
+      const channelName = isDirect(session)
+        ? session.username
+        : (session.event._data?.group_name ?? session.event.channel?.name)
+      if (channelName) {
+        channelNameCache.set(
+          `${session.platform}:${session.channelId}`,
+          channelName
         )
+      }
+    }
+
+    const getChannelName = (session: Session) =>
+      session.event._data?.group_name ??
+      session.event.channel?.name ??
+      getChannelNameFromCache(session) ??
+      UNKNOWN
+    const formatUser = (session: Session) =>
+      `${session.username} (${session.userId})`
+    const formatChannel = (session: Session) =>
+      `${getChannelName(session)} (${session.platform}:${session.channelId})`
+
+    ctx.on('message', (session: Session) => {
+      const content = this.toSlimContent(session.content) ?? UNKNOWN
+
+      this.logger.info(
+        '↓',
+        isDirect(session)
+          ? '[DM] ' + formatUser(session)
+          : `${formatChannel(session)} | ${formatUser(session)}`,
+        `\n${content}`
+      )
+
+      // cache channel name
+      setChannelNameCache(session)
+    })
+
+    ctx.before('send', (session: Session) => {
+      const content = this.toSlimContent(session.content) ?? UNKNOWN
+      if (!content) return
+      this.logger.info(
+        '↑',
+        isDirect(session)
+          ? '[DM] ' + formatChannel(session)
+          : formatChannel(session),
+        `\n${content}`
+      )
     })
   }
 
@@ -44,7 +76,7 @@ export default class MessagesLogger extends BasePlugin {
    */
   toSlimContent(content: string) {
     if (!content) return content
-    return content.replace(
+    return String(content).replace(
       /(src|url)="(base64:|data:)(.+?)"/gi,
       (_, $1, $2, $3) => `${$1}="${$2}(${$3.length} bytes)"`
     )
