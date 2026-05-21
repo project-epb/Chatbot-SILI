@@ -31,11 +31,10 @@ export class PluginDebug extends BasePlugin {
 
     ctx
       .platform('onebot')
-      .command('debug.face', '<faceId:posint> Send QQ face', {})
+      .command('debug.face <faceId:posint>', 'Send QQ face', {})
       .action((_, faceId) => {
-        const numId = parseInt(faceId)
-        if (isNaN(numId) || numId < 1) return 'Invalid face ID.'
-        return <face id={numId} />
+        if (isNaN(faceId) || faceId < 1) return 'Invalid face ID.'
+        return <face id={faceId} />
       })
 
     ctx.inject(['qqntEmojiReaction'], (ctx) => {

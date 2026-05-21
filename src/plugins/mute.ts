@@ -14,9 +14,13 @@ export default class PluginMute extends BasePlugin {
 
     ctx = ctx.platform('red', 'onebot').channel()
     ctx
-      .command('channel.mute', '<duration:number>', { authority: 3 })
-      .option('set-user', '-u <user:user>')
-      .option('set-all', '-a', { type: 'boolean' })
+      .command('channel.mute <duration:number> 群禁言，duration 为禁言时长（秒）', { authority: 3 })
+      .option('set-user', '-u <user:user> 禁言指定用户')
+      .option(
+        'set-all',
+        '-a 开关全员禁言：duration>0 开启，duration=0 关闭',
+        { type: 'boolean' }
+      )
       .action(({ session, options }, duration) => {
         this.logger.info(options, duration)
         if (options['set-all']) {
