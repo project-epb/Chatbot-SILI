@@ -14,19 +14,18 @@ import type { ClientOptions as AnthropicClientOptions } from '@anthropic-ai/sdk'
 import { Inject } from 'cordis'
 import type { ClientOptions } from 'openai'
 
-import { type CommandCatalogEntry } from './utils/command-catalog'
 import AdminCommands from './commands/admin'
 import ChatCommand from './commands/chat'
-import { ImageReferenceCache } from './services/image-cache'
-import { MemoryStore } from './services/memory'
 import { ChatCompletionUsage, LLMProviderBase } from './providers/_base'
 import { AnthropicProvider } from './providers/anthropic'
 import { OpenAIProvider } from './providers/openai'
-import { SessionManager } from './services/session-manager'
 import { ActiveChatRegistry } from './services/active-chats'
 import { ChatHistoryService } from './services/chat-history'
 import { CommandCatalogService } from './services/command-catalog'
+import { ImageReferenceCache } from './services/image-cache'
+import { MemoryStore } from './services/memory'
 import { MemoryForkScheduler } from './services/memory-fork-scheduler'
+import { SessionManager } from './services/session-manager'
 import { SummaryCompactor } from './services/summary-compactor'
 import { SystemPromptBuilder } from './services/system-prompt'
 import { TavilySearchClient } from './services/tavily-client'
@@ -48,6 +47,7 @@ import {
   runWebExtract,
   runWebSearch,
 } from './tools'
+import { type CommandCatalogEntry } from './utils/command-catalog'
 
 declare module 'koishi' {
   export interface Tables {
@@ -307,7 +307,10 @@ export default class PluginLLM extends BasePlugin<Config> {
       memoryForkMaxRetries: 3,
       sessionIdleTimeoutMs: 3 * 24 * 60 * 60 * 1000, // 3 days
       systemPrompt: {
-        default: PluginLLM.readPromptFile('SILI-v5.prompt.md'),
+        default:
+          process.env.KOISHI_ENV === 'dev'
+            ? PluginLLM.readPromptFile('Noir.prompt.md')
+            : PluginLLM.readPromptFile('SILI-v6.prompt.md'),
       },
     }
     config = {
@@ -437,10 +440,15 @@ export default class PluginLLM extends BasePlugin<Config> {
       this.tools.register({
         definition: EXTRACT_WEBPAGES_TOOL,
         execute: async (args, { turnState }) =>
-          runWebExtract(args as any, tavilyClient, getWebToolsState(turnState), {
-            maxUrlsPerCall: tavilyConfig.maxExtractUrlsPerCall,
-            maxCallsPerTurn: tavilyConfig.maxExtractCallsPerTurn,
-          }),
+          runWebExtract(
+            args as any,
+            tavilyClient,
+            getWebToolsState(turnState),
+            {
+              maxUrlsPerCall: tavilyConfig.maxExtractUrlsPerCall,
+              maxCallsPerTurn: tavilyConfig.maxExtractCallsPerTurn,
+            }
+          ),
       })
     }
 
@@ -479,9 +487,7 @@ export default class PluginLLM extends BasePlugin<Config> {
             r.skippedConversations
           )
         )
-        .catch((e) =>
-          this.logger.warn('[turn-migration] failed:', e)
-        )
+        .catch((e) => this.logger.warn('[turn-migration] failed:', e))
 
       // 启动时清一次过期的图片缓存；之后每小时再扫一次（ctx.setInterval
       // 在 plugin dispose 时自动清理）。
@@ -515,9 +521,8 @@ export default class PluginLLM extends BasePlugin<Config> {
       if (sbHandler) {
         ;(async () => {
           try {
-            const { CodeSandboxRuntime } = await import(
-              './services/code-sandbox-runtime'
-            )
+            const { CodeSandboxRuntime } =
+              await import('./services/code-sandbox-runtime')
             await new CodeSandboxRuntime(this.logger).warmup()
             this.logger.info('[code-sandbox] warmup ok')
           } catch (e) {
@@ -568,7 +573,6 @@ export default class PluginLLM extends BasePlugin<Config> {
     MemoryStore.initSchema(this.ctx)
     SessionManager.initSchema(this.ctx)
   }
-
 
   static readPromptFile(file: string) {
     try {
